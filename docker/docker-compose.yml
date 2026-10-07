@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Base de Datos Relacional para donaciones-service, incentivos-service y keycloak
+  postgres:
+    image: postgres:16-alpine
+    container_name: donatrack-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: donatrack
+      POSTGRES_PASSWORD: donatrack_password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U donatrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Base de Datos NoSQL Documental exclusiva para logistica-service (cumplimiento estricto TP)
+  mongo:
+    image: mongo:7.0
+    container_name: donatrack-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: logistica_db
+    volumes:
+      - mongo_data:/data/db
+
+  # Message Broker para desacoplamiento asíncrono y Transactional Outbox
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: donatrack-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"    # Protocolo AMQP
+      - "15672:15672"  # Panel de Administración Web
+    environment:
+      RABBITMQ_DEFAULT_USER: donatrack
+      RABBITMQ_DEFAULT_PASS: donatrack_password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # Servidor SMTP de desarrollo con UI Web para previsualizar notificaciones
+  mailpit:
+    image: axllent/mailpit:v1.18
+    container_name: donatrack-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # Puerto SMTP
+      - "8025:8025"  # Web UI
+    environment:
+      MP_MAX_MESSAGES: 500
+
+  # Identity Provider para Autenticación, JWT, Roles y Social Login (Bonus Entrega 5/6)
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    container_name: donatrack-keycloak
+    restart: unless-stopped
+    command: start-dev --db=postgres --db-url=jdbc:postgresql://postgres:5432/keycloak_db --db-username=donatrack --db-password=donatrack_password --http-port=8081
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  mongo_data:
+  rabbitmq_data:

@@ -1,0 +1,43 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: donaciones-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/donaciones_db}
+    username: ${SPRING_DATASOURCE_USERNAME:donatrack}
+    password: ${SPRING_DATASOURCE_PASSWORD:donatrack_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        # Optimizaciones criticas para importacion masiva de CSV (>20.000 filas)
+        jdbc:
+          batch_size: 500
+          batch_versioned_data: true
+        order_inserts: true
+        order_updates: true
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:donatrack}
+    password: ${SPRING_RABBITMQ_PASSWORD:donatrack_password}
+
+# Configuracion de Colas y Exchanges de Donaciones
+donatrack:
+  rabbitmq:
+    exchange: "donatrack.events.exchange"
+    queue:
+      donacion-asignada: "q.notificaciones.donacion-asignada"
+      donante-inactivo: "q.notificaciones.donante-inactivo"
+    routing-key:
+      donacion-asignada: "donacion.asignada"
+      donante-inactivo: "donante.inactivo"

@@ -1,0 +1,1174 @@
+DonaTrack - Sistema de Gestión y
+Trazabilidad de Donaciones
+
+Trabajo Práctico Anual Integrador
+-2026-
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Contexto general
+Marco Institucional
+UTN Solidaria es una iniciativa de la Subsecretaría de Asuntos Estudiantiles de nuestra Facultad, orientada
+a acompañar y asistir a personas en situación de vulnerabilidad a través de distintas acciones solidarias
+organizadas por estudiantes y voluntarios. Se constituye como un espacio de articulación entre
+estudiantes, docentes y graduados, con el propósito de canalizar acciones solidarias que generen un
+impacto positivo y sostenible en la sociedad.
+El área busca complementar la formación académica de los futuros profesionales, impulsando valores
+como la responsabilidad social, la empatía y el trabajo colaborativo. En este marco, UTN Solidaria se
+posiciona como un puente entre la universidad y la comunidad, promoviendo la participación activa frente
+a problemáticas sociales y fomentando el desarrollo de soluciones concretas desde una perspectiva
+interdisciplinaria.
+Entre sus principales líneas de acción se destaca el reparto de viandas a personas en situación de
+vulnerabilidad en los alrededores de la sede Medrano y de donaciones recibidas de alimentos no
+perecederos, ropa, abrigo, colchones y frazadas, el acompañamiento a instituciones educativas y
+comunitarias como el Hospital Gandulfo y un hogar de niños, y la generación de espacios de voluntariado
+que permitan a los participantes involucrarse de manera directa con diversos contextos sociales. Su
+trabajo se sostiene gracias al compromiso de los voluntarios y a las donaciones de quienes confían y
+acompañan cada una de las propuestas.
+En el marco del presente trabajo práctico de grado, se propone analizar y modelar los distintos procesos
+que conforman UTN Solidaria, utilizando esta iniciativa como caso de estudio, y llevarla a la práctica
+mediante el diseño y desarrollo de una solución tecnológica que integre herramientas y enfoques propios
+de la Ingeniería en Sistemas de Información.
+De este modo, se busca articular la formación tecnológica con el compromiso social, contribuyendo a la
+formación de profesionales no solo altamente capacitados, sino también conscientes de su rol en la
+sociedad y comprometidos con la transformación de su entorno.
+
+Contexto
+Una organización sin fines de lucro dedicada a la recolección y distribución de donaciones de bienes
+materiales enfrenta dificultades para gestionar y dar trazabilidad a los recursos que recibe. La falta de un
+sistema unificado provoca desorden, duplicación de registros y poca claridad sobre el destino de las
+donaciones, perjudicando la transparencia y eficiencia.
+
+Nuestro sistema
+A partir de la problemática identificada y presentada en la sección anterior, se propone el diseño y
+desarrollo de DonaTrack: una solución digital orientada a organizar, registrar y monitorear las donaciones
+desde su recepción en el depósito de la organización hasta su entrega a entidades beneficiarias que las
+requieran. El objetivo del sistema será mejorar la distribución de recursos y, al mismo tiempo, fortalecer la
+confianza de personas donantes y entidades beneficiarias de las donaciones.
+1
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+En este marco, diseñaremos e implementaremos una arquitectura distribuida en servicios:
+●​ un servicio de gestión de personas donantes, entidades beneficiarias y donaciones (en adelante,
+Servicio de Donaciones), que permitirá el alta, baja y modificación de personas donantes (humanas
+o jurídicas), registro de donaciones con trazabilidad y auditoría de estados y de entidades
+beneficiarias.
+●​ un servicio de logística y gestión de camiones y entregas (en adelante, Servicio de Logística), que
+garantizará la generación de rutas de los camiones de la organización para la entrega de las
+donaciones y la trazabilidad de las mismas durante este proceso.
+●​ un servicio de incentivos a donantes y misiones (en adelante, Servicio de Incentivos), que integrará
+funcionalidades de analítica para procesar la actividad de donación, calcular el progreso de los
+donantes y otorgar incentivos simbólicos como insignias y ascensos de categoría.
+●​ un servicio de notificaciones, que permitirá envío de notificaciones por distintos medios ante
+cambios de estado de las donaciones, asignaciones, entregas de donaciones realizadas y
+recompensas desbloqueadas.
+●​ un servicio de autenticación;
+●​ un componente de front para server-side rendering (se explicará en la entrega V).
+A modo orientativo, se tiene este diagrama de despliegue (Fig. 1) como contexto general del sistema. El
+mismo no es definitivo y sufrirá modificaciones conforme avance el desarrollo del sistema.
+
+Figura 1 - Diagrama de Despliegue Inicial (orientativo)
+
+Es importante destacar que en el actual diagrama de despliegue se omite la integración entre servicios. A
+medida que los equipos desarrollen las correspondientes entregas, se otorgarán detalles adicionales
+respecto a la misma.
+
+2
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Entregas
+El trabajo se organiza en seis entregas. Las primeras incorporan funcionalidades de manera incremental,
+mientras que, a medida que avanza el desarrollo, las entregas se orientan a refinar el diseño e integrar
+herramientas y aspectos tecnológicos necesarios para su implementación real (por ejemplo, persistencia,
+exposición de una API REST, observabilidad, integración con una interfaz de usuario y seguridad).
+Las entregas previstas se muestran a continuación, aunque pueden sufrir algunas modificaciones en su
+alcance o fechas: (*)
+Nro.
+1
+2
+3
+4
+5
+6
+
+Título
+Arquitectura y Modelado en Objetos - Parte I y Diseño de la
+Interfaz de Usuario
+Arquitectura y Modelado en Objetos - Parte II
+Arquitectura y Modelado en Objetos - Parte III
+Persistencia y Maquetado de Interfaz de Usuario
+Arquitectura Web MVC
+Despliegue, Observabilidad y Seguridad
+
+Semana de entrega propuesta
+Semana del 20 de abril
+Semana del 25 de mayo
+Semana del 29 de junio
+Semana del 7 de septiembre
+Semana del 12 de Octubre
+Semana del 16 de Noviembre
+
+(*) - Estas fechas son a modo de referencia, consultar con el cronograma del curso asignado.
+
+3
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Requerimientos mínimos de UI/UX
+Acceso
+1.​ El sistema debe contar con una landing page1 accesible públicamente que permita:
+○​ Presentar el propósito y objetivos de DonaTrack.
+○​ Mostrar ejemplos destacados de donaciones realizadas en el último mes.
+○​ Incluir enlaces de acceso a:
+i.​ Visualización de fotos de donaciones entregadas sin login.
+ii.​ Registro o inicio de sesión para personas donantes y beneficiarias.
+iii.​ Información legal y de privacidad.
+2.​ El sistema debe mostrar las donaciones ya entregadas a entidades beneficiarias en un mapa
+interactivo y permitir ver sus detalles al hacer clic en cada marcador.
+3.​ El sistema debe permitir el registro de personas donantes y entidades beneficiarias.
+4.​ El sistema debe permitir el inicio de sesión de personas donantes, entidades beneficiarias y
+personas administradoras.
+Persona donante
+5.​ La persona donante debe poder filtrar sus donaciones realizadas por estado y categoría o
+subcategoría/s de bienes entregados.
+6.​ La persona donante debe poder navegar por las entidades beneficiarias registradas.
+7.​ La persona humana donante debe poder acceder a una sección de Incentivos y consultar misiones
+a realizar e insignias obtenidas.
+8.​ La persona donante debe recibir notificaciones cuando una donación realizada por ella es asignada,
+cuando cumplió una misión, cuando sube de categoría o cuando la entidad beneficiaria asignada
+recibe la donación realizada.
+9.​ La persona donante debe poder seguir en un mapa las entregas activas de las donaciones que
+realizó, visualizando el/los camiones asociados con ubicación y última actualización.
+Entidad beneficiaria
+10.​La entidad beneficiaria debe poder registrar necesidades materiales concretas.
+11.​La entidad beneficiaria debe poder ver el estado de las donaciones asignadas a ella.
+12.​La entidad beneficiaria debe poder confirmar la recepción de una donación, cargando fotos de la
+misma.
+13.​La entidad beneficiaria debe recibir notificaciones en base a la asignación de donaciones y
+confirmación de recepción de entrega.
+14.​La entidad beneficiaria debe poder seguir en un mapa las entregas activas de las donaciones que
+debe recibir, visualizando el/los camiones asociados con ubicación y última actualización.
+
+1
+
+El término landing page significa página de aterrizaje o de destino. Su misión es ser el lugar donde “aterrizan” los
+usuarios luego de interactuar con una campaña de atracción que los lleva a la plataforma web.
+
+4
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Persona administradora
+15.​La persona administradora debe registrar personas donantes y donaciones que haya recibido en el
+depósito, asociándolas a la persona donante correspondiente.
+16.​La persona administradora debe poder actualizar el estado de las donaciones disponibles en el
+depósito, en caso de que estén vencidas.
+17.​La persona administradora debe poder seleccionar la entidad beneficiaria final de una donación
+pendiente de asignación, a partir del resultado de ejecución de los algoritmos de selección.
+18.​La persona administradora debe poder administrar los camiones disponibles.
+19.​La persona administradora debe poder visualizar el ranking mensual de donantes más activos y el
+historial de rankings anteriores.
+20.​La persona administradora debe poder importar personas donantes ya registradas para otorgarles
+un usuario desde archivos CSV con más de 10.000 filas.
+
+5
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+ENTREGA 1: Arquitectura y Modelado en Objetos - Parte I
+Objetivos de la entrega
+●​ Entrar en contacto con el dominio y sus principales abstracciones.
+●​ Incorporar de forma paulatina conceptos y principios de Diseño.
+●​ Familiarizarse con el entorno de desarrollo y las principales tecnologías a ser aplicadas a lo largo
+del Trabajo Práctico.
+●​ Familiarizarse con la arquitectura del sistema.
+●​ Incorporar nociones de Diseño UI/UX.
+
+Unidades del Programa Vinculadas
+●​
+●​
+●​
+●​
+●​
+
+Unidad 2: Herramientas de Concepción y Comunicación del Diseño.
+Unidad 3: Diseño con Objetos.
+Unidad 4: Diseño de Interfaz de Usuario.
+Unidad 6: Diseño de Arquitectura.
+Unidad 8: Validación del Diseño.
+
+Alcance
+●​
+●​
+●​
+●​
+●​
+
+Servicio de Donaciones - Gestión de Donantes y Donaciones.
+Servicio de Donaciones - Importación masiva de donantes mediante archivo CSV.
+Servicio de Donaciones - Gestión de Entidades Beneficiarias y Necesidades.
+Servicio de Notificaciones - Primera iteración.
+Bocetos de interfaz de usuario.
+
+Dominio
+Servicio de Donaciones - Donantes
+Las personas donantes son personas humanas o jurídicas que desean aportar a las entidades
+beneficiarias. Estas podrán registrarse en la plataforma previo a llevar una donación al depósito. A las
+personas humanas se les solicita nombre, apellido, edad, número de documento, género y dirección y al
+menos un medio de contacto (en forma obligatoria correo electrónico y en forma opcional teléfono y/o
+WhatsApp). A su vez, podrá determinar cuál de ellos será su medio de contacto predeterminado para
+recibir notificaciones del sistema.
+Por otra parte, las personas jurídicas deben indicar razón social, su tipo (Gubernamental, ONG, Empresa,
+Institución), rubro y al menos un medio de contacto. Cada organización tendrá personas representantes
+habilitadas a operar en su nombre.
+
+6
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Servicio de Donaciones - Registro de personas donantes
+Las personas donantes (o en caso de las jurídicas, un representante) se acercarán al depósito con el
+objetivo de ingresar una donación. En caso de que no tengan un usuario en la plataforma, una persona
+administradora les pedirá los datos de registro (ver sección anterior) y se les enviará un correo electrónico
+de bienvenida para que accedan por primera vez.
+
+Servicio de Donaciones - Donaciones y segmentación
+Una vez registrada la persona donante, o confirmado que ya cuenta con un usuario, la persona
+administradora que esté en el depósito en ese momento completará el formulario de la donación en su
+nombre.
+Se debe incluir una descripción general y los bienes que contiene. De cada bien se conoce una descripción
+y, opcionalmente, se le asocia una foto. Estos pertenecen a una categoría (mobiliario, alimentos,
+vestimenta, etc.). Para cada categoría existen múltiples subcategorías.
+La subcategoría constituye la unidad mínima de asignación dentro del sistema, permitiendo identificar con
+precisión qué bien se necesita o se dona. Por ejemplo, dentro de la categoría “Alimentos” pueden definirse
+subcategorías como fideos secos, arroz, legumbres secas, aceite vegetal; y dentro de “Vestimenta” pueden
+existir subcategorías como camperas de abrigo, remeras, pantalones o ropa infantil.
+Existen algunas categorías en las que es necesario conocer si su estado es usado o no, como por ejemplo
+en bienes mobiliarios o vestimenta. En caso de que los bienes sean perecederos, se debe ingresar la fecha
+de vencimiento. En todos los casos, se deberá contabilizar la cantidad de un mismo producto en una
+unidad determinada (kilogramos, unidades o según corresponda).
+Se registrará la totalidad de los bienes a donar en una única carga dentro del sistema, a partir de la cual el
+sistema realizará automáticamente una segmentación interna, generando múltiples posibles donaciones
+independientes agrupadas obligatoriamente por subcategorías. De este modo, cada donación resultante
+quedará asociada a una única subcategoría, constituyendo la unidad mínima de asignación y garantizando
+coherencia en el proceso automático de vinculación con las necesidades correspondientes.
+En el caso de bienes perecederos, el sistema podrá generar donaciones separadas cuando existan
+diferencias en la fecha de vencimiento. Asimismo, para aquellos bienes no perecederos cuyo estado sea
+relevante (como mobiliario o vestimenta) deberá consignarse si se trata de artículos nuevos o usados, a fin
+de asegurar una correcta evaluación y asignación posterior.
+Se proveen a continuación ejemplos concretos:
+●​ La oficina corporativa de Arcos Plateados está en proceso de mudanza y quiere donar un conjunto
+de muebles usados: seis sillas y una mesa rectangular.
+●​ Una planta industrial de pastas secas desea donar 100 paquetes de fideos y 50 tetra-packs de
+tomate que vencen el 01/01/2027.
+
+7
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Servicio de Donaciones - Entidades beneficiarias y necesidades
+Las entidades beneficiarias son organizaciones sin fines de lucro que se registran para recibir donaciones.
+Pueden ser escuelas rurales, comedores, espacios de tutoría de niños, entre otros. De cada entidad se
+conoce su razón social, dirección completa, teléfono y correos de las personas representantes designadas.
+Las entidades beneficiarias podrán registrar sus necesidades materiales indicando subcategoría (sillas,
+ropa de abrigo, arroz, frutas, entre otros) y una breve descripción. La plataforma distinguirá entre
+necesidades recurrentes (consumos habituales) y extraordinarias (situaciones puntuales o emergencias).
+●​ Necesidades extraordinarias: surgen ante situaciones excepcionales (como mudanzas,
+inundaciones, incendios o vencimientos próximos de insumos).
+○​ Ejemplo: la escuela rural N°10, tras una inundación en un aula, necesita 30 bancos y 30 sillas
+para reponer la pérdida.
+○​ La cantidad solicitada puede cubrirse mediante donaciones parciales. Por ejemplo, una
+persona dona 2 sillas, otra dona 20, y así sucesivamente hasta alcanzar las 30 sillas
+requeridas. La necesidad se considera satisfecha cuando se recibe una cantidad de bienes
+igualando o superando la cantidad requerida.
+●​ Necesidades recurrentes: están vinculadas al funcionamiento habitual de la organización e
+implican bienes de consumo periódico. Se satisfacen dentro del período correspondiente (por
+ejemplo, mensual), según la cantidad objetivo definida para ese período.
+○​ Ejemplo: el comedor infantil “Escobar Sonrisas” requiere 100 paquetes de fideos por
+semana para su funcionamiento habitual. La necesidad se satisface dentro de cada período
+(semanal), según la cantidad objetivo establecida.
+
+Servicio de Donaciones - Importación masiva de personas donantes por CSV
+Dado que la ONG ya cuenta con un histórico de personas donantes, se debe permitir la migración de su
+información en forma masiva importando un archivo .csv. Cada línea representará una persona donante
+(humana o jurídica) e incluirá los campos mínimos para identificarla y contactarla. En caso de que un
+registro ya exista (esto quiere decir que el correo electrónico ya se encuentra registrado en el servicio) se
+deberá actualizar su información; en caso contrario, se lo deberá crear el usuario y enviarle sus
+credenciales de acceso.
+El archivo posee el siguiente formato:
+TipoPersona
+
+TipoDoc
+
+Documento
+
+Nombre/Razón Social
+
+Email
+
+Teléfono
+
+HUMANA
+
+DNI
+
+12345678
+
+Ana Pérez
+
+ana@mail.c
+om
+
++54 11 5555-5555
+
+JURIDICA
+
+CUIT
+
+30-12345678-9 Arcos Plateados S.A.
+
+contacto@e +54 11 4444-4444
+mpresa.com
+
+Con estos datos debe ser posible ubicar a Se puede utilizar este archivo de prueba de 20.000 filas.
+la persona donante en el sistema. En caso
+contrario, se le debe crear un usuario.
+8
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Servicio de Notificaciones
+Para esta entrega, se solicita exponer un componente notificador que, dado un destinatario, un mensaje y
+un medio de notificación (correo electrónico, SMS y WhatsApp), pueda realizar el envío. En esta iteración,
+se solicita simular la llamada a los servicios externos y marcar a las notificaciones como completadas. En
+próximas iteraciones se realizará la integración real.
+
+Bocetos de interfaz de usuario
+Nuestro sistema contará con una interfaz web accesible para personas donantes, entidades beneficiarias y
+personas administradoras de la plataforma. Con el objetivo de familiarizarse con ella, sus flujos, y usuarios
+finales, se solicita realizar bocetos de las principales interfaces de usuario del sistema, utilizando como
+punto de partida la especificación de requerimientos mínimos.
+
+Requerimientos detallados
+Requerimientos de dominio
+1.​ El sistema deberá permitir la gestión de personas donantes.
+2.​ El sistema deberá permitir la gestión de las donaciones resultantes.
+3.​ El sistema deberá permitir la gestión de entidades beneficiarias y sus necesidades.
+4.​ El sistema deberá permitir la importación masiva de donantes en CSV.
+5.​ El sistema deberá permitir el envío de notificaciones en forma simulada a través de distintos
+medios.
+Requerimientos de implementación
+6.​ El sistema deberá implementarse como una aplicación multimódulo.
+7.​ El Servicio de Donaciones deberá exponer un endpoint web simple que al invocarlo mediante un
+GET retorne el mensaje: “Hola desde el servicio de Donaciones.”
+
+Entregables
+1.​ Modelo del Dominio: diagrama de clases inicial que contemple las funcionalidades requeridas. Se
+solicita realizar un diagrama de clases por servicio.
+2.​ Diagramas de Arquitectura: diagrama de despliegue, componentes y/o cualquier otro tipo de
+diagrama que refleje la arquitectura física y lógica de la entrega actual.
+3.​ Justificaciones de Diseño Iniciales.
+4.​ Diagrama General de Casos de Uso.
+5.​ Bocetos de interfaz de usuario que cumplan con los requerimientos detallados (se sugiere la
+utilización de IA).
+6.​ Implementación de los requerimientos.
+
+Pregunta de discusión
+1.​ ¿Un modelo de dominio rico es una inversión necesaria para capturar la complejidad del negocio o
+una sobreingeniería innecesaria frente a un modelo anémico más simple?
+
+9
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+ENTREGA 2: Arquitectura y Modelado en Objetos - Parte II
+Objetivos de la entrega
+●​ Diseñar e implementar, de manera incremental, las nuevas funcionalidades.
+●​ Incorporar nociones de ejecuciones de tareas asincrónicas y/o calendarizadas.
+●​ Familiarizarse con el concepto de APIs como mecanismo de integración y su consumo, y exponer
+servicios a través de un protocolo de red.
+
+Unidades del Programa Vinculadas
+●​
+●​
+●​
+●​
+●​
+
+Unidad 2: Herramientas de Concepción y Comunicación del Diseño.
+Unidad 3: Diseño con Objetos.
+Unidad 6: Diseño de Arquitectura.
+Unidad 7: Integración de Sistemas.
+Unidad 8: Validación del Diseño.
+
+Alcance
+Servicio de Donaciones - Trazabilidad de las donaciones.
+Servicio de Notificaciones - Integración concreta con distintos medios de notificación.
+Servicio de Donaciones - Asignación de Necesidades Materiales.
+Servicio de Incentivos – Primera iteración del Servicio de Analítica de Donantes y Sistema de
+Recompensas.
+●​ Exposición REST de los servicios.
+●​
+●​
+●​
+●​
+
+Dominio
+Servicio de Donaciones - Estados de las donaciones
+El sistema deberá garantizar la trazabilidad y auditoría de los estados de cada donación. Al momento de
+registrarse, la donación quedará en estado “En depósito”, lo que indica que está disponible para ser
+asignada a una entidad beneficiaria.
+Al día siguiente, cuando se ejecute el algoritmo de asignación (situación que se describe en una posterior
+entrega), si la donación es asignada a una entidad beneficiaria quedará en estado “Asignación realizada”,
+en caso contrario permanece en el depósito.
+La donación pasará a estar “Lista para entregar” cuando se haya planificado una ruta que incluya la
+donación. Pasará a “En traslado” cuando el camión asignado para la entrega haya iniciado el recorrido.
+Finalmente, cuando la entidad beneficiaria haya confirmado su entrega, quedará en estado “Entregada”.
+Si no se la pudo entregar el día estipulado, quedará en estado “Entrega fallida” y volverá al depósito. Si esto
+sucediera, se solicita registrar una justificación de por qué no se realizó la entrega, por ejemplo: “Tocamos
+timbre pero nadie respondió”.
+
+10
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Las personas administradoras encargadas del depósito podrán cambiar el estado de una donación a
+“Vencida”, en caso de que sea necesario.
+
+Figura 2 - Diagrama de Estados de una donación.
+
+Servicio de Donaciones - Asignación de las donaciones
+Por cada donación que se encuentre en estado “En Depósito”, el sistema debe ejecutar un proceso de
+matchmaking, entendido como el mecanismo de evaluación y asignación entre donaciones y necesidades
+materiales compatibles. Su objetivo es determinar el destino más adecuado para cada donación,
+permitiendo satisfacer una necesidad material perteneciente a una Entidad Beneficiaria.
+Se deben implementar dos algoritmos de matchmaking, cada uno con criterios de evaluación distintos.
+Estos algoritmos asignan un puntaje (score) normalizado entre 0 y 1 a cada posible cruce
+donación-necesidad.
+Cabe aclarar que una donación únicamente podrá ser evaluada contra necesidades que soliciten
+exactamente la misma Subcategoría de bien.
+Una vez calculados los puntajes, el sistema deberá ordenar los resultados y generar un ranking,
+proponiendo como máximo las diez (10) necesidades con mayor puntuación para cada donación.
+Adicionalmente, el diseño de la solución debe contemplar la posibilidad de incorporar nuevos algoritmos
+de matchmaking en el futuro, permitiendo extender el sistema ante la aparición de nuevos requerimientos o
+criterios de asignación.
+Hasta la actualidad, los algoritmos de puntuación disponibles son:
+●​ Algoritmo de Compatibilidad Semántica: analiza la correspondencia entre las características del
+bien o bienes donado(s) y las necesidades declaradas. Favorece a aquellas cuya demanda coincida
+de forma más precisa con la donación recibida. La fórmula está dada por el siguiente polinomio:
+2
+
+𝑆𝑠𝑒𝑚 = 𝑎1· χ1 + 𝑎2 · χ2 + 𝑎3· χ3
+Las Variables (Valores Calculados)
+Las χ𝑛 son las variables dinámicas que el motor calcula para cada par (Donación, Necesidad).
+Todas devuelven un valor en el intervalo [0 ; 1].
+○​ χ1 (Variable de Similitud Textual): Es el resultado de aplicar la función matemática de
+Distancia de Levenshtein2 entre el nombre del bien y la descripción de la necesidad.
+■​ χ
+
+2
+
+1
+
+= 1 −
+
+𝐷𝑖𝑠𝑡 𝐿𝑒𝑣𝑒𝑛𝑠ℎ𝑡𝑒𝑖𝑛(𝑁𝑜𝑚𝑏𝑟𝑒. 𝐷𝑒𝑠𝑐)
+𝑚𝑎𝑥(𝐿𝑜𝑛𝑔𝑖𝑡𝑢𝑑(𝑁𝑜𝑚𝑏𝑟𝑒), 𝐿𝑜𝑛𝑔𝑖𝑡𝑢𝑑(𝐷𝑒𝑠𝑐))
+
+https://es.wikipedia.org/wiki/Distancia_de_Levenshtein
+
+11
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+■​ Ejemplo: Si son idénticos, la distancia es 0, por ende χ = 1. Si son totalmente
+1
+
+distintos, tiende a 0.
+○​ χ2 (Variable de Cobertura de Volumen): Penaliza el desperdicio. Se calcula a partir del ratio:
+
+𝑅 =
+■​
+
+𝑅 ≤ 1 ⇒ χ2 = 𝑅
+
+■​
+
+𝑅 > 1 ⇒ χ2 = 𝑅
+
+𝐶𝑎𝑛𝑡𝐷𝑜𝑛𝑎𝑑𝑎
+𝐶𝑎𝑛𝑡𝑅𝑒𝑞𝑢𝑒𝑟𝑖𝑑𝑎
+
+1
+
+○​ χ3 (Variable de Tipo de Necesidad): Según el tipo de necesidad esta variable tomará
+distintos valores, pudiendo ser ajustados a futuro.
+■​ Si la necesidad es Extraordinaria ⇒ χ3 = 1
+■​ Si la necesidad es Recurrente ⇒ χ3 = 0. 5
+Las Constantes
+Las 𝑎𝑛 son constantes configurables por el administrador del sistema. Determinan qué le importa
+más a la ONG. La regla de oro es que la suma de todos los pesos debe dar 1 (100%)
+○​ 𝑎1 (Peso Textual): Por ejemplo, 0.40. Le da un 40% de importancia a que la descripción haga
+"match" con el nombre.
+○​ 𝑎2 (Peso del Volumen): Por ejemplo, 0.40. Le da un 40% de importancia a que las cantidades
+coincidan.
+○​ 𝑎3 (Peso del Tipo): Por ejemplo, 0.20. Le da un 20% de importancia a la urgencia.
+●​ Algoritmo de Prioridad a sub-atendidos: asigna prioridad a organizaciones que hayan recibido
+menos donaciones en el último trimestre.
+
+𝑆𝑠𝑢𝑏 =
+
+1
+1 + α· 𝐶𝑎𝑛𝑡𝐷𝑜𝑛𝑎𝑐𝑖𝑜𝑛𝑒𝑠𝑇𝑟𝑖𝑚𝑒𝑡𝑟𝑒
+
+○​ 𝐶𝑎𝑛𝑡𝐷𝑜𝑛𝑎𝑐𝑖𝑜𝑛𝑒𝑠𝑇𝑟𝑖𝑚𝑒𝑡𝑟𝑒: Cantidad de donaciones recibidas durante el trimestre por la
+entidad beneficiaria que publicó la necesidad.
+○​ α: Un factor de suavizado (ej. 0.1) para que si alguna entidad recibió únicamente 1 donación,
+su puntaje no caiga al 50% inmediatamente, sino que baje gradualmente.
+A partir de los rankings generados por el sistema, este componente puede filtrar automáticamente las
+necesidades que hayan aparecido en el "Top 10" de la ejecución de ambos algoritmos para que una
+persona administradora confirme el destino final. Si no hubo coincidencias, entonces la interfaz mostrará
+ambos rankings por separado.
+Para asegurarse de que la ejecución de los algoritmos no degrade el desempeño del sistema, se solicita
+que el mismo se realice en horarios de baja carga.
+
+Servicio de Incentivos - Analítica de donantes
+Este servicio tiene como objetivo consolidar y analizar los datos de donaciones realizadas en nuestro
+sistema para generar métricas de impacto y comportamiento, y a partir de ellas implementar un sistema de
+incentivos basado en misiones y categorías. Su finalidad es, por un lado, brindar a las personas donantes
+información clara y detallada sobre su participación en la plataforma y, por otro, incentivar el uso sostenido
+12
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+mediante elementos de ludificación3. Asimismo, deberá poner a disposición de las personas
+administradoras información agregada que permita evaluar la evolución general del sistema.
+La persona donante, ya sea humana o representante de una persona jurídica, además de contar con sus
+datos personales, podrá observar en su perfil sus totales históricos de donaciones, gráficos de evolución
+por período, comparaciones mensuales y el número total de organizaciones que ha ayudado con sus
+aportes. También podrá visualizar su posición en el ranking de donantes activos, así como indicadores que
+reflejen su impacto acumulado dentro de la plataforma.
+
+Servicio de Incentivos - Recompensas
+En paralelo, el servicio incorporará un sistema de incentivos asociado al cumplimiento de misiones. Se
+establecen tres categorías de donante: Colaborador, Sostenedor y Transformador y dicha categoría será
+visible públicamente junto al nombre de usuario.
+Para subir de categoría, las personas donantes deberán completar una serie de misiones específicas. Las
+misiones se completan en orden secuencial dentro de cada categoría: al completar una misión, se
+desbloquea la siguiente.
+Cada misión completada le otorga a la persona donante una insignia, la cual podrá verse en su perfil en
+caso de que las configure como visibles.
+Algunos ejemplos de misiones son:
+●​
+●​
+●​
+●​
+
+Racha: realizar una donación durante X meses consecutivos.
+Completitud: realizar donaciones de X categorías distintas.
+Hábil Donador: donación que supere X cantidad de bienes.
+Donaciones Exitosas: lograr X donaciones que sean recibidas exitosamente por una entidad
+beneficiaria.
+
+El donante deberá poder visualizar en todo momento el progreso de su misión actual y la distancia restante
+respecto del objetivo establecido. Se deberá contemplar que ciertas misiones, como “Racha”, pueden
+perder el progreso acumulado ante determinadas condiciones (por ejemplo, si no se realiza ninguna
+donación durante un mes completo).
+En esta entrega, se solicita realizar la integración entre el Servicio de Donaciones y el Servicio de
+Incentivos, de modo que las donaciones impacten en el cálculo de progreso y permitan marcar como
+completadas aquellas misiones cuya condición dependa de la actividad de donación. En próximas
+entregas, se solicitará la integración con el Servicio de Logística.
+
+Servicio de Incentivos - Difusión de Insignias y ranking mensual
+Para incentivar el crecimiento orgánico de DonaTrack, se incorporará un mecanismo de automatización
+que permita publicar y difundir hitos relevantes de los donantes. Cada vez que una persona donante
+obtenga una insignia, el sistema activará automáticamente un flujo de procesamiento. Este flujo recibirá un
+
+3
+
+El término ludificación refiere a la aplicación de dinámicas y elementos propios de los juegos en contextos no
+lúdicos con el objetivo de fomentar mayor participación y motivación de parte de los usuarios, haciendo las
+experiencias más entretenidas.
+
+13
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+texto descriptivo y generará una imagen asociada a la insignia obtenida. Posteriormente, publicará el
+contenido en una red social, mencionando al usuario correspondiente para dar visibilidad al logro4.
+Adicionalmente, al cierre de cada mes, un flujo programado ejecutará un proceso de ranking mensual de
+donantes más activos, calculado en función de la cantidad de misiones cumplidas durante ese período (sin
+importar la categoría). Como resultado, el sistema persistirá el ranking del mes y destacará a los tres
+primeros en una sección visible de la aplicación.
+
+Eventos e integración con medios de notificación (Parte I)
+El sistema deberá enviar notificaciones a personas donantes y entidades beneficiarias cuando ocurra un
+evento considerado relevante.
+Cada servicio que produzca dichos eventos deberá integrarse con el Servicio de Notificaciones para emitir
+el mensaje correspondiente. Para esta entrega, se requiere notificar en los siguientes casos:
+●​ A una persona donante, cuando no registre interacción con la plataforma durante más de 20 días,
+con el objetivo de incentivar a realizar una nueva donación. (Servicio de Donaciones)
+●​ A una entidad beneficiaria, cuando se le asigna una donación en base a sus necesidades
+recurrentes o extraordinarias. (Servicio de Donaciones)
+●​ A una persona donante, cuando haya realizado una donación que acaba de ser asignada a una
+entidad beneficiaria. (Servicio de Donantes)
+●​ A una persona donante, cuando haya cumplido una misión. (Servicio de Incentivos)
+●​ A una persona donante, cuando haya cambiado de categoría. (Servicio de Incentivos)
+En esta iteración, además, se solicita que se envíen notificaciones reales a las personas usuarias
+involucradas, a través de correo electrónico, SMS y/o WhatsApp, basándose en la simulación realizada en
+la entrega anterior.
+
+Exposición REST de los servicios - Parte I
+Se deberán exponer las siguientes operaciones en una API REST:
+Servicio de Donaciones - Gestión de Personas Donantes y Donaciones:
+●​ Operaciones CRUD5 sobre las donaciones.
+●​ Operaciones CRUD sobre las personas donantes (jurídicas y humanas).
+●​ Cambios de estado de una donación, garantizando trazabilidad y auditoría.
+Servicio de Donaciones - Gestión de Entidades Beneficiarias y Necesidades:
+●​ Operaciones CRUD sobre las entidades beneficiarias.
+●​ Operaciones CRUD sobre las necesidad materiales (recurrentes y extraordinarias)
+●​ Obtención del ranking generado por los algoritmos de asignación y selección de entidad beneficiaria
+final.
+●​ Ejecución a demanda de los algoritmos de asignación de necesidades.
+
+4
+
+Para esta implementación, se solicita la integración con una herramienta de automatización de flujos “low-code” (por
+ejemplo: n8n).
+5
+https://developer.mozilla.org/es/docs/Glossary/CRUD
+
+14
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Servicio de Incentivos:
+●​ Obtención de métricas de actividad de una persona donante (período actual y acumulado).
+●​ Obtención de las misiones completadas por una persona donante.
+●​ Obtención de las insignias para una persona donante.
+
+Requerimientos detallados
+1.​ El sistema debe garantizar la trazabilidad de los estados de las donaciones, desde su recepción
+hasta su entrega.
+2.​ El sistema debe garantizar el envío de notificaciones por distintos medios ante registro de
+inactividad por parte de una persona donante, asignación de donaciones a la entidad beneficiaria y
+a la persona donante al cumplir una misión.
+3.​ El sistema debe garantizar la ejecución asincrónica de los algoritmos de asignación de donaciones
+presentes en el depósito.
+4.​ El sistema debe permitir la gestión de incentivos a donantes.
+5.​ El sistema debe permitir la realización de operaciones a través de los endpoints solicitados,
+mediante el desarrollo de una API REST.
+6.​ El sistema debe incorporar un mecanismo de automatización para la publicación en redes sociales
+cuando una persona donante recibe una insignia.
+
+Entregables
+1.​ Modelo del Dominio: diagrama de clases que contemple las funcionalidades requeridas.
+2.​ Diagrama de despliegue y componentes.
+3.​ Justificaciones de Diseño: Documento y Diagramas Complementarios que considere el equipo.
+4.​ Implementación de requerimientos de la entrega actual.
+5.​ Implementación del flujo automatizado de publicación y difusión de insignias.
+
+Pregunta de discusión
+1.​ ¿Procesar las asignaciones de donaciones en tiempo real mejora realmente el sistema o introduce
+complejidad y problemas de escalabilidad que justifican un enfoque batch asincrónico?
+
+15
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+ENTREGA 3: Arquitectura y Modelado en Objetos - Parte III
+Objetivos de la entrega
+●​ Diseñar e implementar, de manera incremental, las nuevas funcionalidades.
+●​ Exponer un servicio a través de un protocolo de red.
+●​ Incorporar flujos de trabajo asincrónicos.
+
+Alcance
+●​ Servicio de Logística - Entrega y planificación de rutas.
+●​ Servicio de Logística - Monitoreo de camiones en tiempo real.
+●​ Exposición REST de los servicios.
+
+Unidades del Programa Vinculadas
+●​
+●​
+●​
+●​
+●​
+
+Unidad 2: Herramientas de Concepción y Comunicación del Diseño.
+Unidad 3: Diseño con Objetos.
+Unidad 6: Diseño de Arquitectura.
+Unidad 7: Integración de Sistemas.
+Unidad 8: Validación del Diseño.
+
+Dominio
+Servicio de Logística - Entrega y planificación de rutas
+Para realizar las entregas, la organización cuenta con una flota de camiones. De cada uno se conoce la
+patente, la capacidad en volumen (m³), la altura (m) y la capacidad de carga (kg). Todos los camiones
+pueden transportar cualquier tipo de bien y parten siempre desde el depósito para realizar las entregas del
+día.
+La plataforma contará con la integración de un componente externo encargado de generar las rutas de
+reparto del día siguiente para la flota. Este componente recibirá, por ejecución, un conjunto de donaciones
+en estado Asignación Realizada junto con la información de los camiones disponibles. Devolverá, por cada
+camión, una lista ordenada de destinos (direcciones de las entidades beneficiarias) con las entregas que
+debe realizar en cada una. Al completar la planificación, las rutas asignadas quedan disponibles para los
+choferes en su aplicación.
+
+Servicio de Logística - Trazabilidad de las entregas de las donaciones
+Antes de iniciar el recorrido, el chofer deberá indicar en el sistema que dará por inicio su ruta.
+Automáticamente, las entregas asignadas pasarán al estado “En traslado”. Cuando el camión entregue la
+donación en la sede de la entidad beneficiaria, esta deberá confirmar la recepción en el sistema. La entrega
+pasará al estado “Entregada” y quedará registrado qué camión realizó la entrega. Luego, la entidad deberá
+cargar fotos de la donación recibida en la plataforma.
+
+16
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Si la entidad informa que no recibió la entrega en el día correspondiente, la misma se marcará como “No
+recibida”. El caso será revisado por las personas administradoras. Si la donación regresa al depósito, la
+entrega volverá al estado “Pendiente”.
+
+Servicio de Logística - Monitoreo de camiones en tiempo real
+Para permitir el seguimiento en tiempo real de las entregas por todos los interesados, el sistema deberá
+mostrar en un dashboard administrativo la posición actual de los camiones y su avance sobre la ruta
+asignada en tiempo real. El equipo encargado de los dispositivos y herramientas de campo ha propuesto
+dos alternativas para obtener la posición del camión en tiempo real:
+1.​ Dispositivo GPS configurable instalado en el camión, que enviará periódicamente la ubicación y
+velocidad.
+2.​ Aplicación móvil utilizada por el conductor, que reportará la geolocalización mientras la ruta esté
+activa.
+Ambas opciones permiten cumplir con el objetivo funcional de monitoreo en tiempo real. Se deberá elegir
+una de las dos alternativas y continuar el desarrollo en función de la decisión adoptada, definiendo el
+contrato de integración correspondiente.
+La configuración de los dispositivos físicos o de la aplicación móvil será responsabilidad del equipo
+externo. La plataforma deberá recibir, validar y procesar la información enviada para reflejar correctamente
+el estado del recorrido en el dashboard.
+
+Eventos - Parte II
+Para esta entrega, se requiere notificar en los siguientes casos:
+●​ Inicio de ruta: se notificará a todas las entidades beneficiarias y a los donantes cuyas entregas
+formen parte de la ruta iniciada por el chofer. La notificación deberá incluir un enlace al mapa
+interactivo, permitiendo el seguimiento de la entrega en tiempo real.
+●​ Entrega realizada con éxito: cuando la entidad beneficiaria confirme la recepción satisfactoria de la
+donación, se notificará tanto a la entidad como al donante correspondiente. La notificación deberá
+incluir un comprobante de entrega, indicando fecha, hora y camión responsable.
+●​ Entrega no satisfactoria: en caso de que la entrega no pueda concretarse por cualquier motivo (por
+ejemplo: vencimiento de los bienes previo a la entrega, imposibilidad de recepción por parte de la
+entidad, incidentes logísticos, etc.), se notificará a la entidad beneficiaria, a la persona donante y a
+personas administradoras del sistema. Si la entrega pudiera ser replanificada, se dejará constancia
+del estado correspondiente en el sistema y podrá generarse una nueva asignación de ruta para la
+donación en cuestión.
+
+Exposición REST de los servicios - Parte II
+Se deberán exponer las siguientes operaciones en una API REST:
+Servicio de Logística:
+●​ Gestión de flota de camiones.
+●​ Operaciones CRUD sobre las rutas y entregas.
+17
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Integración entre Servicios
+Se deberá garantizar la integración entre todos los servicios para obtener información relevante y orquestar
+los casos de uso del sistema. La interacción entre servicios de dominio podrá resolverse mediante
+comunicación sincrónica (API), y la definición de la direccionalidad de las interacciones (por ejemplo, entre
+el servicio de Donaciones y Logística) quedará sujeta a discusión de cada equipo, priorizando bajo
+acoplamiento y trazabilidad de las operaciones.
+En particular, la integración entre los servicios de dominio y el Servicio de Notificaciones deberá realizarse
+de forma asincrónica, a través de una cola de mensajes, a fin de no afectar la disponibilidad del sistema
+ante picos de carga o fallas transitorias.
+
+Requerimientos detallados
+Requerimientos de dominio:
+1.​ El sistema debe permitir la realización de operaciones a través de los endpoints solicitados,
+mediante el desarrollo de una API REST.
+2.​ El sistema debe, en horarios de baja carga, generar los planes de rutas para los camiones durante la
+siguiente jornada operativa, integrándose con el componente externo provisto.
+3.​ El sistema debe permitir a los choferes de los camiones informar del comienzo de su ruta.
+4.​ El sistema debe mostrar en tiempo real tanto a la persona donante como a la entidad beneficiaria
+de la donación la localización de los camiones para poder estar al tanto de su llegada.
+5.​ El sistema debe gestionar la recepción de la entrega por parte de las entidades beneficiarias en
+todos los casos.
+Requerimientos de implementación:
+1.​ Para que la integración con el servicio externo de planificación de rutas funcione, el sistema deberá
+exponer una URL de callback donde el componente externo podrá notificar el resultado de la
+planificación. La llamada de retorno permitirá que la plataforma registre las rutas generadas y
+actualice el estado de las entregas que hayan sido efectivamente asignadas.
+2.​ El sistema deberá realizar las solicitudes al proveedor en lotes puesto que, por restricciones del
+proveedor, cada ejecución procesa como máximo 100 donaciones a entregar.
+3.​ Es posible que el planificador no pueda asignar todas las donaciones en una única ruta. En ese
+caso, devolverá las donaciones sin asignar en un campo aparte, y será responsabilidad de nuestro
+sistema volver a planificarlas.
+
+Entregables
+1.​ Modelo del Dominio: diagrama de clases por servicio que contemple las funcionalidades
+requeridas.
+2.​ Justificaciones de Diseño: Documento y Diagramas Complementarios.
+3.​ Implementación de los requerimientos de esta entrega.
+4.​ Diagrama de despliegue actualizado (incluir integraciones concretas entre los servicios).
+
+Pregunta de discusión
+1.​ ¿La precisión y confiabilidad de dispositivos GPS dedicados justifican su costo frente a la
+flexibilidad y menor inversión de una app móvil para el seguimiento de camiones?
+18
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+ENTREGA 4: Persistencia y Diseño y Maquetado de Interfaz de Usuario
+Objetivos de la entrega
+●​
+●​
+●​
+●​
+●​
+●​
+
+Incorporar nociones de persistencia de datos en un medio relacional.
+Incorporar nociones de la técnica de mapeo objeto – relacional.
+Incorporar nociones de desnormalizaciones del modelo relacional.
+Incorporar nociones de Diseño UI/UX.
+Incorporar nociones de maquetado Web a través de un lenguaje de marcado como HTML5.
+Incorporar nociones de aplicación de estilos sobre maquetas Web a través de CSS.
+
+Unidades del Programa Vinculadas
+●​
+●​
+●​
+●​
+●​
+
+Unidad 2: Herramientas de Concepción y Comunicación del Diseño.
+Unidad 4: Diseño de Interfaz de Usuario.
+Unidad 5: Diseño de Datos y Estrategias de Persistencia.
+Unidad 6: Diseño de Arquitectura.
+Unidad 8: Validación del Diseño.
+
+Alcance
+●​ Persistencia del modelo de objetos previamente generado por Servicio.
+●​ Estrategia de persistencia políglota.
+●​ Diseño y maquetado de interfaces de usuario.
+
+Requerimientos detallados
+1.​ Se deberán persistir las entidades del modelo planteado para cada servicio.
+2.​ El Servicio de Logística deberá utilizar una base de datos documental, mientras que los servicios
+restantes deberán ser persistidos en una base de datos relacional.
+3.​ Se deberán contemplar estrategias de desnormalización cuando resulte necesario para optimizar
+consultas de lectura.
+4.​ Se deberán implementar los bocetos de interfaz de usuario planteados en la Entrega 1.
+
+Entregables
+1.​ Modelo del Dominio: actualización del modelo de Diagrama de Clases con las funcionalidades
+previstas en esta entrega.
+2.​ Justificaciones de Diseño: Documento y Diagramas Complementarios.
+3.​ Modelo de datos: Diagrama de entidad-relación físico por Servicio.
+4.​ Justificaciones y Consideraciones de Diseño Relacional.
+5.​ Implementación en código de los requerimientos de la presente entrega.
+6.​ Maquetado e implementación en HTML de las interfaces de usuario requeridas, considerando la
+navegabilidad entre interfaces y aplicando estilos.
+
+19
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Consideraciones para Persistencia
+Cada servicio debe tener persistencia en un esquema relacional propio, exceptuando el Servicio de
+Logística que debe tener un esquema no relacional. Para el caso de la persistencia relacional, se puede
+compartir un mismo motor a fines de simplicidad.
+Además, para la persistencia relacional se deberá utilizar un ORM, mientras que para la persistencia
+documental se deberá utilizar un ODM.
+
+Consideraciones para el Maquetado
+●​ UI orientada a la usabilidad: La interfaz de usuario debe ser diseñada bajo principios de usabilidad
+heurística, priorizando una curva de aprendizaje mínima para usuarios sin experiencia previa.
+●​ Arquitectura de navegación optimizada: Se debe implementar un sistema de rutas y jerarquías que
+permita acceder a funcionalidades clave con una profundidad de navegación máxima de tres
+niveles.
+●​ Familiaridad del diseño: El diseño debe adherirse a design patterns establecidos en sistemas
+similares (por ejemplo: Material Design y Human Interface Guidelines) para aprovechar modelos
+mentales existentes.
+●​ Soporte de microcopy y ayudas visuales: Los flujos críticos deben incluir etiquetas, tooltips,
+placeholders y onboarding hints que faciliten el entendimiento funcional del sistema.
+●​ Gestión de estados e interacciones: Toda acción del usuario debe estar acompañada por
+notificaciones no intrusivas (toasts, modals, banners) que informen resultados o errores.
+●​ Indicadores asincrónicos: Se deben renderizar loaders, skeleton screens o spinners durante
+procesos que impliquen latencias perceptibles por parte del usuario (mayores a 300ms).
+●​ Layout adaptable (responsive): La UI debe implementarse utilizando media queries, flexbox o
+sistemas de grillas que garanticen adaptabilidad fluida entre breakpoints móviles, tablet y desktop.
+●​ Integridad funcional cross-device: Todos los componentes interactivos deben permanecer
+accesibles y operables sin distorsión o superposición, independientemente del tamaño o resolución
+de pantalla.
+●​ Cumplimiento de normas WCAG: Se deben seguir las Web Content Accessibility Guidelines (mínimo
+nivel AA), incluyendo soporte ARIA, foco visible y estructuras semánticas HTML correctas.
+●​ Interacción móvil optimizada: Todos los elementos clickeables deben respetar una hit área mínima
+de 48x48px, según recomendaciones de accesibilidad en entornos táctiles.
+●​ Estilo visual unificado: El diseño debe regirse por un sistema que asegure coherencia visual en
+tokens de diseño (colores, tipografías, espaciados y bordes).
+
+Pregunta de discusión
+1.​ ¿El uso de una base de datos NoSQL en el Servicio de Logística es una decisión técnica acertada
+por la naturaleza de los datos, o una elección innecesaria frente a la robustez de un modelo
+relacional?
+
+20
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+ENTREGA 5: Arquitectura Web MVC
+Objetivos de la entrega
+●​ Incorporar patrones de arquitectura MVC a través de la implementación de un Cliente Liviano.
+●​ Aplicar principios de diseño centrado en el usuario (UI/UX) para la construcción de interfaces.
+
+Unidades del Programa Vinculadas
+●​
+●​
+●​
+●​
+●​
+●​
+
+Unidad 2: Herramientas de Concepción y Comunicación del Diseño
+Unidad 4: Diseño de Interfaz de Usuario
+Unidad 6: Diseño de Arquitectura
+Unidad 7: Integración de Sistemas
+Unidad 8: Validación del Diseño
+Unidad 9: Diseño y Seguridad
+
+Alcance
+●​ Implementación de un Cliente Liviano desacoplado.
+●​ Servicio de Autenticación.
+
+Implementación de un Cliente Liviano desacoplado
+Se deberá crear un nuevo proyecto independiente para la implementación de la interfaz gráfica de usuario.
+El cliente será desacoplado de la lógica de negocio, consumiendo las APIs REST desarrolladas en entregas
+anteriores. Para la generación de las interfaces de usuario se deberá utilizar un motor de plantillas
+(template engine). Las vistas deberán renderizar dinámicamente los datos obtenidos de las APIs.
+
+Servicio de Autenticación
+Se deberá incorporar un servicio de Autenticación, encargado de la gestión de tokens de autorización desde
+el servidor frontend hacia los servicios de aplicación (donde reside la lógica de negocio).
+
+Requerimientos detallados
+Se deberán implementar todos los requerimientos detallados en esta sección.
+
+Entregables
+1.​ Implementación de un cliente liviano desacoplado, renderizando las vistas generadas.
+2.​ Bonus - Implementación de un SSO con soporte de Social-Login.
+
+Pregunta de discusión
+1.​ ¿Adoptar SSR responde a una necesidad real del sistema o limita la experiencia de usuario frente a
+la flexibilidad de una SPA moderna?
+
+21
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+ENTREGA 6: Despliegue, Observabilidad y Seguridad
+Objetivos de la entrega
+●​
+●​
+●​
+●​
+
+Familiarizarse con técnicas y proveedores de despliegue.
+Incorporar herramientas de monitoreo, observabilidad y seguridad.
+Familiarizarse con diferentes estrategias de integración.
+Familiarizarse con la Arquitectura de microservicios y sus componentes asociados.
+
+Unidades del Programa Vinculadas
+●​
+●​
+●​
+●​
+
+Unidad 2: Herramientas de Concepción y Comunicación del Diseño.
+Unidad 6: Diseño de Arquitectura.
+Unidad 8: Validación del Diseño.
+Unidad 9: Diseño y Seguridad.
+
+Alcance
+●​
+●​
+●​
+●​
+
+Sistema desplegado en la nube.
+Herramientas de observabilidad, monitoreo, seguridad y control.
+Nuevas estrategias de diseño de APIs Web.
+Nociones de Microservicios.
+
+Requerimientos detallados
+1.​ Se deberá desplegar el sistema en la nube para que pueda ser accedido por el público general.
+2.​ Se deberán implementar soluciones de observabilidad que permitan recolectar, visualizar y analizar
+métricas, trazas y logs del sistema, con el objetivo de obtener una visión integral y en tiempo real
+del estado y comportamiento de los servicios.
+3.​ Se deberá incorporar herramientas de monitoreo proactivo que supervisen la salud de los servicios
+y permitan configurar políticas de autorestart ante fallos.
+4.​ Se deberá implementar un sistema de limitación de solicitudes (Rate Limiting) que regule el tráfico
+entrante, protegiendo los recursos del sistema frente a abusos o sobrecarga.
+5.​ Se deberá implementar:
+a.​ Opción 1: el protocolo gRPC como reemplazo de HTTP para las comunicaciones entre
+servicios que requieren actualizaciones en tiempo real.
+b.​ Opción 2: una interfaz GraphQL en el Servicio de Donaciones o en el Servicio de Logística,
+con el objetivo de dar soporte a filtros dinámicos y selección de campos específicos,
+proporcionando flexibilidad y eficiencia en las consultas.
+6.​ Bonus - teniendo en cuenta la arquitectura actual, ajustar los servicios actuales para que se puedan
+incorporar a una Arquitectura de Microservicios, puedan registrarse a un Service Registry y sean
+consumidos a través de un API Gateway.
+7.​ Bonus - implementar el patrón Transactional Outbox para asegurar la persistencia confiable de los
+eventos de notificación que se generen inmediatamente luego de una operación de escritura
+transaccional en el sistema.
+22
+
+​
+
+​
+
+Trabajo Práctico Anual 2026
+
+Entregables
+1.​ Diagrama de Despliegue de la solución actual.
+2.​ Implementación de Herramientas de Observabilidad, Monitoreo, Seguridad y Control.
+3.​ Implementación de un Web Service utilizando gRPC o GraphQL.
+4.​ Propuesta en diagrama de despliegue e implementación de la Arquitectura de Microservicios.
+
+Pregunta de discusión
+1.​ ¿Priorizar eficiencia y tipado fuerte con gRPC es más adecuado que la flexibilidad en consultas que
+ofrece GraphQL, o depende estrictamente del contexto del sistema?
+
+23
+
+​
+
+​
+
+Anexo - Links de interés
+Modelado UML
+●​
+●​
+●​
+●​
+●​
+
+Diagrama de Casos de Uso
+Diagrama de Clases
+Diagrama de Componentes
+Diagrama de Despliegue
+StarUML
+
+Metodología de Trabajo
+●​ Git Flow
+
+Diseño y Maquetado Web
+●​
+●​
+●​
+●​
+●​
+●​
+
+Diseño y Maquetado Web - Parte I
+Diseño y Maquetado Web - Parte II
+Seminario UX/UI
+Heurísticas de Nielsen
+Laws of UX
+Web Content Accessibility Guidelines
+
+Leyes
+●​ Ley de Accesibilidad en las Páginas Web
+●​ Ley de Protección de los Datos Personales
+
+24
+
+Trabajo Práctico Anual 2026
+
+

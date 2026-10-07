@@ -1,0 +1,62 @@
+@startuml
+autonumber
+skinparam roundcorner 6
+skinparam sequenceMessageAlign center
+
+title Flujo de Matchmaking, Asignación y Transactional Outbox - DonaTrack
+
+actor "Operador / Donante" as User
+participant "API Gateway (:8080)" as Gateway
+participant "donaciones-service (:8082)" as Donaciones
+database "PostgreSQL (donaciones_db)" as DB
+participant "Outbox Scheduler" as Scheduler
+queue "RabbitMQ (donatrack.events)" as Broker
+participant "notificaciones-service (:8085)" as Notificaciones
+participant "incentivos-service (:8084)" as Incentivos
+participant "Mailpit SMTP (:1025)" as Mailpit
+
+== 1. Carga y Segmentación por Subcategoría ==
+User -> Gateway : POST /api/v1/donaciones/carga-segmentada\n(bienes mixtos)
+Gateway -> Donaciones : Forward request
+Donaciones -> Donaciones : Segmentar lista por subcategoría\n(unidad mínima de asignación)
+Donaciones -> DB : INSERT Donaciones [EN_DEPOSITO]\nINSERT BienesDonados
+Donaciones --> Gateway : 201 Created (IDs generados)
+Gateway --> User : Respuesta con donaciones segmentadas
+
+== 2. Evaluación de Matchmaking ==
+User -> Gateway : GET /api/v1/donaciones/{id}/matchmaking
+Gateway -> Donaciones : Forward request
+Donaciones -> DB : SELECT Entidades con necesidades activas
+Donaciones -> Donaciones : MatchmakingStrategy.calcularScore()\n- Levenshtein(subcat_don, subcat_nec) [chi1]\n- Ratio volumen/peso cubierto [chi2]\n- Urgencia (Extraordinaria/Recurrente) [chi3]\n- Factor Subatendidos: 1 / (1 + 0.1 * donacionesTrimestre)
+Donaciones --> Gateway : 200 OK (Rankings ordenados con desglose)
+Gateway --> User : Lista de entidades sugeridas
+
+== 3. Confirmación de Asignación y Transactional Outbox ==
+User -> Gateway : POST /api/v1/donaciones/{id}/asignar?entidadId=X
+Gateway -> Donaciones : Forward request
+group #LightYellow Transacción Atómica (@Transactional)
+    Donaciones -> DB : UPDATE donacion SET estado = 'ASIGNACION_REALIZADA'
+    Donaciones -> DB : UPDATE necesidad_material SET cantidad_cubierta += cant
+    Donaciones -> DB : INSERT INTO outbox_events\n(aggregate_id, event_type, payload, processed=false)
+end
+Donaciones --> Gateway : 200 OK (Asignación confirmada)
+Gateway --> User : 200 OK
+
+== 4. Despacho Asíncrono de Eventos (Outbox Pattern) ==
+loop Cada 2000 ms
+    Scheduler -> DB : SELECT * FROM outbox_events WHERE processed = false
+    Scheduler -> Broker : basicPublish(\n  exchange='donatrack.events',\n  routingKey='donacion.asignada',\n  payload=DonacionAsignadaEvent\n)
+    Scheduler -> DB : UPDATE outbox_events SET processed = true, processed_at = NOW()
+end
+
+== 5. Consumo Asíncrono e Integraciones ==
+par Notificaciones
+    Broker -> Notificaciones : Entregar mensaje a q.notificaciones.donaciones
+    Notificaciones -> Notificaciones : Generar plantilla HTML de confirmación
+    Notificaciones -> Mailpit : Enviar email SMTP a donante y beneficiaria
+else Incentivos
+    Broker -> Incentivos : Entregar mensaje a q.incentivos.donaciones
+    Incentivos -> Incentivos : Sumar puntos al donante y verificar misiones
+end
+
+@enduml

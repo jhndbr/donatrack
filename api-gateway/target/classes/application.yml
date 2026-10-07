@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        # Rutas hacia el Servicio de Donaciones
+        - id: donaciones-service
+          uri: ${DONACIONES_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/donaciones/**, /api/v1/donantes/**, /api/v1/entidades/**
+
+        # Rutas hacia el Servicio de Logistica
+        - id: logistica-service
+          uri: ${LOGISTICA_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/logistica/**
+
+        # Rutas hacia el Servicio de Incentivos
+        - id: incentivos-service
+          uri: ${INCENTIVOS_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/incentivos/**
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

@@ -1,0 +1,12 @@
+com/donatrack/common/enums/TipoNecesidad.class
+com/donatrack/common/events/EntregaConfirmadaEvent.class
+com/donatrack/common/events/MisionCumplidaEvent.class
+com/donatrack/common/enums/CanalNotificacion.class
+com/donatrack/common/events/RutaIniciadaEvent.class
+com/donatrack/common/enums/CategoriaDonante.class
+com/donatrack/common/events/DonacionAsignadaEvent.class
+com/donatrack/common/events/EntregaFallidaEvent.class
+com/donatrack/common/dto/NotificacionRequestDto.class
+com/donatrack/common/events/CategoriaAscendidaEvent.class
+com/donatrack/common/enums/EstadoDonacion.class
+com/donatrack/common/events/DonanteInactivoEvent.class

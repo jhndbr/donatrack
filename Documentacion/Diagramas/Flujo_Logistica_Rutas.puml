@@ -1,0 +1,58 @@
+@startuml
+autonumber
+skinparam roundcorner 6
+skinparam sequenceMessageAlign center
+
+title Flujo de Logística: Lotes <= 100, Webhook Callback y Seguimiento GPS
+
+participant "logistica-service (:8083)" as Logistica
+participant "donaciones-service (:8082)" as Donaciones
+participant "Optimizador Externo de Rutas" as Optimizer
+participant "Webhook Listener (:8083)" as Webhook
+database "MongoDB (logistica_db)" as Mongo
+actor "Chofer / Móvil GPS" as Chofer
+queue "RabbitMQ (donatrack.events)" as Broker
+participant "notificaciones-service (:8085)" as Notificaciones
+
+== 1. Agrupación en Lotes y Envío al Planificador ==
+Logistica -> Donaciones : GET /api/v1/donaciones?estado=ASIGNACION_REALIZADA
+Donaciones --> Logistica : Lista de donaciones pendientes
+Logistica -> Logistica : Particionar lista en lotes de tamaño MAX <= 100
+Logistica -> Optimizer : POST /optimizar-lote\n(puntos de recogida y entrega, peso, volumen, loteId)
+Optimizer --> Logistica : 202 Accepted (Procesando asincrónicamente)
+
+== 2. Respuesta Asíncrona vía Callback Webhook ==
+Optimizer -> Webhook : POST /api/v1/logistica/rutas/callback\n(loteId, camionId, ordenParadas, distanciaKm, etaMinutos)
+Webhook -> Mongo : INSERT Ruta (camionId, paradas, estado='PLANIFICADA')
+Webhook -> Donaciones : PUT /api/v1/donaciones/bulk-estado\n(ids=[...], nuevoEstado='LISTA_PARA_ENTREGAR')
+Webhook --> Optimizer : 200 OK (Ruta registrada exitosamente)
+
+== 3. Inicio de Recorrido por el Chofer ==
+Chofer -> Logistica : POST /api/v1/logistica/rutas/{rutaId}/iniciar
+Logistica -> Mongo : UPDATE Ruta SET estado = 'EN_CURSO'
+Logistica -> Donaciones : PUT /api/v1/donaciones/bulk-estado\n(ids=[...], nuevoEstado='EN_TRASLADO')
+Logistica -> Broker : basicPublish(routingKey='ruta.iniciada', payload=RutaIniciadaEvent)
+Broker -> Notificaciones : Notificar a Entidades Beneficiarias estimación de llegada
+
+== 4. Telemetría GPS en Tiempo Real ==
+loop Durante el recorrido
+    Chofer -> Logistica : POST /api/v1/logistica/camiones/{id}/ubicacion\n{latitud: -34.6037, longitud: -58.3816}
+    Logistica -> Mongo : UPDATE Camion SET ubicacionActual = GeoPoint(lat, lon)
+end
+
+== 5. Entrega en Destino o Registro de Incidencia ==
+alt Caso A: Entrega Exitosa
+    Chofer -> Logistica : POST /api/v1/logistica/entregas/confirmar\n{donacionId, receptorNombre, dni, firmaUrl}
+    Logistica -> Mongo : INSERT Entrega (exitosa=true)
+    Logistica -> Donaciones : PUT /api/v1/donaciones/{id}/estado?nuevoEstado=ENTREGADA
+    Logistica -> Broker : basicPublish(routingKey='entrega.confirmada', payload=EntregaConfirmadaEvent)
+    Broker -> Notificaciones : Notificar al Donante y Beneficiaria (Certificado Digital)
+else Caso B: Entrega Fallida (Con Justificación Obligatoria)
+    Chofer -> Logistica : POST /api/v1/logistica/entregas/fallida\n{donacionId, motivo='Entidad cerrada en horario pactado'}
+    Logistica -> Mongo : INSERT Entrega (exitosa=false, motivo=...)
+    Logistica -> Donaciones : PUT /api/v1/donaciones/{id}/estado?nuevoEstado=ENTREGA_FALLIDA&motivo=...
+    Logistica -> Broker : basicPublish(routingKey='entrega.fallida', payload=EntregaFallidaEvent)
+    Broker -> Notificaciones : Notificar al Operador Logístico para reprogramación
+end
+
+@enduml

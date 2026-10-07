@@ -1,0 +1,30 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: logistica-service
+
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/logistica_db}
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:donatrack}
+    password: ${SPRING_RABBITMQ_PASSWORD:donatrack_password}
+
+donatrack:
+  rabbitmq:
+    exchange: "donatrack.events.exchange"
+    routing-key:
+      ruta-iniciada: "ruta.iniciada"
+      entrega-confirmada: "entrega.confirmada"
+      entrega-fallida: "entrega.fallida"
+
+  servicios:
+    donaciones-url: ${DONACIONES_SERVICE_URL:http://localhost:8082}
+
+  rutas:
+    max-lote-donaciones: 100

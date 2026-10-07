@@ -1,0 +1,33 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: incentivos-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/incentivos_db}
+    username: ${SPRING_DATASOURCE_USERNAME:donatrack}
+    password: ${SPRING_DATASOURCE_PASSWORD:donatrack_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:donatrack}
+    password: ${SPRING_RABBITMQ_PASSWORD:donatrack_password}
+
+donatrack:
+  rabbitmq:
+    exchange: "donatrack.events.exchange"
+    routing-key:
+      mision-cumplida: "mision.cumplida"
+      categoria-ascendida: "categoria.ascendida"
+
+  integraciones:
+    n8n-webhook-url: ${N8N_WEBHOOK_URL:http://localhost:5678/webhook/insignias}

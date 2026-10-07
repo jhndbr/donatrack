@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1517.1707499999993 771.4" width="1517.1707499999993" height="771.4" style="--bg:#1F1F1F;--fg:#CCCCCC;--line:#CCCCCC;--accent:#0078D4;--muted:#CCCCCCCC;--surface:#181818;--border:#CCCCCC;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<g class="subgraph" data-id="Clientes" data-label="Capa de Clientes / UI">
+  <rect x="522.9617999999998" y="40" width="371.387" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="522.9617999999998" y="40" width="371.387" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="534.9617999999998" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Capa de Clientes / UI</text>
+</g>
+<g class="subgraph" data-id="InfraGateway" data-label="Seguridad y Enrutamiento">
+  <rect x="40" y="249.8" width="231.04199999999994" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="40" y="249.8" width="231.04199999999994" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="52" y="263.8" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Seguridad y Enrutamiento</text>
+</g>
+<g class="subgraph" data-id="Microservicios" data-label="Microservicios de Negocio">
+  <rect x="299.0419999999999" y="190.9" width="909.9449999999998" height="149.8" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="299.0419999999999" y="190.9" width="909.9449999999998" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="311.0419999999999" y="204.9" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Microservicios de Negocio</text>
+</g>
+<g class="subgraph" data-id="Messaging" data-label="Mensajería Asíncrona">
+  <rect x="493.33124999999995" y="594.5" width="241.41599999999997" height="110.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="493.33124999999995" y="594.5" width="241.41599999999997" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="505.33124999999995" y="608.5" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Mensajería Asíncrona</text>
+</g>
+<g class="subgraph" data-id="Datastores" data-label="Persistencia Políglota">
+  <rect x="123.60425000000009" y="412.70000000000005" width="459.862" height="127.80000000000001" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="123.60425000000009" y="412.70000000000005" width="459.862" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="135.6042500000001" y="426.70000000000005" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Persistencia Políglota</text>
+</g>
+<g class="subgraph" data-id="MockExternal" data-label="Servicios Externos / Mocks">
+  <rect x="769.5987499999999" y="614.5" width="689.5719999999999" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="769.5987499999999" y="614.5" width="689.5719999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="781.5987499999999" y="628.5" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Servicios Externos / Mocks</text>
+</g>
+<polyline class="edge" data-from="Clientes" data-to="AuthService" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="597.2391999999998,136.9 597.2391999999998,148.9 155.52099999999996,148.9 155.52099999999996,293.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Clientes" data-to="DonacionesService" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="671.5165999999998,136.9 671.5165999999998,160.9 417.5269999999998,160.9 417.5269999999998,234.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Clientes" data-to="LogisticaService" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="745.7939999999999,136.9 745.7939999999999,172.9 642.7164999999999,172.9 642.7164999999998,234.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Clientes" data-to="IncentivosService" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="820.0713999999998,136.9 820.0713999999998,172.9 867.9059999999997,172.9 867.9059999999998,234.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="DonacionesService" data-to="PostgresDonaciones" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="451.68866666666656,288.7 451.68866666666656,370.70000000000005 206.52125,370.70000000000005 206.5212500000001,456.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="IncentivosService" data-to="PostgresIncentivos" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="816.6634999999999,288.7 816.6634999999999,300.70000000000005 632.7164999999999,300.70000000000005 632.7164999999999,394.70000000000005 504.99525000000017,394.70000000000005 504.9952500000001,456.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="LogisticaService" data-to="MongoLogistica" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="595.3642499999999,288.7 595.3642499999999,382.70000000000005 357.98125000000005,382.70000000000005 357.9812500000001,456.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="DonacionesService" data-to="RabbitMQ" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="Eventos" points="383.36533333333324,288.7 383.3653333333332,358.70000000000005 71.25024999999982,358.70000000000005 71.25024999999982,576.5 561.68525,576.5 561.68525,648.5" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="LogisticaService" data-to="RabbitMQ" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="Eventos" points="642.7164999999998,288.7 642.7164999999999,508.20000000000005 635.96625,508.20000000000005 635.96625,576.5 614.0392499999999,576.5 614.03925,648.5" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="IncentivosService" data-to="RabbitMQ" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="Eventos" points="867.9059999999998,288.7 867.9059999999997,528.2 841.5027499999999,528.2 841.5027499999999,576.5 666.39325,576.5 666.3932500000001,648.5" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="RabbitMQ" data-to="NotificacionesService" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="614.0392499999999,699.4 614.0392499999996,723.4 1469.1707499999993,723.4 1469.1707499999993,172.89999999999998 1095.6889999999994,172.89999999999998 1095.6889999999996,234.89999999999998" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="NotificacionesService" data-to="Mailpit" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1095.6889999999999,288.7 1095.6889999999999,504.20000000000005 1345.3169999999998,504.20000000000005 1345.3169999999998,596.5 1344.7612499999998,596.5 1344.7612499999998,648.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="LogisticaService" data-to="ExternalRouter" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="API Callback" points="690.0687499999998,288.7 690.0687499999998,312.70000000000005 877.9059999999997,312.70000000000005 877.9059999999997,528.2 964.3474999999999,528.2 964.3474999999999,596.5 886.2312499999998,596.5 886.2312499999998,648.5" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="IncentivosService" data-to="N8nService" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="Webhook" points="919.1484999999998,288.7 919.1484999999998,516.2 1116.60775,516.2 1116.60775,648.5" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrowhead)" />
+<g class="edge-label" data-from="DonacionesService" data-to="RabbitMQ" data-label="Eventos">
+  <rect x="42.750249999999824" y="539.2" width="56.854000000000006" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="71.17724999999983" y="554.35" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">Eventos</text>
+</g>
+<g class="edge-label" data-from="LogisticaService" data-to="RabbitMQ" data-label="Eventos">
+  <rect x="607.46625" y="515.2" width="56.854000000000006" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="635.89325" y="530.35" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">Eventos</text>
+</g>
+<g class="edge-label" data-from="IncentivosService" data-to="RabbitMQ" data-label="Eventos">
+  <rect x="813.0027499999999" y="535.2" width="56.854000000000006" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="841.4297499999999" y="550.35" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">Eventos</text>
+</g>
+<g class="edge-label" data-from="LogisticaService" data-to="ExternalRouter" data-label="API Callback">
+  <rect x="925.3474999999999" y="535.2" width="77.644" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="964.1694999999999" y="550.35" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">API Callback</text>
+</g>
+<g class="edge-label" data-from="IncentivosService" data-to="N8nService" data-label="Webhook">
+  <rect x="1085.10775" y="535.2" width="62.2" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="1116.2077499999998" y="550.35" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">Webhook</text>
+</g>
+<g class="node" data-id="WebClient" data-label="Front SSR / Web MVC" data-shape="rectangle">
+  <rect x="538.9617999999998" y="84" width="168.661" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="623.2922999999998" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Front SSR / Web MVC</text>
+</g>
+<g class="node" data-id="MobileDriver" data-label="App Chofer / GPS" data-shape="rectangle">
+  <rect x="735.6227999999999" y="84" width="142.726" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="806.9857999999999" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">App Chofer / GPS</text>
+</g>
+<g class="node" data-id="AuthService" data-label="Auth Service (JWT / Roles)" data-shape="rectangle">
+  <rect x="56" y="293.8" width="199.04199999999994" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="155.52099999999996" y="312.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Auth Service (JWT / Roles)</text>
+</g>
+<g class="node" data-id="DonacionesService" data-label="Servicio de Donaciones
+(PostgreSQL + Schedulers)" data-shape="rectangle">
+  <rect x="315.0419999999999" y="234.9" width="204.96999999999994" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="417.5269999999999" y="261.8" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="417.5269999999999" dy="-3.9000000000000012">Servicio de Donaciones</tspan><tspan x="417.5269999999999" dy="16.900000000000002">(PostgreSQL + Schedulers)</tspan></text>
+</g>
+<g class="node" data-id="LogisticaService" data-label="Servicio de Logística
+(MongoDB + Schedulers)" data-shape="rectangle">
+  <rect x="548.0119999999998" y="234.9" width="189.409" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="642.7164999999998" y="261.8" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="642.7164999999998" dy="-3.9000000000000012">Servicio de Logística</tspan><tspan x="642.7164999999998" dy="16.900000000000002">(MongoDB + Schedulers)</tspan></text>
+</g>
+<g class="node" data-id="IncentivosService" data-label="Servicio de Incentivos
+(PostgreSQL + Schedulers)" data-shape="rectangle">
+  <rect x="765.4209999999998" y="234.9" width="204.96999999999994" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="867.9059999999998" y="261.8" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="867.9059999999998" dy="-3.9000000000000012">Servicio de Incentivos</tspan><tspan x="867.9059999999998" dy="16.900000000000002">(PostgreSQL + Schedulers)</tspan></text>
+</g>
+<g class="node" data-id="NotificacionesService" data-label="Servicio de Notificaciones
+(Worker + Canales)" data-shape="rectangle">
+  <rect x="998.3909999999997" y="234.9" width="194.59599999999998" height="53.800000000000004" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="1095.6889999999996" y="261.8" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="1095.6889999999996" dy="-3.9000000000000012">Servicio de Notificaciones</tspan><tspan x="1095.6889999999996" dy="16.900000000000002">(Worker + Canales)</tspan></text>
+</g>
+<g class="node" data-id="RabbitMQ" data-label="RabbitMQ / Colas de Eventos" data-shape="cylinder">
+  <rect x="509.33124999999995" y="655.5" width="209.41599999999997" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+  <line x1="509.33124999999995" y1="655.5" x2="509.33124999999995" y2="692.4" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <line x1="718.7472499999999" y1="655.5" x2="718.7472499999999" y2="692.4" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="614.0392499999999" cy="692.4" rx="104.70799999999998" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="614.0392499999999" cy="655.5" rx="104.70799999999998" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="614.0392499999999" y="673.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">RabbitMQ / Colas de Eventos</text>
+</g>
+<g class="node" data-id="PostgresDonaciones" data-label="PostgreSQL
+donaciones_db" data-shape="cylinder">
+  <rect x="139.6042500000001" y="463.70000000000005" width="133.834" height="53.80000000000001" fill="var(--_node-fill)" stroke="none" />
+  <line x1="139.6042500000001" y1="463.70000000000005" x2="139.6042500000001" y2="517.5" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <line x1="273.4382500000001" y1="463.70000000000005" x2="273.4382500000001" y2="517.5" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="206.5212500000001" cy="517.5" rx="66.917" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="206.5212500000001" cy="463.70000000000005" rx="66.917" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="206.5212500000001" y="490.6" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="206.5212500000001" dy="-3.9000000000000012">PostgreSQL</tspan><tspan x="206.5212500000001" dy="16.900000000000002">donaciones_db</tspan></text>
+</g>
+<g class="node" data-id="PostgresIncentivos" data-label="PostgreSQL
+incentivos_db" data-shape="cylinder">
+  <rect x="442.5242500000001" y="463.70000000000005" width="124.94200000000001" height="53.80000000000001" fill="var(--_node-fill)" stroke="none" />
+  <line x1="442.5242500000001" y1="463.70000000000005" x2="442.5242500000001" y2="517.5" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <line x1="567.4662500000002" y1="463.70000000000005" x2="567.4662500000002" y2="517.5" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="504.9952500000001" cy="517.5" rx="62.471000000000004" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="504.9952500000001" cy="463.70000000000005" rx="62.471000000000004" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="504.9952500000001" y="490.6" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="504.9952500000001" dy="-3.9000000000000012">PostgreSQL</tspan><tspan x="504.9952500000001" dy="16.900000000000002">incentivos_db</tspan></text>
+</g>
+<g class="node" data-id="MongoLogistica" data-label="MongoDB
+logistica_db" data-shape="cylinder">
+  <rect x="301.4382500000001" y="463.70000000000005" width="113.086" height="53.80000000000001" fill="var(--_node-fill)" stroke="none" />
+  <line x1="301.4382500000001" y1="463.70000000000005" x2="301.4382500000001" y2="517.5" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <line x1="414.5242500000001" y1="463.70000000000005" x2="414.5242500000001" y2="517.5" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="357.9812500000001" cy="517.5" rx="56.543" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <ellipse cx="357.9812500000001" cy="463.70000000000005" rx="56.543" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="357.9812500000001" y="490.6" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)"><tspan x="357.9812500000001" dy="-3.9000000000000012">MongoDB</tspan><tspan x="357.9812500000001" dy="16.900000000000002">logistica_db</tspan></text>
+</g>
+<g class="node" data-id="Mailpit" data-label="Mailpit (Servidor SMTP UI)" data-shape="rectangle">
+  <rect x="1246.3517499999998" y="648.5" width="196.81899999999996" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="1344.7612499999998" y="666.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Mailpit (Servidor SMTP UI)</text>
+</g>
+<g class="node" data-id="ExternalRouter" data-label="External Route Planner API" data-shape="rectangle">
+  <rect x="785.5987499999999" y="648.5" width="201.265" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="886.2312499999998" y="666.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">External Route Planner API</text>
+</g>
+<g class="node" data-id="N8nService" data-label="n8n (Automatización Redes)" data-shape="rectangle">
+  <rect x="1014.8637499999999" y="648.5" width="203.488" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="1116.60775" y="666.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">n8n (Automatización Redes)</text>
+</g>
+</svg>

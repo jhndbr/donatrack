@@ -1,0 +1,17 @@
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/LogisticaServiceApplication.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/config/LogisticaDataInitializer.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/controller/CamionController.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/controller/RutaController.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/controller/TelemetriaController.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/domain/Camion.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/domain/Entrega.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/domain/Parada.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/domain/Ruta.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/domain/UbicacionGPS.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/dto/PlanificadorCallbackDto.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/repository/CamionRepository.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/repository/EntregaRepository.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/repository/RutaRepository.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/repository/UbicacionGPSRepository.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/scheduler/LogisticaScheduler.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/main/java/com/donatrack/logistica/service/LogisticaService.java

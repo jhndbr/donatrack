@@ -1,0 +1,68 @@
+@startuml
+skinparam state {
+    BackgroundColor #F8FAFC
+    BorderColor #334155
+    ArrowColor #1E293B
+    StartColor #059669
+    EndColor #DC2626
+}
+
+title Máquina de Estados del Ciclo de Vida de la Donación - DonaTrack (DDSI 2026)
+
+[*] --> EN_DEPOSITO : Carga Segmentada por Subcategoría\n[Bienes clasificados y pesados]
+
+state EN_DEPOSITO {
+    EN_DEPOSITO : Esperando proceso de Matchmaking
+    EN_DEPOSITO : Bienes almacenados físicamente
+}
+
+EN_DEPOSITO --> ASIGNACION_REALIZADA : Confirmación de Matchmaking\n(Algoritmo Semántico / Subatendidos)\n[Dispara Evento Outbox: donacion.asignada]
+
+EN_DEPOSITO --> VENCIDA : Scheduler Diario de Caducidad\n[fechaActual >= fechaVencimiento]
+
+state ASIGNACION_REALIZADA {
+    ASIGNACION_REALIZADA : Vinculada a Entidad Beneficiaria
+    ASIGNACION_REALIZADA : Esperando agrupación en lote logístico
+}
+
+ASIGNACION_REALIZADA --> LISTA_PARA_ENTREGAR : Recepción de Ruta en Lote (<= 100)\n[Webhook Callback de Logística]
+
+state LISTA_PARA_ENTREGAR {
+    LISTA_PARA_ENTREGAR : Asignada a Camión y Chofer
+    LISTA_PARA_ENTREGAR : En depósito lista para cargar
+}
+
+LISTA_PARA_ENTREGAR --> EN_TRASLADO : Chofer Inicia Ruta\n[Evento AMQP: ruta.iniciada]\n[Monitoreo GPS en tiempo real]
+
+state EN_TRASLADO {
+    EN_TRASLADO : Camión en viaje hacia la Entidad
+    EN_TRASLADO : Telemetría GPS activa
+}
+
+EN_TRASLADO --> ENTREGADA : Entrega Exitosa en Destino\n[Firma Digital + DNI Receptor]\n[Evento AMQP: entrega.confirmada]
+
+EN_TRASLADO --> ENTREGA_FALLIDA : Incidencia en Destino / Ausente\n[Obligatorio: justificación / motivo del fallo]\n[Evento AMQP: entrega.fallida]
+
+state ENTREGA_FALLIDA #FFEBEB {
+    ENTREGA_FALLIDA : Requiere evaluación de reprogramación
+    ENTREGA_FALLIDA : Registro inmutable del motivo de fallo
+}
+
+ENTREGA_FALLIDA --> LISTA_PARA_ENTREGAR : Reprogramación Aprobada\n[Se asigna a nueva ruta]
+
+ENTREGA_FALLIDA --> EN_DEPOSITO : Devolución al Depósito Central\n[Cancelación de ruta actual]
+
+state ENTREGADA #E6FFFA {
+    ENTREGADA : Ciclo cumplido exitosamente
+    ENTREGADA : Suma puntos al Donante
+    ENTREGADA : Cuenta para métrica de Entidad
+}
+
+state VENCIDA #FEE2E2 {
+    VENCIDA : Retiro para disposición final
+}
+
+ENTREGADA --> [*]
+VENCIDA --> [*]
+
+@enduml

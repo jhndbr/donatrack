@@ -1,0 +1,4 @@
+com/donatrack/donaciones/domain/DonacionStateTest.class
+com/donatrack/donaciones/matchmaking/MatchmakingStrategyTest.class
+com/donatrack/donaciones/service/DonacionServiceTest.class
+com/donatrack/donaciones/service/CsvDonanteImporterTest.class

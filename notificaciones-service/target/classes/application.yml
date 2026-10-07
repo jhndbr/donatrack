@@ -1,0 +1,36 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: notificaciones-service
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:donatrack}
+    password: ${SPRING_RABBITMQ_PASSWORD:donatrack_password}
+
+  # Configuracion de envio SMTP apuntando a Mailpit (puerto 1025)
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+donatrack:
+  rabbitmq:
+    exchange: "donatrack.events.exchange"
+    queues:
+      donacion-asignada: "q.notificaciones.donacion-asignada"
+      donante-inactivo: "q.notificaciones.donante-inactivo"
+      ruta-iniciada: "q.notificaciones.ruta-iniciada"
+      entrega-confirmada: "q.notificaciones.entrega-confirmada"
+      entrega-fallida: "q.notificaciones.entrega-fallida"
+      mision-cumplida: "q.notificaciones.mision-cumplida"
+      categoria-ascendida: "q.notificaciones.categoria-ascendida"

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Helper para compilar DonaTrack utilizando un contenedor Docker con JDK 21
+# Evita necesitar instalar el JDK completo en la máquina host y preserva los permisos de usuario.
+
+mkdir -p "$HOME/.m2"
+
+docker run --rm \
+  -u "$(id -u):$(id -g)" \
+  -v "$(pwd):/app" \
+  -v "$HOME/.m2:/var/maven/.m2" \
+  -e "MAVEN_CONFIG=/var/maven/.m2" \
+  -e "HOME=/var/maven" \
+  -w /app \
+  maven:3.9.6-eclipse-temurin-21 mvn "$@"

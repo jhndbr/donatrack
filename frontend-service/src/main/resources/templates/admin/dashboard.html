@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Panel de Administración - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-shield-halved text-dark me-2"></i>Consola de Administración Central</h2>
+            <p class="text-secondary">Monitoreo de operaciones, flota logística, asignaciones por algoritmo y carga de datos masiva.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin/donaciones/nueva" class="btn btn-dt-primary btn-sm"><i class="fa-solid fa-box me-1"></i>Registrar Donación</a>
+            <a href="/admin/importar-csv" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-file-csv me-1"></i>Importar CSV</a>
+        </div>
+    </div>
+
+    <!-- Métricas del Sistema -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-primary border-4">
+                <small class="text-muted fw-bold">DONACIONES TOTALES</small>
+                <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalDonaciones}">0</div>
+                <small class="text-muted">En base de datos PostgreSQL</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-success border-4">
+                <small class="text-muted fw-bold">CAMIONES EN FLOTA</small>
+                <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalCamiones}">0</div>
+                <small class="text-muted">En base de datos MongoDB</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-warning border-4">
+                <small class="text-muted fw-bold">ENTIDADES ASOCIADAS</small>
+                <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalEntidades}">0</div>
+                <small class="text-muted">Comedores y hospitales</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-info border-4">
+                <small class="text-muted fw-bold">DONANTES REGISTRADOS</small>
+                <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalDonantes}">0</div>
+                <small class="text-muted">Humanos y jurídicos</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulos de Gestión -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <i class="fa-solid fa-brain text-primary fs-2 mb-2"></i>
+                <h5 class="fw-bold text-dark">Matchmaking Inteligente</h5>
+                <p class="text-muted small">Ejecuta y audita la asignación semántica y por subatendidos hacia comedores.</p>
+                <a href="/admin/matchmaking" class="btn btn-outline-primary btn-sm mt-auto">Revisar Propuestas</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <i class="fa-solid fa-truck text-success fs-2 mb-2"></i>
+                <h5 class="fw-bold text-dark">Flota de Camiones</h5>
+                <p class="text-muted small">Registra nuevos vehículos, capacidades de volumen m³ y carga máxima kg.</p>
+                <a href="/admin/camiones" class="btn btn-outline-success btn-sm mt-auto">Administrar Camiones</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <i class="fa-solid fa-ranking-star text-warning fs-2 mb-2"></i>
+                <h5 class="fw-bold text-dark">Rankings Mensuales</h5>
+                <p class="text-muted small">Consulta el ranking mensual y el historial de donantes más activos.</p>
+                <a href="/admin/rankings" class="btn btn-outline-warning btn-sm mt-auto">Ver Clasificación</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donaciones Pendientes de Asignar -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-warehouse text-warning me-2"></i>Donaciones en Depósito (Pendientes de Asignar)</h5>
+            <a href="/admin/matchmaking" class="btn btn-sm btn-dt-primary">Asignar con Matchmaking</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Subcategoría</th>
+                        <th>Cantidad</th>
+                        <th>Donante</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(donacionesPendientes)}">
+                        <td colspan="6" class="text-center py-4 text-muted">No hay donaciones pendientes en depósito.</td>
+                    </tr>
+                    <tr th:each="d : ${donacionesPendientes}">
+                        <td class="fw-bold" th:text="'#' + ${d.id}">#1</td>
+                        <td><span class="badge bg-light text-dark border" th:text="${d.subcategoria}">Alimentos</span></td>
+                        <td th:text="${d.cantidad} + ' ' + ${d.unidadMedida}">50 kg</td>
+                        <td th:text="${d.donante != null ? d.donante.nombreCompleto : 'Donante'}">Carlos</td>
+                        <td><span class="badge badge-status status-EN_DEPOSITO">EN_DEPOSITO</span></td>
+                        <td>
+                            <a th:href="@{'/admin/matchmaking?donacionId=' + ${d.id}}" class="btn btn-sm btn-primary">
+                                <i class="fa-solid fa-brain me-1"></i>Evaluar
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

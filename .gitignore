@@ -1,0 +1,135 @@
+# =============================================================================
+# Gitignore para DonaTrack (Proyecto Spring Boot Multimódulo Maven)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Compilación y Salida de Maven
+# -----------------------------------------------------------------------------
+target/
+**/target/
+build/
+**/build/
+out/
+**/out/
+bin/
+**/bin/
+
+# Artefactos compilados individuales
+*.class
+*.war
+*.ear
+*.nar
+*.rar
+
+# Paquetes jar (excepto wrapper de Maven)
+*.jar
+!**/src/main/resources/**/*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# -----------------------------------------------------------------------------
+# Maven Wrapper
+# -----------------------------------------------------------------------------
+.mvn/wrapper/MavenWrapperDownloader.java
+# Mantener propiedades y JAR del wrapper si se añaden
+!.mvn/wrapper/maven-wrapper.properties
+
+# -----------------------------------------------------------------------------
+# Logs de la Aplicación y del Sistema
+# -----------------------------------------------------------------------------
+logs/
+**/logs/
+*.log
+*.log.*
+*.stdout
+*.stderr
+
+# Volcados y errores de JVM
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# -----------------------------------------------------------------------------
+# IDEs y Editores de Código
+# -----------------------------------------------------------------------------
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+*.idea/
+
+# Eclipse
+.project
+.classpath
+.settings/
+.metadata/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+# Si se desea versionar recomendaciones de extensiones o tasks de VSCode, descomentar:
+# !.vscode/extensions.json
+# !.vscode/launch.json
+# !.vscode/tasks.json
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nb-cache/
+
+# -----------------------------------------------------------------------------
+# Variables de Entorno, Credenciales y Secretos
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.keystore
+*.jks
+*.p12
+
+# -----------------------------------------------------------------------------
+# Base de Datos y Docker Local
+# -----------------------------------------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+docker/data/
+docker/volumes/
+
+# -----------------------------------------------------------------------------
+# Reportes de Test y Cobertura (JaCoCo, SonarQube, etc.)
+# -----------------------------------------------------------------------------
+.scannerwork/
+jacoco.exec
+*.exec
+coverage/
+
+# -----------------------------------------------------------------------------
+# Archivos del Sistema Operativo
+# -----------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Iniciar Sesión - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <div class="text-center mb-4">
+                    <div class="rounded-circle bg-primary-subtle text-primary p-3 d-inline-flex mb-2">
+                        <i class="fa-solid fa-lock fs-3"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark">Iniciar Sesión</h3>
+                    <p class="text-muted small">Ingresa tus credenciales para acceder a tu portal</p>
+                </div>
+
+                <!-- Alertas de error / estado -->
+                <div th:if="${errorMensaje}" class="alert alert-danger py-2 small rounded-3 mb-3" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                    <span th:text="${errorMensaje}">Error al autenticar</span>
+                </div>
+                <div th:if="${mensajeExito}" class="alert alert-success py-2 small rounded-3 mb-3" role="alert">
+                    <i class="fa-solid fa-circle-check me-1"></i>
+                    <span th:text="${mensajeExito}">Mensaje exitoso</span>
+                </div>
+                <div th:if="${mensajeInfo}" class="alert alert-info py-2 small rounded-3 mb-3" role="alert">
+                    <i class="fa-solid fa-info-circle me-1"></i>
+                    <span th:text="${mensajeInfo}">Información</span>
+                </div>
+
+                <!-- Formulario Oficial de Autenticación -->
+                <form action="/login" method="post">
+                    <input type="hidden" name="redirect" th:value="${redirect}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Usuario o Correo Electrónico</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
+                            <input type="text" name="username" class="form-control border-start-0" placeholder="admin o juan@donante.org" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-key text-muted"></i></span>
+                            <input type="password" name="password" class="form-control border-start-0" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-dt-primary py-2 fw-semibold">
+                            <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Entrar al Sistema
+                        </button>
+                    </div>
+
+                    <div class="text-center">
+                        <span class="text-muted small">¿No tienes cuenta? <a href="/registro" class="fw-semibold text-primary">Regístrate gratis</a></span>
+                    </div>
+                </form>
+
+                <!-- Tarjeta Colapsable de Guía de Acceso Rápido -->
+                <div class="mt-4 pt-3 border-top">
+                    <a class="small text-muted text-decoration-none d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#credencialesDemo" role="button">
+                        <span><i class="fa-solid fa-circle-question me-1"></i> Credenciales de Acceso Demo</span>
+                        <i class="fa-solid fa-chevron-down small"></i>
+                    </a>
+                    <div class="collapse mt-2" id="credencialesDemo">
+                        <div class="p-2 bg-light rounded-3 small">
+                            <ul class="list-unstyled mb-0" style="font-size: 0.82rem;">
+                                <li class="mb-1"><strong>Admin:</strong> <code>admin</code> / <code>admin123</code></li>
+                                <li class="mb-1"><strong>Donante:</strong> <code>juan.donante@example.com</code> / <code>donante123</code></li>
+                                <li><strong>Entidad:</strong> <code>esperanza@comedor.org</code> / <code>comedor123</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

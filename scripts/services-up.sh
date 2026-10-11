@@ -52,6 +52,12 @@ setsid nohup java $JAVA_OPTS -jar api-gateway/target/api-gateway-1.0.0-SNAPSHOT.
 PID_GATEWAY=$!
 echo "$PID_GATEWAY api-gateway" >> "$PID_FILE"
 
+# 6. frontend-service (:8086)
+echo " -> Levantando frontend-service en puerto 8086..."
+setsid nohup java $JAVA_OPTS -jar frontend-service/target/frontend-service-1.0.0-SNAPSHOT.jar </dev/null > logs/frontend-service.log 2>&1 &
+PID_FRONTEND=$!
+echo "$PID_FRONTEND frontend-service" >> "$PID_FILE"
+
 echo ""
 echo "Esperando que los microservicios completen su arranque..."
 READY=0

@@ -28,6 +28,7 @@ pkill -f "logistica-service.*jar" 2>/dev/null || true
 pkill -f "incentivos-service.*jar" 2>/dev/null || true
 pkill -f "notificaciones-service.*jar" 2>/dev/null || true
 pkill -f "api-gateway.*jar" 2>/dev/null || true
+pkill -f "frontend-service.*jar" 2>/dev/null || true
 
 sleep 1
 echo "Todos los microservicios han sido detenidos correctamente."

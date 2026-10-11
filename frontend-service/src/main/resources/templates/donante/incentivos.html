@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Incentivos y Misiones - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-trophy text-warning me-2"></i>Programa de Incentivos Solidarios</h2>
+            <p class="text-secondary">Cumple misiones, desbloquea insignias de impacto y sube de categoría comunitaria.</p>
+        </div>
+        <a href="/donante" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+    </div>
+
+    <!-- Nivel Actual Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center border-end">
+                <i class="fa-solid fa-crown text-warning fs-1 mb-2"></i>
+                <h4 class="fw-bold text-dark mb-0" th:text="${metricas['categoria'] != null ? metricas['categoria'] : 'COLABORADOR'}">COLABORADOR</h4>
+                <small class="text-muted">Nivel de Donante</small>
+            </div>
+            <div class="col-md-9 ps-md-4">
+                <h5 class="fw-bold text-dark">Escalafón de Impacto:</h5>
+                <div class="d-flex gap-2 align-items-center mt-3">
+                    <span class="badge bg-primary p-2 px-3 rounded-pill">1. COLABORADOR</span>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                    <span class="badge bg-secondary p-2 px-3 rounded-pill">2. SOSTENEDOR</span>
+                    <i class="fa-solid fa-chevron-right text-muted"></i>
+                    <span class="badge bg-warning text-dark p-2 px-3 rounded-pill">3. TRANSFORMADOR</span>
+                </div>
+                <small class="text-muted d-block mt-2">Al completar todas las misiones de tu nivel actual, asciendes automáticamente al siguiente nivel.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Misiones de la Categoría -->
+    <div class="mb-5">
+        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>Misiones a Realizar</h4>
+        <div class="row g-3">
+            <div th:if="${#lists.isEmpty(misiones)}" class="col-12 text-muted">
+                No hay misiones activas en este momento o ya has completado todas las misiones de tu categoría.
+            </div>
+            <div th:each="m : ${misiones}" class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="badge bg-info-subtle text-info fw-semibold mb-1" th:text="${m.mision != null ? m.mision.tipo : 'MISION'}">RACHA</span>
+                            <h5 class="fw-bold text-dark mb-0" th:text="${m.mision != null ? m.mision.nombre : 'Misión'}">Primer Paso</h5>
+                        </div>
+                        <span th:if="${m.completada}" class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Completada</span>
+                        <span th:if="${!m.completada}" class="badge bg-secondary-subtle text-secondary">En Progreso</span>
+                    </div>
+                    <p class="text-muted small mb-3" th:text="${m.mision != null ? m.mision.descripcion : ''}">Realiza 1 donación</p>
+
+                    <!-- Barra de progreso -->
+                    <div class="progress rounded-pill mb-2" style="height: 10px;">
+                        <div class="progress-bar bg-primary" role="progressbar"
+                             th:style="'width: ' + (${m.completada} ? '100%' : (${m.progresoActual} / (${m.mision != null ? m.mision.objetivo : 1.0}) * 100) + '%')">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>Progreso: <strong th:text="${m.progresoActual}">0</strong> / <span th:text="${m.mision != null ? m.mision.objetivo : 1}">1</span></span>
+                        <span class="text-warning fw-semibold"><i class="fa-solid fa-medal me-1"></i><span th:text="${m.mision != null ? m.mision.nombreInsignia : 'Insignia'}">Insignia</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insignias Ganadas -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-5">
+        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-award text-warning me-2"></i>Vitrina de Insignias Obtenidas</h4>
+        <div class="d-flex flex-wrap gap-3" th:if="${!#lists.isEmpty(insignias)}">
+            <div th:each="ins : ${insignias}" class="card border border-warning-subtle rounded-3 p-3 text-center bg-light" style="width: 180px;">
+                <i class="fa-solid fa-shield-halved text-warning fs-1 mb-2"></i>
+                <div class="fw-bold small text-dark" th:text="${ins.nombre}">Insignia</div>
+                <small class="text-muted" th:text="${ins.descripcion}">Descripción</small>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(insignias)}" class="text-muted small">
+            Aún no has desbloqueado insignias. ¡Aporta a las misiones para que se difundan en redes y en tu perfil!
+        </div>
+    </div>
+</div>
+</body>
+</html>

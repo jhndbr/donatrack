@@ -54,6 +54,25 @@ public class DonacionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/historial")
+    public ResponseEntity<List<Donacion.RegistroHistorialEstado>> obtenerHistorial(@PathVariable("id") Long id) {
+        return donacionRepository.findById(id)
+                .map(d -> ResponseEntity.ok(d.getHistorialEstados()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Donacion> modificarDonacion(@PathVariable("id") Long id,
+                                                      @RequestBody Map<String, Object> body) {
+        return donacionRepository.findById(id).map(donacion -> {
+            if (body.containsKey("subcategoria")) donacion.setSubcategoria((String) body.get("subcategoria"));
+            if (body.containsKey("cantidad")) donacion.setCantidad(((Number) body.get("cantidad")).doubleValue());
+            if (body.containsKey("unidadMedida")) donacion.setUnidadMedida((String) body.get("unidadMedida"));
+            if (body.containsKey("esUsado")) donacion.setEsUsado((Boolean) body.get("esUsado"));
+            return ResponseEntity.ok(donacionRepository.save(donacion));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/carga-segmentada")
     public ResponseEntity<List<Donacion>> registrarDonacionSegmentada(@RequestParam("donanteId") Long donanteId,
                                                                       @RequestBody List<BienDonado> bienes) {

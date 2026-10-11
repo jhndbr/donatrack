@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Gestión de Camiones - DonaTrack Admin</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-truck text-success me-2"></i>Gestión de Flota de Camiones</h2>
+            <p class="text-secondary">Administración de vehículos logísticos y capacidades físicas (MongoDB NoSQL).</p>
+        </div>
+        <a href="/admin" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver al Panel</a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Formulario Alta Camión -->
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-plus-circle text-primary me-2"></i>Registrar Nuevo Camión</h5>
+                <form action="/admin/camiones" method="post">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Patente / Dominio</label>
+                        <input type="text" name="patente" class="form-control" placeholder="Ej. AE789XY" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Capacidad de Volumen (m³)</label>
+                        <input type="number" step="0.1" name="capacidadVolumenM3" class="form-control" placeholder="20.0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Altura Máxima (m)</label>
+                        <input type="number" step="0.1" name="alturaM" class="form-control" placeholder="3.0" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Capacidad de Carga (kg)</label>
+                        <input type="number" step="10" name="capacidadPesoKg" class="form-control" placeholder="3500.0" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success fw-semibold">
+                            <i class="fa-solid fa-truck-ramp-box me-2"></i>Guardar Camión en Flota
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Camiones Existentes -->
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list text-secondary me-2"></i>Camiones Disponibles</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Patente</th>
+                                <th>Volumen</th>
+                                <th>Altura</th>
+                                <th>Capacidad Peso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(camiones)}">
+                                <td colspan="4" class="text-center text-muted">No hay camiones registrados aún.</td>
+                            </tr>
+                            <tr th:each="c : ${camiones}">
+                                <td class="fw-bold text-primary" th:text="${c.patente}">AE789XY</td>
+                                <td th:text="${c.capacidadVolumenM3} + ' m³'">20.0 m³</td>
+                                <td th:text="${c.alturaM} + ' m'">3.0 m</td>
+                                <td th:text="${c.capacidadPesoKg} + ' kg'">3500 kg</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

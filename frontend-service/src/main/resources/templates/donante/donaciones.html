@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Mis Donaciones - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-boxes-packing text-primary me-2"></i>Mis Donaciones Realizadas</h2>
+            <p class="text-secondary">Consulta y filtra la trazabilidad de todos los bienes aportados.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/donante/nueva-donacion" class="btn btn-success btn-sm shadow-sm">
+                <i class="fa-solid fa-plus-circle me-1"></i>Nueva Donación
+            </a>
+            <a href="/donante" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver al Panel</a>
+        </div>
+    </div>
+
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i><span th:text="${mensajeExito}">Éxito</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${mensajeError}">Error</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+        <form action="/donante/donaciones" method="get" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold text-muted">Filtrar por Estado</label>
+                <select name="estado" class="form-select">
+                    <option value="">Todos los Estados</option>
+                    <option value="EN_DEPOSITO" th:selected="${estadoSeleccionado == 'EN_DEPOSITO'}">En Depósito</option>
+                    <option value="ASIGNACION_REALIZADA" th:selected="${estadoSeleccionado == 'ASIGNACION_REALIZADA'}">Asignación Realizada</option>
+                    <option value="LISTA_PARA_ENTREGAR" th:selected="${estadoSeleccionado == 'LISTA_PARA_ENTREGAR'}">Lista para Entregar</option>
+                    <option value="EN_TRASLADO" th:selected="${estadoSeleccionado == 'EN_TRASLADO'}">En Traslado</option>
+                    <option value="ENTREGADA" th:selected="${estadoSeleccionado == 'ENTREGADA'}">Entregada</option>
+                    <option value="ENTREGA_FALLIDA" th:selected="${estadoSeleccionado == 'ENTREGA_FALLIDA'}">Entrega Fallida</option>
+                    <option value="VENCIDA" th:selected="${estadoSeleccionado == 'VENCIDA'}">Vencida</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold text-muted">Filtrar por Subcategoría</label>
+                <input type="text" name="subcategoria" class="form-control" placeholder="Ej. arroz, fideos, abrigo..." th:value="${subcategoriaSeleccionada}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-dt-primary w-100 mt-4"><i class="fa-solid fa-filter me-1"></i>Filtrar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de Donaciones -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Subcategoría</th>
+                        <th>Cantidad</th>
+                        <th>Fecha Recepción</th>
+                        <th>Entidad Asignada</th>
+                        <th>Estado Actual</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(donaciones)}">
+                        <td colspan="7" class="text-center py-5 text-muted">No se encontraron donaciones con los filtros seleccionados.</td>
+                    </tr>
+                    <tr th:each="d : ${donaciones}">
+                        <td class="fw-bold" th:text="'#' + ${d.id}">#1</td>
+                        <td>
+                            <span class="badge bg-light text-dark border fw-semibold" th:text="${d.subcategoria}">Alimentos</span>
+                        </td>
+                        <td th:text="${d.cantidad} + ' ' + ${d.unidadMedida}">10 kg</td>
+                        <td class="small text-muted" th:text="${d.fechaRecepcion != null ? #strings.substring(d.fechaRecepcion, 0, 10) : 'Hoy'}">2026-10-10</td>
+                        <td>
+                            <span th:if="${d.entidadAsignada != null}" class="text-primary fw-semibold" th:text="${d.entidadAsignada.razonSocial}">Comedor Sol</span>
+                            <span th:if="${d.entidadAsignada == null}" class="text-muted small">Pendiente de Matchmaking</span>
+                        </td>
+                        <td>
+                            <span th:class="'badge badge-status status-' + ${d.estado}" th:text="${d.estado}">EN_DEPOSITO</span>
+                        </td>
+                        <td>
+                            <a href="/donante/tracking" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-location-arrow me-1"></i>Seguimiento
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

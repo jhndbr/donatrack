@@ -29,6 +29,7 @@
         <module>incentivos-service</module>
         <module>notificaciones-service</module>
         <module>api-gateway</module>
+        <module>frontend-service</module>
     </modules>
 
     <dependencyManagement>

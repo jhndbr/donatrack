@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Registrar Nueva Donación en Depósito - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark"><i class="fa-solid fa-box-open text-primary me-2"></i>Registrar Donación en Depósito</h1>
+            <p class="text-muted mb-0">Recepción y segmentación automática de bienes por subcategoría para asignación y entrega.</p>
+        </div>
+        <div>
+            <a th:href="@{/admin}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Volver a Admin
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-file-circle-plus text-secondary me-2"></i>Formulario de Ingreso de Bienes
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form th:action="@{/admin/donaciones/nueva}" method="post">
+                        <!-- Donante selector -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Donante de Origen <span class="text-danger">*</span></label>
+                            <select name="donanteId" class="form-select" required>
+                                <option value="" disabled selected>-- Seleccione el Donante Registrado --</option>
+                                <option th:each="d : ${donantes}" 
+                                        th:value="${d.id}" 
+                                        th:text="${d.nombre + ' ' + (d.apellido != null ? d.apellido : '') + ' (' + d.email + ')'}">
+                                    Juan Pérez (juan@example.com)
+                                </option>
+                            </select>
+                            <div class="form-text">Si el donante no existe, impórtelo vía CSV o regístrelo en el sistema.</div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fa-solid fa-tags me-1"></i>Detalle del Bien a Segmentar
+                        </h6>
+
+                        <!-- Nombre del bien -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción del Bien <span class="text-danger">*</span></label>
+                            <input type="text" name="nombreBien" class="form-control" placeholder="Ej. Leche Larga Vida, Zapatillas Talle 40, Fideos" required>
+                        </div>
+
+                        <div class="row">
+                            <!-- Subcategoría (Criterio clave del modelo de dominio) -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Subcategoría (Unidad de Asignación) <span class="text-danger">*</span></label>
+                                <select name="subcategoria" class="form-select" required>
+                                    <option value="" disabled selected>-- Elija Subcategoría --</option>
+                                    <optgroup label="Alimentos">
+                                        <option value="ALIMENTOS_NO_PERECEDEROS">Alimentos No Perecederos</option>
+                                        <option value="LACTEOS">Lácteos y Derivados</option>
+                                        <option value="FRESCOS">Frutas, Verduras y Frescos</option>
+                                    </optgroup>
+                                    <optgroup label="Indumentaria y Calzado">
+                                        <option value="ROPA_ABRIGO">Ropa de Invierno y Abrigo</option>
+                                        <option value="CALZADO">Calzado (Zapatillas/Botas)</option>
+                                        <option value="ROPA_GENERAL">Ropa General / Diaria</option>
+                                    </optgroup>
+                                    <optgroup label="Higiene y Salud">
+                                        <option value="ARTICULOS_HIGIENE">Artículos de Higiene Personal</option>
+                                        <option value="LIMPIEZA">Artículos de Limpieza Institucional</option>
+                                        <option value="PRIMEROS_AUXILIOS">Botiquín y Primeros Auxilios</option>
+                                    </optgroup>
+                                    <optgroup label="Equipamiento y Otros">
+                                        <option value="UTILES_ESCOLARES">Útiles y Material Didáctico</option>
+                                        <option value="MOBILIARIO">Mobiliario y Enseres</option>
+                                        <option value="JUGUETES">Juguetes y Recreación</option>
+                                    </optgroup>
+                                </select>
+                                <div class="form-text">El algoritmo de matchmaking agrupa y asigna las donaciones por subcategoría.</div>
+                            </div>
+
+                            <!-- Cantidad -->
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Cantidad <span class="text-danger">*</span></label>
+                                <input type="number" step="0.1" min="0.1" name="cantidad" class="form-control" placeholder="Ej. 50" required>
+                            </div>
+
+                            <!-- Unidad de Medida -->
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Unidad <span class="text-danger">*</span></label>
+                                <select name="unidadMedida" class="form-select" required>
+                                    <option value="UNIDADES">Unidades</option>
+                                    <option value="KG">Kilogramos (kg)</option>
+                                    <option value="LITROS">Litros (L)</option>
+                                    <option value="CAJAS">Cajas</option>
+                                    <option value="BULTOS">Bultos</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Estado Usado/Nuevo -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="esUsado" name="esUsado" value="true">
+                                <label class="form-check-label fw-semibold" for="esUsado">El bien es usado (en buenas condiciones de uso)</label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a th:href="@{/admin}" class="btn btn-outline-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-dt-primary px-4">
+                                <i class="fa-solid fa-check me-1"></i> Registrar en Depósito
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

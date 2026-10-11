@@ -1,4 +1,9 @@
 com/donatrack/donaciones/domain/DonacionStateTest.class
+com/donatrack/donaciones/controller/DonacionControllerTest.class
+com/donatrack/donaciones/service/OutboxPublisherTest.class
 com/donatrack/donaciones/matchmaking/MatchmakingStrategyTest.class
+com/donatrack/donaciones/scheduler/DonacionesSchedulerTest.class
+com/donatrack/donaciones/service/DonacionServiceTest$1.class
 com/donatrack/donaciones/service/DonacionServiceTest.class
 com/donatrack/donaciones/service/CsvDonanteImporterTest.class
+com/donatrack/donaciones/service/MatchmakingServiceTest.class

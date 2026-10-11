@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Portal Entidad Beneficiaria - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-building text-success me-2"></i>Portal de Entidad Beneficiaria</h2>
+            <p class="text-secondary">Gestiona tus necesidades de recursos, verifica donaciones asignadas y confirma recepciones con fotos.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/beneficiaria/necesidades" class="btn btn-dt-secondary"><i class="fa-solid fa-plus me-1"></i>Registrar Necesidad</a>
+            <a href="/beneficiaria/confirmar" class="btn btn-outline-success"><i class="fa-solid fa-camera me-1"></i>Confirmar Recepción</a>
+        </div>
+    </div>
+
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i><span th:text="${mensajeExito}">Éxito</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${mensajeError}">Error</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Donaciones Asignadas a la Entidad -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-box-open text-primary me-2"></i>Donaciones Asignadas a tu Entidad</h4>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Subcategoría</th>
+                        <th>Cantidad</th>
+                        <th>Donante</th>
+                        <th>Estado Actual</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(donacionesAsignadas)}">
+                        <td colspan="6" class="text-center py-4 text-muted">No tienes donaciones asignadas actualmente.</td>
+                    </tr>
+                    <tr th:each="don : ${donacionesAsignadas}">
+                        <td class="fw-bold" th:text="'#' + ${don.id}">#1</td>
+                        <td><span class="badge bg-light text-dark border" th:text="${don.subcategoria}">Alimentos</span></td>
+                        <td th:text="${don.cantidad} + ' ' + ${don.unidadMedida}">20 kg</td>
+                        <td th:text="${don['donante'] != null ? don['donante']['nombreCompleto'] : 'Donante Solidario'}">Carlos Gomez</td>
+                        <td><span th:class="'badge badge-status status-' + ${don.estado}" th:text="${don.estado}">ASIGNACION_REALIZADA</span></td>
+                        <td>
+                            <a th:href="@{/beneficiaria/confirmar(donacionId=${don.id})}" class="btn btn-sm btn-outline-success">
+                                <i class="fa-solid fa-check me-1"></i>Confirmar Entrega
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Accesos rápidos -->
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center">
+                <i class="fa-solid fa-hand-holding-dollar text-primary fs-1 mb-2"></i>
+                <h5 class="fw-bold text-dark">Solicitud de Recursos</h5>
+                <p class="text-muted small">Carga tus necesidades recurrentes o extraordinarias para que el algoritmo de Matchmaking asigne donaciones.</p>
+                <a href="/beneficiaria/necesidades" class="btn btn-sm btn-dt-primary">Cargar Necesidades</a>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center">
+                <i class="fa-solid fa-truck-ramp-box text-success fs-1 mb-2"></i>
+                <h5 class="fw-bold text-dark">Camión en Camino</h5>
+                <p class="text-muted small">Sigue en vivo la posición GPS del camión asignado a la entrega de tus insumos.</p>
+                <a href="/beneficiaria/tracking" class="btn btn-sm btn-dt-secondary">Ver Camión en Mapa</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

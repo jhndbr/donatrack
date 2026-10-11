@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Matchmaking Inteligente - DonaTrack Admin</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-brain text-primary me-2"></i>Asignación con Matchmaking Inteligente</h2>
+            <p class="text-secondary">Estrategias de Compatibilidad Semántica (Levenshtein, volumen, urgencia) y Prioridad a Subatendidos.</p>
+        </div>
+        <a href="/admin" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+    </div>
+
+    <!-- Selección de Donación a Evaluar -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+        <h5 class="fw-bold text-dark mb-3">1. Seleccionar Donación en Depósito</h5>
+        <div class="row g-2">
+            <div th:if="${#lists.isEmpty(donacionesPendientes)}" class="text-muted">
+                No hay donaciones pendientes en depósito para evaluar.
+            </div>
+            <div th:each="d : ${donacionesPendientes}" class="col-md-4">
+                <a th:href="@{'/admin/matchmaking?donacionId=' + ${d.id}}"
+                   th:class="'text-decoration-none card p-3 rounded-3 border ' + (${donacionSeleccionada == d.id} ? 'border-primary bg-primary-subtle' : 'bg-light')">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong class="text-dark" th:text="'Donación #' + ${d.id}">#1</strong>
+                        <span class="badge bg-primary" th:text="${d.subcategoria}">Alimentos</span>
+                    </div>
+                    <small class="text-secondary mt-1 d-block" th:text="${d.cantidad} + ' ' + ${d.unidadMedida} + ' de ' + ${d.donante != null ? d.donante.nombreCompleto : 'Donante'}">50 kg</small>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados del Matchmaking -->
+    <div th:if="${evaluacion != null}" class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+        <h5 class="fw-bold text-dark mb-3">2. Resultados de Algoritmos (Top 10 y Coincidencias)</h5>
+
+        <!-- Coincidencias Destacadas -->
+        <div class="alert alert-warning rounded-3 border-warning mb-4" th:if="${!#lists.isEmpty(evaluacion.coincidenciasDestacadas)}">
+            <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-star text-warning me-2"></i>Recomendación Óptima (Presente en Ambos Algoritmos):</h6>
+            <div th:each="c : ${evaluacion.coincidenciasDestacadas}" class="d-flex justify-content-between align-items-center py-1">
+                <div>
+                    <strong class="text-dark" th:text="${c.nombreEntidad}">Comedor Los Chicos</strong>:
+                    <span class="text-muted small" th:text="${c.descripcionNecesidad}">50 kg arroz</span>
+                    <span class="badge bg-dark ms-2" th:text="'Score: ' + ${c.score}">0.95</span>
+                </div>
+                <form action="/admin/matchmaking/asignar" method="post">
+                    <input type="hidden" name="donacionId" th:value="${donacionSeleccionada}">
+                    <input type="hidden" name="entidadId" th:value="${c.idEntidad}">
+                    <button type="submit" class="btn btn-success btn-sm"><i class="fa-solid fa-check me-1"></i>Confirmar Asignación</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Ranking Semántico Top 10 -->
+            <div class="col-md-6">
+                <div class="border rounded-3 p-3 bg-light h-100">
+                    <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-spell-check me-2"></i>Top Semántico (Levenshtein + Cobertura)</h6>
+                    <ul class="list-group list-group-flush">
+                        <li th:each="p : ${evaluacion.rankingSemanticoTop10}" class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-semibold text-dark" th:text="${p.nombreEntidad}">Comedor A</div>
+                                <small class="text-muted" th:text="${p.descripcionNecesidad}">Necesidad</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill" th:text="${p.score}">0.92</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Ranking Subatendidos Top 10 -->
+            <div class="col-md-6">
+                <div class="border rounded-3 p-3 bg-light h-100">
+                    <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-scale-balanced me-2"></i>Top Subatendidos (Prioridad a menos asistidos)</h6>
+                    <ul class="list-group list-group-flush">
+                        <li th:each="p : ${evaluacion.rankingSubatendidosTop10}" class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-semibold text-dark" th:text="${p.nombreEntidad}">Comedor B</div>
+                                <small class="text-muted" th:text="${p.descripcionNecesidad}">Necesidad</small>
+                            </div>
+                            <span class="badge bg-success rounded-pill" th:text="${p.score}">0.88</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

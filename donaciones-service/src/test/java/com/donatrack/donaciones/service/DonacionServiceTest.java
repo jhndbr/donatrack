@@ -3,13 +3,16 @@ package com.donatrack.donaciones.service;
 import com.donatrack.common.enums.EstadoDonacion;
 import com.donatrack.donaciones.domain.*;
 import com.donatrack.donaciones.repository.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,10 +43,17 @@ public class DonacionServiceTest {
     private DonacionService donacionService;
 
     private PersonaHumana donante;
+    private EntidadBeneficiaria entidad;
 
     @BeforeEach
     void setUp() {
         donante = new PersonaHumana("Juan", "Perez", 35, "30111222", "M", "Av. Siempreviva 123");
+        donante.setId(1L);
+
+        entidad = new EntidadBeneficiaria("Comedor Esperanza", "Av. Belgrano 500", "11-2222-3333");
+        entidad.setId(10L);
+
+        ReflectionTestUtils.setField(donacionService, "routingKeyDonacionAsignada", "donacion.asignada");
     }
 
     @Test
@@ -65,9 +75,127 @@ public class DonacionServiceTest {
     }
 
     @Test
+    void testSegmentacionDonanteInexistenteLanzaExcepcion() {
+        when(donanteRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () ->
+                donacionService.registrarCargaSegmentada(999L, List.of())
+        );
+    }
+
+    @Test
+    void testAsignarDonacionExitosoConOutbox() throws Exception {
+        Donacion d = new Donacion(donante, "Pastas Secas", 20.0, "kg", false, null);
+        d.setId(100L);
+
+        when(donacionRepository.findById(100L)).thenReturn(Optional.of(d));
+        when(entidadRepository.findById(10L)).thenReturn(Optional.of(entidad));
+        when(donacionRepository.save(any(Donacion.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"idDonacion\":100}");
+
+        Donacion asignada = donacionService.asignarDonacion(100L, 10L);
+
+        assertEquals(EstadoDonacion.ASIGNACION_REALIZADA, asignada.getEstado());
+        assertEquals(entidad, asignada.getEntidadAsignada());
+
+        ArgumentCaptor<OutboxEvent> outboxCaptor = ArgumentCaptor.forClass(OutboxEvent.class);
+        verify(outboxEventRepository, times(1)).save(outboxCaptor.capture());
+        OutboxEvent outbox = outboxCaptor.getValue();
+        assertEquals("Donacion", outbox.getAggregateType());
+        assertEquals("100", outbox.getAggregateId());
+        assertEquals("donacion.asignada", outbox.getRoutingKey());
+    }
+
+    @Test
+    void testAsignarDonacionInexistenteLanzaExcepcion() {
+        when(donacionRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> donacionService.asignarDonacion(999L, 10L));
+    }
+
+    @Test
+    void testAsignarDonacionEntidadInexistenteLanzaExcepcion() {
+        Donacion d = new Donacion(donante, "Pastas Secas", 20.0, "kg", false, null);
+        when(donacionRepository.findById(100L)).thenReturn(Optional.of(d));
+        when(entidadRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> donacionService.asignarDonacion(100L, 999L));
+    }
+
+    @Test
+    void testAsignarDonacionFalloSerializacionJsonLanzaRuntime() throws Exception {
+        Donacion d = new Donacion(donante, "Pastas Secas", 20.0, "kg", false, null);
+        d.setId(100L);
+
+        when(donacionRepository.findById(100L)).thenReturn(Optional.of(d));
+        when(entidadRepository.findById(10L)).thenReturn(Optional.of(entidad));
+        when(donacionRepository.save(any(Donacion.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(objectMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("Error mock") {});
+
+        assertThrows(RuntimeException.class, () -> donacionService.asignarDonacion(100L, 10L));
+    }
+
+    @Test
+    void testActualizarEstadoTransicionesValidas() {
+        Donacion d = new Donacion(donante, "Arroz", 10.0, "kg", false, null);
+        d.setId(101L);
+        d.asignarA(entidad);
+
+        when(donacionRepository.findById(101L)).thenReturn(Optional.of(d));
+        when(donacionRepository.save(any(Donacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // 1. LISTA_PARA_ENTREGAR
+        Donacion d1 = donacionService.actualizarEstado(101L, EstadoDonacion.LISTA_PARA_ENTREGAR, null);
+        assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, d1.getEstado());
+
+        // 2. EN_TRASLADO
+        Donacion d2 = donacionService.actualizarEstado(101L, EstadoDonacion.EN_TRASLADO, null);
+        assertEquals(EstadoDonacion.EN_TRASLADO, d2.getEstado());
+
+        // 3. ENTREGA_FALLIDA
+        Donacion d3 = donacionService.actualizarEstado(101L, EstadoDonacion.ENTREGA_FALLIDA, "Dirección errónea");
+        assertEquals(EstadoDonacion.ENTREGA_FALLIDA, d3.getEstado());
+
+        // 4. EN_DEPOSITO (reingreso)
+        Donacion d4 = donacionService.actualizarEstado(101L, EstadoDonacion.EN_DEPOSITO, null);
+        assertEquals(EstadoDonacion.EN_DEPOSITO, d4.getEstado());
+
+        // 5. VENCIDA
+        Donacion d5 = donacionService.actualizarEstado(101L, EstadoDonacion.VENCIDA, null);
+        assertEquals(EstadoDonacion.VENCIDA, d5.getEstado());
+    }
+
+    @Test
+    void testActualizarEstadoConfirmarEntrega() {
+        Donacion d = new Donacion(donante, "Arroz", 10.0, "kg", false, null);
+        d.setId(101L);
+        d.asignarA(entidad);
+        d.marcarListaParaEntregar();
+        d.iniciarTraslado();
+
+        when(donacionRepository.findById(101L)).thenReturn(Optional.of(d));
+        when(donacionRepository.save(any(Donacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Donacion entregada = donacionService.actualizarEstado(101L, EstadoDonacion.ENTREGADA, null);
+        assertEquals(EstadoDonacion.ENTREGADA, entregada.getEstado());
+    }
+
+    @Test
+    void testActualizarEstadoInvalidoDirecto() {
+        Donacion d = new Donacion(donante, "Arroz", 10.0, "kg", false, null);
+        d.setId(101L);
+        when(donacionRepository.findById(101L)).thenReturn(Optional.of(d));
+
+        // ASIGNACION_REALIZADA no se permite directo por actualizarEstado sin entidad
+        assertThrows(IllegalArgumentException.class, () ->
+                donacionService.actualizarEstado(101L, EstadoDonacion.ASIGNACION_REALIZADA, null)
+        );
+    }
+
+    @Test
     void testActualizarEstadoLote() {
         Donacion d1 = new Donacion(donante, "Arroz", 10.0, "kg", false, null);
-        d1.asignarA(new EntidadBeneficiaria("Entidad 1", "Dir 1", "123"));
+        d1.asignarA(entidad);
 
         when(donacionRepository.findById(101L)).thenReturn(Optional.of(d1));
         when(donacionRepository.save(any(Donacion.class))).thenAnswer(inv -> inv.getArgument(0));

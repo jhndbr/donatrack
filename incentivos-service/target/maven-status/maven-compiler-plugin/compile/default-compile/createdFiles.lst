@@ -2,6 +2,7 @@ com/donatrack/incentivos/domain/Insignia.class
 com/donatrack/incentivos/domain/Mision$TipoMision.class
 com/donatrack/incentivos/config/RabbitMqIncentivosConfig.class
 com/donatrack/incentivos/repository/RankingMensualRepository.class
+com/donatrack/incentivos/repository/InsigniaRepository.class
 com/donatrack/incentivos/domain/Mision.class
 com/donatrack/incentivos/scheduler/IncentivosScheduler$1DonanteMisiones.class
 com/donatrack/incentivos/repository/PerfilDonanteIncentivoRepository.class

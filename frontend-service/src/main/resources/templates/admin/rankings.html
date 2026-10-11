@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Tabla de Posiciones y Rankings Mensuales - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark"><i class="fa-solid fa-trophy text-warning me-2"></i>Ranking Mensual de Donantes</h1>
+            <p class="text-muted mb-0">Gamificación y tabla de posiciones calculada por misiones y donaciones completadas.</p>
+        </div>
+        <div>
+            <a th:href="@{/admin}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Volver a Admin
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form th:action="@{/admin/rankings}" method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Año</label>
+                    <input type="number" name="anio" class="form-control" th:value="${anio}" min="2020" max="2030">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Mes (1 - 12)</label>
+                    <select name="mes" class="form-select">
+                        <option th:each="m : ${#numbers.sequence(1, 12)}" 
+                                th:value="${m}" 
+                                th:text="${'Mes ' + m}"
+                                th:selected="${m == mes}">Mes</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-dt-primary w-100">
+                        <i class="fa-solid fa-filter me-1"></i> Filtrar Tabla
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rankings Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-medal text-primary me-2"></i>Clasificación: Período <span th:text="${mes + '/' + anio}">10/2026</span>
+            </h5>
+            <span class="badge bg-primary px-3 py-2" th:text="${rankings.size() + ' Donantes en el Ranking'}">0 Donantes</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4" style="width: 100px;">Puesto</th>
+                            <th>Donante</th>
+                            <th>Puntos / Score</th>
+                            <th>Misiones Cumplidas</th>
+                            <th>Insignia Otorgada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(rankings)}">
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="fa-regular fa-folder-open fa-2x mb-2 d-block"></i>
+                                No hay datos de ranking calculados para el período seleccionado.
+                            </td>
+                        </tr>
+                        <tr th:each="r, iterStat : ${rankings}">
+                            <td class="ps-4">
+                                <span th:if="${r.posicion == 1 or iterStat.count == 1}" class="badge bg-warning text-dark fs-6">
+                                    <i class="fa-solid fa-crown me-1"></i> 1º
+                                </span>
+                                <span th:if="${r.posicion == 2 or iterStat.count == 2}" class="badge bg-secondary text-white fs-6">
+                                    <i class="fa-solid fa-medal me-1"></i> 2º
+                                </span>
+                                <span th:if="${r.posicion == 3 or iterStat.count == 3}" class="badge text-white fs-6" style="background-color: #cd7f32;">
+                                    <i class="fa-solid fa-award me-1"></i> 3º
+                                </span>
+                                <span th:if="${(r.posicion != null and r.posicion > 3) or (r.posicion == null and iterStat.count > 3)}" class="fw-bold text-muted ps-2" th:text="${(r.posicion != null ? r.posicion : iterStat.count) + 'º'}">
+                                    4º
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark" th:text="${r.nombreDonante != null ? r.nombreDonante : 'Donante #' + (r.idDonante != null ? r.idDonante : 'N/A')}">Juan Pérez</div>
+                                <small class="text-muted" th:text="${'ID Donante: ' + (r.idDonante != null ? r.idDonante : 'N/A')}">ID: 1</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-success-subtle text-success fs-6 fw-bold px-3 py-1">
+                                    <i class="fa-solid fa-star me-1 text-warning"></i>
+                                    <span th:text="${r.puntosMes != null ? r.puntosMes : (r.puntajeTotal != null ? r.puntajeTotal : 0)}">150</span> pts
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-secondary">
+                                    <i class="fa-solid fa-bullseye me-1"></i>
+                                    <span th:text="${r.misionesCompletadasMes != null ? r.misionesCompletadasMes : 0}">3</span> completadas
+                                </span>
+                            </td>
+                            <td>
+                                <span th:if="${r.posicion == 1 or iterStat.count == 1}" class="badge bg-warning-subtle text-warning-emphasis border border-warning px-2 py-1">
+                                    <i class="fa-solid fa-gem me-1"></i> Campeón Solidario
+                                </span>
+                                <span th:if="${(r.posicion == 2 or iterStat.count == 2) or (r.posicion == 3 or iterStat.count == 3)}" class="badge bg-info-subtle text-info-emphasis border border-info px-2 py-1">
+                                    <i class="fa-solid fa-shield-halved me-1"></i> Guardián de la Comunidad
+                                </span>
+                                <span th:if="${(r.posicion != null and r.posicion > 3) or (r.posicion == null and iterStat.count > 3)}" class="badge bg-light text-muted border px-2 py-1">
+                                    <i class="fa-solid fa-seedling me-1 text-success"></i> Contribuyente Activo
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Tracking de Camión - Entidad Beneficiaria</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Monitoreo de Camión en Aproximación</h2>
+            <p class="text-secondary">Ubicación satelital del camión logístico en viaje hacia tu sede.</p>
+        </div>
+        <a href="/beneficiaria" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
+        <div class="card-body p-0">
+            <div id="beneficiariaMap" class="map-container" style="height: 480px;"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var map = L.map('beneficiariaMap').setView([-34.6037, -58.3816], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            L.marker([-34.6037, -58.3816]).addTo(map)
+                .bindPopup("<b>Tu Sede (Entidad Beneficiaria)</b><br>Destino final de entrega.").openPopup();
+
+            var camionIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div style='background-color:#0d9488;color:white;padding:6px;border-radius:50%;text-align:center;width:32px;height:32px;box-shadow:0 2px 4px rgba(0,0,0,0.3);'><i class='fa-solid fa-truck'></i></div>",
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+
+            L.marker([-34.5990, -58.4100], { icon: camionIcon }).addTo(map)
+                .bindPopup("<b>Camión AE789XY</b><br>Aproximándose a destino.<br>Tiempo estimado: 15 mins");
+        });
+    </script>
+</div>
+</body>
+</html>

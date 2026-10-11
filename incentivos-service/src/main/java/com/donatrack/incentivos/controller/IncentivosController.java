@@ -24,17 +24,20 @@ public class IncentivosController {
     private final ProgresoMisionRepository progresoRepository;
     private final RankingMensualRepository rankingRepository;
     private final com.donatrack.incentivos.repository.MisionRepository misionRepository;
+    private final com.donatrack.incentivos.repository.InsigniaRepository insigniaRepository;
 
     public IncentivosController(IncentivosService incentivosService,
                                 PerfilDonanteIncentivoRepository perfilRepository,
                                 ProgresoMisionRepository progresoRepository,
                                 RankingMensualRepository rankingRepository,
-                                com.donatrack.incentivos.repository.MisionRepository misionRepository) {
+                                com.donatrack.incentivos.repository.MisionRepository misionRepository,
+                                com.donatrack.incentivos.repository.InsigniaRepository insigniaRepository) {
         this.incentivosService = incentivosService;
         this.perfilRepository = perfilRepository;
         this.progresoRepository = progresoRepository;
         this.rankingRepository = rankingRepository;
         this.misionRepository = misionRepository;
+        this.insigniaRepository = insigniaRepository;
     }
 
     @GetMapping("/misiones/activas")
@@ -78,5 +81,37 @@ public class IncentivosController {
 
         incentivosService.registrarImpactoDonacion(idDonante, nombre, email, cantidadBienes);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * CU-52: Configurar visibilidad de insignias (publica / privada)
+     */
+    @PatchMapping("/insignias/{id}/visibilidad")
+    public ResponseEntity<Insignia> configurarVisibilidadInsignia(@PathVariable("id") Long id,
+                                                                  @RequestParam("visible") boolean visible) {
+        return insigniaRepository.findById(id).map(insignia -> {
+            insignia.setEsPublica(visible);
+            return ResponseEntity.ok(insigniaRepository.save(insignia));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * CU-55: Publicar insignia en red social
+     */
+    @PostMapping("/insignias/{id}/publicar-red-social")
+    public ResponseEntity<Map<String, Object>> publicarEnRedSocial(@PathVariable("id") Long id,
+                                                                   @RequestParam(value = "redSocial", defaultValue = "TWITTER") String redSocial) {
+        return insigniaRepository.findById(id).map(insignia -> {
+            String mensaje = "¡He desbloqueado la insignia '" + insignia.getNombre() + "' colaborando con UTN Solidaria en DonaTrack!";
+            String shareUrl = "https://donatrack.org/insignias/" + insignia.getId();
+            Map<String, Object> resp = new java.util.HashMap<>();
+            resp.put("status", "PUBLICADA");
+            resp.put("insigniaId", insignia.getId());
+            resp.put("insigniaNombre", insignia.getNombre());
+            resp.put("redSocial", redSocial);
+            resp.put("mensajeDifusion", mensaje);
+            resp.put("shareUrl", shareUrl);
+            return ResponseEntity.ok(resp);
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

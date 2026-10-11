@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Seguimiento Logístico en Vivo - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-truck-fast text-success me-2"></i>Seguimiento de Entregas Activas</h2>
+            <p class="text-secondary">Monitorea en tiempo real la geolocalización de los camiones que transportan las donaciones asignadas.</p>
+        </div>
+        <a href="/donante" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+    </div>
+
+    <!-- Live Map -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="fa-solid fa-satellite-dish text-primary me-2"></i>Posicionamiento Satelital en Vivo</span>
+            <span class="badge bg-success"><i class="fa-solid fa-signal me-1"></i>Telemetría Activa</span>
+        </div>
+        <div class="card-body p-0">
+            <div id="trackingMap" class="map-container" style="height: 480px;"></div>
+        </div>
+    </div>
+
+    <!-- Lista de Camiones Activos -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-truck me-2"></i>Flota de Camiones en Operación</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patente</th>
+                        <th>Capacidad Volumen</th>
+                        <th>Capacidad Peso</th>
+                        <th>Altura</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(camiones)}">
+                        <td colspan="5" class="text-center text-muted">No hay camiones registrados en este momento.</td>
+                    </tr>
+                    <tr th:each="c : ${camiones}">
+                        <td class="fw-bold text-primary" th:text="${c.patente}">AE789XY</td>
+                        <td th:text="${c.capacidadVolumenM3} + ' m³'">20.0 m³</td>
+                        <td th:text="${c.capacidadPesoKg} + ' kg'">3500 kg</td>
+                        <td th:text="${c.alturaM} + ' m'">3.0 m</td>
+                        <td><span class="badge bg-success-subtle text-success">Disponible / En Ruta</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var map = L.map('trackingMap').setView([-34.6037, -58.3816], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            // Depósito Central UTN Medrano
+            L.marker([-34.5985, -58.4201]).addTo(map)
+                .bindPopup("<b>Depósito Central UTN Medrano</b><br>Punto de partida de todos los camiones.");
+
+            // Camión en traslado
+            var camionIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div style='background-color:#1e40af;color:white;padding:6px;border-radius:50%;text-align:center;width:32px;height:32px;box-shadow:0 2px 4px rgba(0,0,0,0.3);'><i class='fa-solid fa-truck'></i></div>",
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+
+            L.marker([-34.6060, -58.3900], { icon: camionIcon }).addTo(map)
+                .bindPopup("<b>Camión AE789XY</b><br>En traslado hacia Comedor Los Chicos Felices.<br>Velocidad: 42 km/h");
+        });
+    </script>
+</div>
+</body>
+</html>

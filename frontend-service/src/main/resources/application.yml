@@ -1,0 +1,15 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: frontend-service
+
+  thymeleaf:
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+
+donatrack:
+  api-gateway:
+    url: ${API_GATEWAY_URL:http://localhost:8080}

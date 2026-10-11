@@ -57,10 +57,15 @@ public class Donacion {
     @OneToMany(mappedBy = "donacion", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BienDonado> bienes = new ArrayList<>();
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "donaciones_historial_estados", joinColumns = @JoinColumn(name = "donacion_id"))
+    private List<RegistroHistorialEstado> historialEstados = new ArrayList<>();
+
     public Donacion() {
         this.fechaRecepcion = LocalDateTime.now();
         this.fechaActualizacionEstado = LocalDateTime.now();
         this.estado = EstadoDonacion.EN_DEPOSITO;
+        this.historialEstados.add(new RegistroHistorialEstado(LocalDateTime.now(), null, EstadoDonacion.EN_DEPOSITO, "Ingreso inicial en depósito"));
     }
 
     public Donacion(PersonaDonante donante, String subcategoria, double cantidad,
@@ -135,9 +140,15 @@ public class Donacion {
         cambiarEstado(EstadoDonacion.VENCIDA);
     }
 
-    private void cambiarEstado(EstadoDonacion nuevoEstado) {
+    private void cambiarEstado(EstadoDonacion nuevoEstado, String justificacion) {
+        EstadoDonacion anterior = this.estado;
         this.estado = nuevoEstado;
         this.fechaActualizacionEstado = LocalDateTime.now();
+        this.historialEstados.add(new RegistroHistorialEstado(LocalDateTime.now(), anterior, nuevoEstado, justificacion));
+    }
+
+    private void cambiarEstado(EstadoDonacion nuevoEstado) {
+        cambiarEstado(nuevoEstado, "Transición de ciclo de vida");
     }
 
     public void agregarBien(BienDonado bien) {
@@ -185,4 +196,40 @@ public class Donacion {
 
     public List<BienDonado> getBienes() { return bienes; }
     public void setBienes(List<BienDonado> bienes) { this.bienes = bienes; }
+
+    public List<RegistroHistorialEstado> getHistorialEstados() { return historialEstados; }
+    public void setHistorialEstados(List<RegistroHistorialEstado> historialEstados) { this.historialEstados = historialEstados; }
+
+    @Embeddable
+    public static class RegistroHistorialEstado {
+        private LocalDateTime fechaHora;
+        @Enumerated(EnumType.STRING)
+        private EstadoDonacion estadoAnterior;
+        @Enumerated(EnumType.STRING)
+        private EstadoDonacion nuevoEstado;
+        private String justificacion;
+
+        public RegistroHistorialEstado() {
+            this.fechaHora = LocalDateTime.now();
+        }
+
+        public RegistroHistorialEstado(LocalDateTime fechaHora, EstadoDonacion estadoAnterior, EstadoDonacion nuevoEstado, String justificacion) {
+            this.fechaHora = fechaHora != null ? fechaHora : LocalDateTime.now();
+            this.estadoAnterior = estadoAnterior;
+            this.nuevoEstado = nuevoEstado;
+            this.justificacion = justificacion != null ? justificacion : "";
+        }
+
+        public LocalDateTime getFechaHora() { return fechaHora; }
+        public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
+
+        public EstadoDonacion getEstadoAnterior() { return estadoAnterior; }
+        public void setEstadoAnterior(EstadoDonacion estadoAnterior) { this.estadoAnterior = estadoAnterior; }
+
+        public EstadoDonacion getNuevoEstado() { return nuevoEstado; }
+        public void setNuevoEstado(EstadoDonacion nuevoEstado) { this.nuevoEstado = nuevoEstado; }
+
+        public String getJustificacion() { return justificacion; }
+        public void setJustificacion(String justificacion) { this.justificacion = justificacion; }
+    }
 }

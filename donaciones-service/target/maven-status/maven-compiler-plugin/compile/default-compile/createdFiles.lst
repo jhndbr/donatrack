@@ -25,6 +25,7 @@ com/donatrack/donaciones/controller/DonanteController.class
 com/donatrack/donaciones/repository/PersonaDonanteRepository.class
 com/donatrack/donaciones/service/DonacionService.class
 com/donatrack/donaciones/matchmaking/MatchmakingRankingResult.class
+com/donatrack/donaciones/domain/Donacion$RegistroHistorialEstado.class
 com/donatrack/donaciones/exception/GlobalExceptionHandler.class
 com/donatrack/donaciones/matchmaking/PrioridadSubatendidosStrategy.class
 com/donatrack/donaciones/repository/DonacionRepository.class

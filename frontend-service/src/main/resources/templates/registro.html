@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Registro de Donante / Entidad - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                <div class="text-center mb-4">
+                    <div class="rounded-circle bg-primary-subtle text-primary p-3 d-inline-flex mb-2">
+                        <i class="fa-solid fa-user-plus fs-3"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark">Únete a la Red Solidaria</h3>
+                    <p class="text-muted small">Regístrate como donante particular o como entidad comunitaria beneficiaria</p>
+                </div>
+
+                <ul class="nav nav-pills nav-fill mb-4 p-1 bg-light rounded-pill" id="pills-tab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill fw-semibold py-2" id="tab-donante" data-bs-toggle="pill" data-bs-target="#content-donante" type="button">
+                            <i class="fa-solid fa-hand-holding-heart me-1"></i> Persona Donante
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill fw-semibold py-2" id="tab-entidad" data-bs-toggle="pill" data-bs-target="#content-entidad" type="button">
+                            <i class="fa-solid fa-building me-1"></i> Entidad Beneficiaria
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="pills-tabContent">
+                    <!-- Registro Donante -->
+                    <div class="tab-pane fade show active" id="content-donante">
+                        <form action="/registro/donante" method="post">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Nombre <span class="text-danger">*</span></label>
+                                    <input type="text" name="nombre" class="form-control" placeholder="Ej. Juan" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Apellido <span class="text-danger">*</span></label>
+                                    <input type="text" name="apellido" class="form-control" placeholder="Ej. Perez" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">DNI / Documento <span class="text-danger">*</span></label>
+                                    <input type="text" name="dni" class="form-control" placeholder="Ej. 35123456" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Edad</label>
+                                    <input type="number" name="edad" class="form-control" placeholder="Ej. 30" value="28">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold small">Correo Electrónico (Medio de Contacto Principal) <span class="text-danger">*</span></label>
+                                    <input type="email" name="email" class="form-control" placeholder="juan.perez@ejemplo.com" required>
+                                    <small class="text-muted">Se utilizará para notificarte el estado de tus donaciones y login (clave inicial: <code>donante123</code>).</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">WhatsApp (Opcional)</label>
+                                    <input type="text" name="telefono" class="form-control" placeholder="+54 9 11 1234-5678">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Dirección</label>
+                                    <input type="text" name="direccion" class="form-control" placeholder="Ej. Medrano 951, CABA">
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <button type="submit" class="btn btn-dt-primary w-100 py-2 fw-semibold">
+                                        <i class="fa-solid fa-check me-1"></i> Completar Registro como Donante
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Registro Entidad -->
+                    <div class="tab-pane fade" id="content-entidad">
+                        <form action="/registro/entidad" method="post">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold small">Razón Social de la Organización <span class="text-danger">*</span></label>
+                                    <input type="text" name="razonSocial" class="form-control" placeholder="Ej. Comedor Comunitario Corazones Solidarios" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Dirección Sede / Depósito <span class="text-danger">*</span></label>
+                                    <input type="text" name="direccion" class="form-control" placeholder="Av. Corrientes 4500, CABA" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Teléfono Institucional <span class="text-danger">*</span></label>
+                                    <input type="text" name="telefono" class="form-control" placeholder="11-4444-5555" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold small">Email Representante Principal <span class="text-danger">*</span></label>
+                                    <input type="email" name="email" class="form-control" placeholder="contacto@comedor.org" required>
+                                    <small class="text-muted">Se utilizará para recibir avisos de donaciones asignadas y login (clave inicial: <code>comedor123</code>).</small>
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <button type="submit" class="btn btn-dt-secondary w-100 py-2 fw-semibold">
+                                        <i class="fa-solid fa-building-check me-1"></i> Registrar Entidad Beneficiaria
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <span class="text-muted small">¿Ya tienes cuenta activa? <a href="/login" class="fw-semibold text-primary">Ingresar al sistema</a></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

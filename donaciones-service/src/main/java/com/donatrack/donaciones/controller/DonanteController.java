@@ -53,6 +53,33 @@ public class DonanteController {
         return ResponseEntity.ok(donanteRepository.save(persona));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<PersonaDonante> modificarDonante(@PathVariable("id") Long id,
+                                                           @RequestBody java.util.Map<String, Object> body) {
+        return donanteRepository.findById(id).map(donante -> {
+            if (donante instanceof PersonaHumana humana) {
+                if (body.containsKey("nombre")) humana.setNombre((String) body.get("nombre"));
+                if (body.containsKey("apellido")) humana.setApellido((String) body.get("apellido"));
+                if (body.containsKey("edad")) humana.setEdad(((Number) body.get("edad")).intValue());
+                if (body.containsKey("direccion")) humana.setDireccion((String) body.get("direccion"));
+            } else if (donante instanceof PersonaJuridica juridica) {
+                if (body.containsKey("razonSocial")) juridica.setRazonSocial((String) body.get("razonSocial"));
+                if (body.containsKey("rubro")) juridica.setRubro((String) body.get("rubro"));
+                if (body.containsKey("tipo")) juridica.setTipo((String) body.get("tipo"));
+            }
+            return ResponseEntity.ok(donanteRepository.save(donante));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarDonante(@PathVariable("id") Long id) {
+        if (donanteRepository.existsById(id)) {
+            donanteRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     /**
      * Importacion masiva de mas de 10.000 / 20.000 filas de donantes mediante Streaming CSV.
      */

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Información Legal y Privacidad - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+        <h2 class="fw-bold text-dark mb-4"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Términos, Condiciones y Privacidad</h2>
+        <p class="lead text-secondary">Transparencia y protección de datos en la iniciativa solidaria de UTN.BA.</p>
+        
+        <h5 class="fw-bold mt-4 text-dark">1. Tratamiento de Datos Personales</h5>
+        <p class="text-muted">En cumplimiento de la Ley 25.326 de Protección de los Datos Personales de la República Argentina, los datos de contacto suministrados por donantes (correo electrónico, teléfono, WhatsApp) serán utilizados exclusivamente para informar novedades del estado de las donaciones y recompensas del sistema.</p>
+
+        <h5 class="fw-bold mt-4 text-dark">2. Trazabilidad de Bienes y Alimentos</h5>
+        <p class="text-muted">DonaTrack y UTN Solidaria garantizan que los bienes recibidos no serán comercializados bajo ninguna circunstancia, siendo destinados en su totalidad a comedores, hogares y entidades beneficiarias registradas.</p>
+
+        <h5 class="fw-bold mt-4 text-dark">3. Seguridad y Auditoría</h5>
+        <p class="text-muted">Todas las asignaciones y cambios de estado son registrados de manera inmutable mediante eventos de auditoría y almacenamiento transaccional.</p>
+    </div>
+</div>
+</body>
+</html>

@@ -47,6 +47,7 @@ test_endpoint "Donaciones - Endpoint Saludo Entrega 1" "http://localhost:8082/ap
 test_endpoint "Donaciones - Listar Donaciones" "http://localhost:8082/api/v1/donaciones" 200
 test_endpoint "Logística - Listar Flota Camiones" "http://localhost:8083/api/v1/logistica/camiones" 200
 test_endpoint "Incentivos - Ranking Mensual" "http://localhost:8084/api/v1/incentivos/rankings/mensual" 200
+test_endpoint "Frontend - Landing Page MVC (:8086)" "http://localhost:8086/" 200
 
 # 3. API Gateway y Enrutamiento Inverso
 echo -e "\n${YELLOW}3. Verificando API Gateway y Enrutamiento Inverso (:8080):${NC}"
@@ -153,8 +154,8 @@ fi
 echo -n " -> Donaciones - Actualización Masiva de Estados (bulk-estado)... "
 BULK_RES=$(curl -s -X PUT http://localhost:8082/api/v1/donaciones/bulk-estado \
   -H "Content-Type: application/json" \
-  -d "{\"idsDonaciones\": [$DONACION_ID], \"nuevoEstado\": \"EN_TRANSITO\"}")
-if echo "$BULK_RES" | grep -q "EN_TRANSITO"; then
+  -d "{\"idsDonaciones\": [$DONACION_ID], \"nuevoEstado\": \"LISTA_PARA_ENTREGAR\"}")
+if echo "$BULK_RES" | grep -q "LISTA_PARA_ENTREGAR"; then
     echo -e "${GREEN}[OK - Bulk update aplicado correctamente]${NC}"
     PASSED=$((PASSED + 1))
 else

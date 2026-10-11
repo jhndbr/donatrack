@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Registrar Nueva Donación - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill mb-1">
+                <i class="fa-solid fa-hand-holding-heart me-1"></i> Aporte Solidario
+            </span>
+            <h2 class="fw-bold text-dark mb-0">Registrar Nueva Donación de Bienes</h2>
+            <p class="text-secondary">Carga los recursos a donar. Se ingresarán a depósito con trazabilidad y segmentación por subcategoría.</p>
+        </div>
+        <a href="/donante/donaciones" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i>Mis Donaciones
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                <form action="/donante/donar" method="post">
+                    <input type="hidden" name="donanteId" th:value="${donanteId}">
+
+                    <!-- Categoría y Subcategoría -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Categoría Principal <span class="text-danger">*</span></label>
+                            <select name="categoria" id="categoriaSelect" class="form-select" required onchange="actualizarSubcategorias()">
+                                <option value="Alimentos">Alimentos y Nutrición</option>
+                                <option value="Vestimenta">Vestimenta y Abrigo</option>
+                                <option value="Mobiliario">Mobiliario y Equipamiento</option>
+                                <option value="Insumos">Insumos y Salud</option>
+                                <option value="Escolar">Educación y Útiles Escolares</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Subcategoría (Unidad Mínima) <span class="text-danger">*</span></label>
+                            <input type="text" name="subcategoria" id="subcategoriaInput" class="form-control"
+                                   placeholder="Ej. arroz, fideos secos, camperas..."
+                                   th:value="${subcategoriaPreseleccionada}" required>
+                            <small class="text-muted">Unidad canónica de asignación y matchmaking.</small>
+                        </div>
+                    </div>
+
+                    <!-- Cantidad y Unidad -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Cantidad Aportada <span class="text-danger">*</span></label>
+                            <input type="number" step="0.1" min="0.1" name="cantidad" class="form-control" placeholder="Ej. 25" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Unidad de Medida <span class="text-danger">*</span></label>
+                            <select name="unidadMedida" class="form-select" required>
+                                <option value="kg">Kilogramos (kg)</option>
+                                <option value="litros">Litros (l)</option>
+                                <option value="unidades">Unidades / Piezas</option>
+                                <option value="paquetes">Paquetes / Cajas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Condición y Vencimiento -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Condición del Bien</label>
+                            <select name="condicion" class="form-select">
+                                <option value="NUEVO">Nuevo / Sin uso</option>
+                                <option value="USADO">Usado en excelentes condiciones</option>
+                                <option value="REPARADO">Reparado / Restaurado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Fecha de Vencimiento <small class="text-muted">(Solo perecederos)</small></label>
+                            <input type="date" name="fechaVencimiento" class="form-control" value="2027-01-01">
+                        </div>
+                    </div>
+
+                    <!-- Foto URL y Presets -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Foto de los Bienes o Comprobante Inicial <small class="text-muted">(Opcional)</small></label>
+                        <input type="url" name="fotoUrl" id="fotoUrlInput" class="form-control"
+                               placeholder="https://images.unsplash.com/photo-..."
+                               value="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=500&q=80">
+                        <div class="mt-2 d-flex flex-wrap gap-2">
+                            <small class="text-muted me-1">Ejemplos rápidos:</small>
+                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
+                                    onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=500&q=80'">
+                                <i class="fa-solid fa-bowl-rice me-1"></i>Alimentos
+                            </button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
+                                    onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=500&q=80'">
+                                <i class="fa-solid fa-shirt me-1"></i>Vestimenta
+                            </button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
+                                    onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=500&q=80'">
+                                <i class="fa-solid fa-chair me-1"></i>Mobiliario
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Observaciones / Detalles Adicionales</label>
+                        <textarea name="descripcion" class="form-control" rows="3"
+                                  placeholder="Ej. 25 paquetes de arroz cerrados en caja original para entrega en depósito..."></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-dt-primary btn-lg py-2 fw-semibold shadow-sm">
+                            <i class="fa-solid fa-circle-check me-2"></i>Confirmar Ingreso de Donación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

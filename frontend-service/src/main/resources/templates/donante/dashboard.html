@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Portal Donante - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">¡Bienvenido al Portal de Donante!</h2>
+            <p class="text-secondary">Consulta el estado de tus donaciones y tu progreso en el programa solidario.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/donante/nueva-donacion" class="btn btn-success shadow-sm">
+                <i class="fa-solid fa-plus-circle me-1"></i>Registrar Donación
+            </a>
+            <a href="/donante/donaciones" class="btn btn-dt-primary">
+                <i class="fa-solid fa-list-check me-2"></i>Mis Donaciones
+            </a>
+        </div>
+    </div>
+
+    <!-- Perfil & Gamificación Resumen -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-primary-subtle text-primary p-3 fs-3">
+                        <i class="fa-solid fa-medal"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted text-uppercase fw-bold">Nivel Solidario</small>
+                        <h4 class="fw-bold text-dark mb-0" th:text="${metricas['categoria'] != null ? metricas['categoria'] : 'COLABORADOR'}">COLABORADOR</h4>
+                    </div>
+                </div>
+                <hr class="my-3">
+                <div class="small text-muted d-flex justify-content-between">
+                    <span>Donaciones Totales:</span>
+                    <strong class="text-dark" th:text="${metricas['totalDonaciones'] != null ? metricas['totalDonaciones'] : 0}">0</strong>
+                </div>
+                <div class="small text-muted d-flex justify-content-between mt-1">
+                    <span>Volumen Aportado:</span>
+                    <strong class="text-dark" th:text="${(metricas['totalBienesDonados'] != null ? metricas['totalBienesDonados'] : 0) + ' unidades'}">0</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-award text-warning me-2"></i>Insignias Desbloqueadas</h5>
+                    <a href="/donante/incentivos" class="btn btn-sm btn-outline-warning">Ver Misiones</a>
+                </div>
+                <div class="d-flex flex-wrap gap-3" th:if="${!#lists.isEmpty(insignias)}">
+                    <div th:each="ins : ${insignias}" class="d-flex align-items-center gap-2 p-2 rounded-3 bg-light border">
+                        <i class="fa-solid fa-shield-cat text-warning fs-3"></i>
+                        <div>
+                            <div class="fw-bold small" th:text="${ins.nombre}">Insignia</div>
+                            <small class="text-muted" th:text="${ins.descripcion}">Descripción</small>
+                        </div>
+                    </div>
+                </div>
+                <div th:if="${#lists.isEmpty(insignias)}" class="text-muted small py-3">
+                    Aún no tienes insignias desbloqueadas. ¡Realiza tu primera donación para obtener tu insignia inicial!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación Rápida -->
+    <div class="row g-3">
+        <div class="col-md-4">
+            <a href="/donante/donaciones" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white hover-shadow">
+                    <i class="fa-solid fa-boxes-packing text-primary fs-1 mb-2"></i>
+                    <h5 class="fw-bold text-dark">Mis Donaciones</h5>
+                    <p class="text-muted small mb-0">Filtra por estado, subcategoría y consulta trazabilidad.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/donante/tracking" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white hover-shadow">
+                    <i class="fa-solid fa-map-location-dot text-success fs-1 mb-2"></i>
+                    <h5 class="fw-bold text-dark">Seguimiento en Vivo</h5>
+                    <p class="text-muted small mb-0">Sigue en mapa satelital el camión que lleva tu ayuda.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/donante/entidades" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white hover-shadow">
+                    <i class="fa-solid fa-building-ngo text-info fs-1 mb-2"></i>
+                    <h5 class="fw-bold text-dark">Entidades Beneficiarias</h5>
+                    <p class="text-muted small mb-0">Conoce los comedores y hogares asociados a la red.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

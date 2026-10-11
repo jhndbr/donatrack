@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Comprobantes y Fotos de Donaciones Entregadas - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="mb-4">
+        <span class="badge bg-success-subtle text-success fw-bold mb-2 px-3 py-2 rounded-pill">
+            <i class="fa-solid fa-camera me-1"></i> Transparencia y Auditoría Pública
+        </span>
+        <h2 class="fw-bold text-dark mb-1"><i class="fa-solid fa-images text-primary me-2"></i>Comprobantes y Fotografías de Recepción</h2>
+        <p class="text-secondary">Galería pública de transparencia: evidencia fotográfica cargada por las entidades beneficiarias al recibir físicamente cada donación en destino (accesible sin iniciar sesión).</p>
+    </div>
+
+    <!-- Donaciones Entregadas Dinámicas (del backend si existen) -->
+    <div class="row g-4 mb-4" th:if="${!#lists.isEmpty(entregadas)}">
+        <div class="col-12">
+            <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock-rotate-left text-success me-2"></i>Entregas Recientes en el Sistema</h5>
+        </div>
+        <div class="col-md-4" th:each="ent : ${entregadas}">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=500&q=80"
+                     class="card-img-top" style="height: 220px; object-fit: cover;" alt="Entrega Confirmada">
+                <div class="card-body">
+                    <span class="badge bg-success-subtle text-success mb-2">
+                        <i class="fa-solid fa-check-circle me-1"></i>Entrega Confirmada
+                    </span>
+                    <h5 class="card-title fw-bold" th:text="${ent['entidadAsignada'] != null ? ent['entidadAsignada']['razonSocial'] : 'Entidad Beneficiaria'}">Comedor</h5>
+                    <p class="card-text text-muted small">
+                        Recepción de <strong class="text-dark" th:text="${ent.cantidad} + ' ' + ${ent.unidadMedida}">50 kg</strong> de <span th:text="${ent.subcategoria}">Alimentos</span>.
+                    </p>
+                </div>
+                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between">
+                    <span><i class="fa-solid fa-calendar-day me-1"></i>Octubre 2026</span>
+                    <span class="text-primary fw-semibold" th:text="'Comprobante #DON-' + ${ent.id}">#DON-1</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Casos Testigo Institucionales de UTN Solidaria -->
+    <div class="row g-4">
+        <div class="col-12" th:if="${!#lists.isEmpty(entregadas)}">
+            <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-certificate text-warning me-2"></i>Evidencias Institucionales Certificadas</h5>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=500&q=80"
+                     class="card-img-top" style="height: 220px; object-fit: cover;" alt="Entrega Alimentos">
+                <div class="card-body">
+                    <span class="badge bg-success-subtle text-success mb-2"><i class="fa-solid fa-check-circle me-1"></i>Entrega Confirmada</span>
+                    <h5 class="card-title fw-bold">Comedor Los Chicos Felices</h5>
+                    <p class="card-text text-muted small">Recepción de 50 kg de arroz y pastas secas por el camión Mercedes-Benz AE789XY.</p>
+                </div>
+                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between">
+                    <span><i class="fa-solid fa-calendar-day me-1"></i>10 de Octubre 2026</span>
+                    <span class="text-primary fw-semibold">Comprobante #ENT-01</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=500&q=80"
+                     class="card-img-top" style="height: 220px; object-fit: cover;" alt="Entrega Indumentaria">
+                <div class="card-body">
+                    <span class="badge bg-success-subtle text-success mb-2"><i class="fa-solid fa-check-circle me-1"></i>Entrega Confirmada</span>
+                    <h5 class="card-title fw-bold">Hogar Niños Esperanza</h5>
+                    <p class="card-text text-muted small">Recepción de 25 litros de leche y nutrientes por el camión Ford Cargo AF123ZZ.</p>
+                </div>
+                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between">
+                    <span><i class="fa-solid fa-calendar-day me-1"></i>09 de Octubre 2026</span>
+                    <span class="text-primary fw-semibold">Comprobante #ENT-02</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                <img src="https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=500&q=80"
+                     class="card-img-top" style="height: 220px; object-fit: cover;" alt="Entrega Insumos">
+                <div class="card-body">
+                    <span class="badge bg-success-subtle text-success mb-2"><i class="fa-solid fa-check-circle me-1"></i>Entrega Confirmada</span>
+                    <h5 class="card-title fw-bold">Hospital Comunitario San Roque</h5>
+                    <p class="card-text text-muted small">Recepción de 40 camperas y frazadas de invierno por el furgón AC456MN.</p>
+                </div>
+                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between">
+                    <span><i class="fa-solid fa-calendar-day me-1"></i>08 de Octubre 2026</span>
+                    <span class="text-primary fw-semibold">Comprobante #ENT-03</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

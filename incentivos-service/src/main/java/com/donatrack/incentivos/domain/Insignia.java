@@ -24,6 +24,9 @@ public class Insignia {
     @Column(name = "fecha_obtencion", nullable = false)
     private LocalDateTime fechaObtencion;
 
+    @Column(name = "es_publica", nullable = false)
+    private boolean esPublica = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "perfil_donante_id")
     @JsonIgnore
@@ -31,6 +34,7 @@ public class Insignia {
 
     public Insignia() {
         this.fechaObtencion = LocalDateTime.now();
+        this.esPublica = true;
     }
 
     public Insignia(String nombre, String descripcion, String imagenUrl) {
@@ -54,6 +58,9 @@ public class Insignia {
 
     public LocalDateTime getFechaObtencion() { return fechaObtencion; }
     public void setFechaObtencion(LocalDateTime fechaObtencion) { this.fechaObtencion = fechaObtencion; }
+
+    public boolean isEsPublica() { return esPublica; }
+    public void setEsPublica(boolean esPublica) { this.esPublica = esPublica; }
 
     public PerfilDonanteIncentivo getPerfilDonante() { return perfilDonante; }
     public void setPerfilDonante(PerfilDonanteIncentivo perfilDonante) { this.perfilDonante = perfilDonante; }

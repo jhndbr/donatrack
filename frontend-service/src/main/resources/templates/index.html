@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>DonaTrack - Inicio y Trazabilidad Solidaria</title>
+</head>
+<body>
+<div th:fragment="content">
+    <!-- Hero Banner -->
+    <div class="p-5 mb-4 bg-white rounded-4 shadow-sm border border-light-subtle">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <span class="badge bg-danger-subtle text-danger fw-bold mb-2 px-3 py-2 rounded-pill">
+                    <i class="fa-solid fa-heart me-1"></i> UTN Solidaria &bull; SAE UTN.BA
+                </span>
+                <h1 class="display-5 fw-bold text-dark tracking-tight mb-3">Trazabilidad Total para tus Donaciones Solidarias</h1>
+                <p class="lead text-secondary mb-4">
+                    Conectamos donantes transparentemente con comedores, hogares y hospitales comunitarios.
+                    Sigue tu donación desde su recepción en depósito hasta la entrega en destino con fotos y geolocalización.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/registro" class="btn btn-dt-primary btn-lg px-4 shadow-sm">
+                        <i class="fa-solid fa-hand-holding-heart me-2"></i>Quiero Donar
+                    </a>
+                    <a href="/comprobantes" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="fa-solid fa-images me-2"></i>Ver Donaciones Entregadas
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 text-center d-none d-lg-block">
+                <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=600&q=80"
+                     class="img-fluid rounded-4 shadow" alt="Voluntariado Solidario">
+            </div>
+        </div>
+    </div>
+
+    <!-- 4-Step Interactive Workflow Guide -->
+    <div class="card border-0 shadow-sm rounded-4 mb-5 bg-white overflow-hidden">
+        <div class="card-body p-4 p-lg-5">
+            <div class="text-center max-w-2xl mx-auto mb-4">
+                <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill mb-2">
+                    <i class="fa-solid fa-diagram-project me-1"></i> Flujo Operativo DonaTrack
+                </span>
+                <h3 class="fw-bold text-dark mb-2">¿Cómo funciona la Trazabilidad Solidaria?</h3>
+                <p class="text-muted mb-0">Cada donación sigue un ciclo de vida transparente y auditable desde el ingreso hasta su entrega final.</p>
+            </div>
+            
+            <div class="row g-4 position-relative">
+                <div class="col-md-3">
+                    <div class="p-3 rounded-4 bg-light h-100 border border-light-subtle position-relative text-center">
+                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center shadow mb-3" style="width: 54px; height: 54px; font-size: 1.3rem;">
+                            <i class="fa-solid fa-warehouse"></i>
+                        </div>
+                        <div><span class="badge bg-secondary mb-2">Paso 1</span></div>
+                        <h5 class="fw-bold text-dark mb-1">Recepción en Depósito</h5>
+                        <p class="text-secondary small mb-0">
+                            Ingreso y pesaje de bienes. Registro inicial con estado <span class="badge bg-secondary-subtle text-secondary">RECIBIDA_EN_DEPOSITO</span>.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="p-3 rounded-4 bg-light h-100 border border-light-subtle position-relative text-center">
+                        <div class="rounded-circle bg-info text-white d-inline-flex align-items-center justify-content-center shadow mb-3" style="width: 54px; height: 54px; font-size: 1.3rem;">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+                        <div><span class="badge bg-info mb-2 text-dark">Paso 2</span></div>
+                        <h5 class="fw-bold text-dark mb-1">Segmentación Automática</h5>
+                        <p class="text-secondary small mb-0">
+                            Clasificación por subcategoría y particionamiento en lotes de carga &le; 100 kg.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="p-3 rounded-4 bg-light h-100 border border-light-subtle position-relative text-center">
+                        <div class="rounded-circle bg-warning text-white d-inline-flex align-items-center justify-content-center shadow mb-3" style="width: 54px; height: 54px; font-size: 1.3rem;">
+                            <i class="fa-solid fa-handshake-angle"></i>
+                        </div>
+                        <div><span class="badge bg-warning mb-2 text-dark">Paso 3</span></div>
+                        <h5 class="fw-bold text-dark mb-1">Matchmaking Inteligente</h5>
+                        <p class="text-secondary small mb-0">
+                            Asignación automática a la entidad con mayor necesidad y prioridad (<span class="badge bg-warning-subtle text-warning">ASIGNACION_REALIZADA</span>).
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="p-3 rounded-4 bg-light h-100 border border-light-subtle position-relative text-center">
+                        <div class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center shadow mb-3" style="width: 54px; height: 54px; font-size: 1.3rem;">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <div><span class="badge bg-success mb-2">Paso 4</span></div>
+                        <h5 class="fw-bold text-dark mb-1">Entrega con Foto</h5>
+                        <p class="text-secondary small mb-0">
+                            Planificación de ruta logística y confirmación de entrega con comprobante fotográfico geolocalizado (<span class="badge bg-success-subtle text-success">ENTREGADA</span>).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Impact Stats Cards -->
+    <div class="row g-3 mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-primary border-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-primary-subtle text-primary rounded-3 fs-3">
+                        <i class="fa-solid fa-box-open"></i>
+                    </div>
+                    <div>
+                        <div class="fs-3 fw-bold text-dark" th:text="${totalDonaciones}">0</div>
+                        <div class="text-muted small">Donaciones Gestionadas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-success border-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-success-subtle text-success rounded-3 fs-3">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                    </div>
+                    <div>
+                        <div class="fs-3 fw-bold text-dark" th:text="${totalEntregadas}">0</div>
+                        <div class="text-muted small">Entregas Confirmadas con Foto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-warning border-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-warning-subtle text-warning rounded-3 fs-3">
+                        <i class="fa-solid fa-weight-scale"></i>
+                    </div>
+                    <div>
+                        <div class="fs-3 fw-bold text-dark" th:text="${#numbers.formatDecimal(totalKilos, 1, 1)} + ' kg'">0.0 kg</div>
+                        <div class="text-muted small">Volumen Solidario Distribuido</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Map Section -->
+    <div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Mapa de Donaciones Entregadas</h5>
+                <small class="text-muted">Explora las donaciones recibidas por entidades beneficiarias en tiempo real</small>
+            </div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                <i class="fa-solid fa-location-dot me-1"></i> Entregas Activas
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div id="deliveredMap" class="map-container"></div>
+        </div>
+    </div>
+
+    <!-- Featured Donations Table/Cards -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock-rotate-left text-secondary me-2"></i>Donaciones Recientes</h4>
+                <small class="text-muted">Monitoreo del ciclo de vida y asignación de bienes</small>
+            </div>
+            <a href="/donante/donaciones" class="btn btn-sm btn-outline-primary">Ver Todas <i class="fa-solid fa-arrow-right ms-1"></i></a>
+        </div>
+
+        <div class="table-responsive bg-white rounded-3 shadow-sm border">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Subcategoría</th>
+                        <th>Cantidad</th>
+                        <th>Donante</th>
+                        <th>Entidad Asignada</th>
+                        <th>Estado Actual</th>
+                        <th>Trazabilidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(donacionesDestacadas)}">
+                        <td colspan="7" class="text-center py-4 text-muted">No hay donaciones registradas aún. ¡Sé el primero en colaborar!</td>
+                    </tr>
+                    <tr th:each="don : ${donacionesDestacadas}">
+                        <td class="fw-bold" th:text="'#' + ${don.id}">#1</td>
+                        <td>
+                            <span class="badge bg-light text-dark border" th:text="${don.subcategoria}">Alimentos</span>
+                        </td>
+                        <td th:text="${don.cantidad} + ' ' + ${don.unidadMedida}">10 kg</td>
+                        <td th:text="${don.donante != null ? don.donante.nombreCompleto : 'Anónimo'}">Juan Perez</td>
+                        <td>
+                            <span th:if="${don.entidadAsignada != null}" class="text-primary fw-semibold" th:text="${don.entidadAsignada.razonSocial}">Comedor</span>
+                            <span th:if="${don.entidadAsignada == null}" class="text-muted small">Pendiente de asignar</span>
+                        </td>
+                        <td>
+                            <span th:class="'badge badge-status status-' + ${don.estado}" th:text="${don.estado}">EN_DEPOSITO</span>
+                        </td>
+                        <td>
+                            <a th:href="@{/donante/tracking}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fa-solid fa-route"></i> Ver Ruta
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Leaflet Script for Home Map -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var map = L.map('deliveredMap').setView([-34.6037, -58.3950], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Marcadores de donaciones entregadas con detalles completos y fotos
+            var puntos = [
+                {
+                    lat: -34.6037, lng: -58.3816,
+                    titulo: "Comedor Los Chicos Felices",
+                    direccion: "Av. Medrano 951, Almagro, CABA",
+                    desc: "Recepción de 50 kg de arroz y alimentos secos.",
+                    fecha: "10 de Octubre de 2026",
+                    camion: "Camión Mercedes-Benz (AE789XY)",
+                    foto: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=450&q=80",
+                    comprobante: "COMP-2026-001"
+                },
+                {
+                    lat: -34.5885, lng: -58.4201,
+                    titulo: "Hogar Sol Naciente",
+                    direccion: "Gorriti 3800, Palermo, CABA",
+                    desc: "Recepción de 25 litros de leche y nutrientes lácteos.",
+                    fecha: "09 de Octubre de 2026",
+                    camion: "Ford Cargo (AF123ZZ)",
+                    foto: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=450&q=80",
+                    comprobante: "COMP-2026-002"
+                },
+                {
+                    lat: -34.6180, lng: -58.3700,
+                    titulo: "Hospital Comunitario San Roque",
+                    direccion: "Paseo Colón 850, San Telmo, CABA",
+                    desc: "Recepción de 40 camperas y frazadas de abrigo.",
+                    fecha: "08 de Octubre de 2026",
+                    camion: "Furgón Utilitario (AC456MN)",
+                    foto: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=450&q=80",
+                    comprobante: "COMP-2026-003"
+                },
+                {
+                    lat: -34.6450, lng: -58.4480,
+                    titulo: "Merendero Esperanza y Futuro",
+                    direccion: "Av. Cruz 2500, Villa Soldati, CABA",
+                    desc: "Recepción de 30 kg de harina, legumbres y cereales.",
+                    fecha: "07 de Octubre de 2026",
+                    camion: "Camión Mercedes-Benz (AE789XY)",
+                    foto: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=450&q=80",
+                    comprobante: "COMP-2026-004"
+                }
+            ];
+
+            puntos.forEach(function(p) {
+                var popupHtml = `
+                    <div style="min-width: 240px; max-width: 280px; font-family: sans-serif;">
+                        <img src="${p.foto}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" alt="${p.titulo}">
+                        <h6 style="font-weight: bold; margin-bottom: 4px; color: #1e3a8a;">${p.titulo}</h6>
+                        <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 6px;">
+                            <i class="fa-solid fa-location-dot"></i> ${p.direccion}
+                        </div>
+                        <p style="font-size: 0.8rem; color: #334155; margin-bottom: 8px;">${p.desc}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="background-color: #dcfce7; color: #166534; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">
+                                <i class="fa-solid fa-circle-check"></i> ENTREGADA
+                            </span>
+                            <span style="font-size: 0.72rem; color: #64748b;">${p.fecha}</span>
+                        </div>
+                        <div style="font-size: 0.72rem; color: #475569; border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i class="fa-solid fa-truck"></i> ${p.camion}</span>
+                            <a href="/comprobantes" style="font-weight: 600; color: #0d9488; text-decoration: none;">Ver Foto &rarr;</a>
+                        </div>
+                    </div>
+                `;
+                L.marker([p.lat, p.lng]).addTo(map).bindPopup(popupHtml);
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

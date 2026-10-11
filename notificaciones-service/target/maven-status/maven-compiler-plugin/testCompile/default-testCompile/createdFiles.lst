@@ -1,1 +1,3 @@
+com/donatrack/notificaciones/sender/NotificationSendersTest.class
+com/donatrack/notificaciones/consumer/NotificacionesConsumersTest.class
 com/donatrack/notificaciones/sender/NotificationDispatcherTest.class

@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.donatrack.incentivos.service.IncentivosProgresoTest
--------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.381 s -- in com.donatrack.incentivos.service.IncentivosProgresoTest

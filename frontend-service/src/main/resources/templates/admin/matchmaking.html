@@ -5,58 +5,137 @@
 </head>
 <body>
 <div th:fragment="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-brain text-primary me-2"></i>Asignación con Matchmaking Inteligente</h2>
-            <p class="text-secondary">Estrategias de Compatibilidad Semántica (Levenshtein, volumen, urgencia) y Prioridad a Subatendidos.</p>
+            <p class="text-secondary mb-0">Estrategias de Compatibilidad Semántica (Levenshtein, volumen, urgencia) y Prioridad a Subatendidos.</p>
         </div>
-        <a href="/admin" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+        <div class="d-flex gap-2">
+            <form action="/admin/matchmaking/ejecutar" method="post" class="d-inline">
+                <button type="submit" class="btn btn-dt-primary btn-sm">
+                    <i class="fa-solid fa-bolt me-1"></i>Ejecutar Batch Automático
+                </button>
+            </form>
+            <a href="/admin" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+        </div>
     </div>
 
-    <!-- Selección de Donación a Evaluar -->
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i><span th:text="${mensajeExito}">Éxito</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${mensajeError}">Error</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${param.asignada}" class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>Donación asignada correctamente.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- 1. Selección de Donación a Evaluar -->
     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-        <h5 class="fw-bold text-dark mb-3">1. Seleccionar Donación en Depósito</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-dark mb-0">1. Donaciones Pendientes en Depósito</h5>
+            <span class="badge bg-secondary-subtle text-secondary" th:text="${donacionesPendientes.size()} + ' en espera'">0 en espera</span>
+        </div>
+        
         <div class="row g-2">
-            <div th:if="${#lists.isEmpty(donacionesPendientes)}" class="text-muted">
-                No hay donaciones pendientes en depósito para evaluar.
+            <div th:if="${#lists.isEmpty(donacionesPendientes)}" class="col-12">
+                <div class="alert alert-light border text-center py-4 text-muted mb-0">
+                    <i class="fa-solid fa-circle-check text-success fs-3 d-block mb-2"></i>
+                    Todas las donaciones en depósito ya fueron evaluadas y asignadas a entidades beneficiarias.
+                </div>
             </div>
             <div th:each="d : ${donacionesPendientes}" class="col-md-4">
                 <a th:href="@{'/admin/matchmaking?donacionId=' + ${d.id}}"
-                   th:class="'text-decoration-none card p-3 rounded-3 border ' + (${donacionSeleccionada == d.id} ? 'border-primary bg-primary-subtle' : 'bg-light')">
+                   th:class="'text-decoration-none card p-3 rounded-3 border h-100 ' + (${donacionSeleccionada == d.id} ? 'border-primary bg-primary-subtle' : 'bg-light')">
                     <div class="d-flex justify-content-between align-items-center">
-                        <strong class="text-dark" th:text="'Donación #' + ${d.id}">#1</strong>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1"
+                              th:text="${d.id != null ? 'DON-' + #numbers.formatInteger(d.id, 4) : 'DON-0000'}">DON-0001</span>
                         <span class="badge bg-primary" th:text="${d.subcategoria}">Alimentos</span>
                     </div>
-                    <small class="text-secondary mt-1 d-block" th:text="${d.cantidad} + ' ' + ${d.unidadMedida} + ' de ' + ${d.donante != null ? d.donante.nombreCompleto : 'Donante'}">50 kg</small>
+                    <small class="text-secondary mt-2 d-block"
+                           th:text="${d.cantidad} + ' ' + ${d.unidadMedida} + ' &bull; Donante: ' + (${d.donante != null ? d.donante.nombreCompleto : 'Solidario'})">50 kg</small>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Resultados del Matchmaking -->
+    <!-- 2. Resultados del Matchmaking para la Donación Seleccionada -->
     <div th:if="${evaluacion != null}" class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-        <h5 class="fw-bold text-dark mb-3">2. Resultados de Algoritmos (Top 10 y Coincidencias)</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+            <h5 class="fw-bold text-dark mb-0">
+                2. Evaluación de Propuestas para
+                <span class="badge bg-primary-subtle text-primary font-monospace"
+                      th:text="${donacionDetalle != null ? 'DON-' + #numbers.formatInteger(donacionDetalle.id, 4) + ' (' + donacionDetalle.subcategoria + ')' : 'Donación #' + donacionSeleccionada}">DON-0001</span>
+            </h5>
+            <small class="text-muted">Motor algorítmico multicriterio</small>
+        </div>
 
-        <!-- Coincidencias Destacadas -->
+        <!-- Coincidencias Destacadas (Presente en Ambos Algoritmos) -->
         <div class="alert alert-warning rounded-3 border-warning mb-4" th:if="${!#lists.isEmpty(evaluacion.coincidenciasDestacadas)}">
             <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-star text-warning me-2"></i>Recomendación Óptima (Presente en Ambos Algoritmos):</h6>
-            <div th:each="c : ${evaluacion.coincidenciasDestacadas}" class="d-flex justify-content-between align-items-center py-1">
+            <div th:each="c : ${evaluacion.coincidenciasDestacadas}" class="d-flex flex-wrap justify-content-between align-items-center py-2 border-bottom border-warning-subtle">
                 <div>
                     <strong class="text-dark" th:text="${c.nombreEntidad}">Comedor Los Chicos</strong>:
                     <span class="text-muted small" th:text="${c.descripcionNecesidad}">50 kg arroz</span>
                     <span class="badge bg-dark ms-2" th:text="'Score: ' + ${c.score}">0.95</span>
                 </div>
-                <form action="/admin/matchmaking/asignar" method="post">
+                <form action="/admin/matchmaking/asignar" method="post" class="mt-2 mt-md-0">
                     <input type="hidden" name="donacionId" th:value="${donacionSeleccionada}">
                     <input type="hidden" name="entidadId" th:value="${c.idEntidad}">
+                    <input type="hidden" name="necesidadId" th:value="${c.necesidadId}">
                     <button type="submit" class="btn btn-success btn-sm"><i class="fa-solid fa-check me-1"></i>Confirmar Asignación</button>
                 </form>
             </div>
         </div>
 
-        <div class="row g-4">
+        <!-- Cuando no hay coincidencias de necesidades específicas -->
+        <div th:if="${#lists.isEmpty(evaluacion.coincidenciasDestacadas) and #lists.isEmpty(evaluacion.rankingSemanticoTop10) and #lists.isEmpty(evaluacion.rankingSubatendidosTop10)}"
+             class="alert alert-info border-info rounded-3 mb-4 p-3">
+            <h6 class="fw-bold text-dark mb-1"><i class="fa-solid fa-circle-info me-2 text-info"></i>Sin demandas puntuales registradas para esta subcategoría</h6>
+            <p class="small text-secondary mb-3">
+                Ninguna entidad beneficiaria ha cargado una necesidad explícita que coincida con este producto.
+                Puedes asignarla manualmente por equidad a cualquiera de las entidades activas listadas a continuación o permitir que el batch la asigne automáticamente a la entidad más subatendida.
+            </p>
+            
+            <h6 class="fw-bold small text-dark mb-2">Entidades Activas Candidatas:</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0 bg-white rounded border">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Entidad Beneficiaria</th>
+                            <th>Dirección</th>
+                            <th>Donaciones Recibidas (Trimestre)</th>
+                            <th class="text-end">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="ent : ${entidades}">
+                            <td class="fw-semibold text-dark" th:text="${ent.razonSocial}">Comedor Los Chicos</td>
+                            <td class="small text-muted" th:text="${ent.direccion}">Calle Falsa 123</td>
+                            <td><span class="badge bg-light text-dark border" th:text="${ent.donacionesRecibidasTrimestre != null ? ent.donacionesRecibidasTrimestre : 0} + ' recibidas'">0 recibidas</span></td>
+                            <td class="text-end">
+                                <form action="/admin/matchmaking/asignar" method="post" class="d-inline">
+                                    <input type="hidden" name="donacionId" th:value="${donacionSeleccionada}">
+                                    <input type="hidden" name="entidadId" th:value="${ent.id}">
+                                    <button type="submit" class="btn btn-outline-success btn-sm py-1">
+                                        <i class="fa-solid fa-check me-1"></i>Asignar a esta Entidad
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Rankings semántico y subatendidos únicamente cuando NO hay coincidencias destacadas (intersección vacía) -->
+        <div class="row g-4" th:if="${#lists.isEmpty(evaluacion.coincidenciasDestacadas) and (!#lists.isEmpty(evaluacion.rankingSemanticoTop10) or !#lists.isEmpty(evaluacion.rankingSubatendidosTop10))}">
             <!-- Ranking Semántico Top 10 -->
-            <div class="col-md-6">
+            <div class="col-md-6" th:if="${!#lists.isEmpty(evaluacion.rankingSemanticoTop10)}">
                 <div class="border rounded-3 p-3 bg-light h-100">
                     <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-spell-check me-2"></i>Top Semántico (Levenshtein + Cobertura)</h6>
                     <ul class="list-group list-group-flush">
@@ -65,14 +144,22 @@
                                 <div class="fw-semibold text-dark" th:text="${p.nombreEntidad}">Comedor A</div>
                                 <small class="text-muted" th:text="${p.descripcionNecesidad}">Necesidad</small>
                             </div>
-                            <span class="badge bg-primary rounded-pill" th:text="${p.score}">0.92</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary rounded-pill" th:text="${p.score}">0.92</span>
+                                <form action="/admin/matchmaking/asignar" method="post" class="d-inline">
+                                    <input type="hidden" name="donacionId" th:value="${donacionSeleccionada}">
+                                    <input type="hidden" name="entidadId" th:value="${p.idEntidad}">
+                                    <input type="hidden" name="necesidadId" th:value="${p.necesidadId}">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">Asignar</button>
+                                </form>
+                            </div>
                         </li>
                     </ul>
                 </div>
             </div>
 
             <!-- Ranking Subatendidos Top 10 -->
-            <div class="col-md-6">
+            <div class="col-md-6" th:if="${!#lists.isEmpty(evaluacion.rankingSubatendidosTop10)}">
                 <div class="border rounded-3 p-3 bg-light h-100">
                     <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-scale-balanced me-2"></i>Top Subatendidos (Prioridad a menos asistidos)</h6>
                     <ul class="list-group list-group-flush">
@@ -81,11 +168,79 @@
                                 <div class="fw-semibold text-dark" th:text="${p.nombreEntidad}">Comedor B</div>
                                 <small class="text-muted" th:text="${p.descripcionNecesidad}">Necesidad</small>
                             </div>
-                            <span class="badge bg-success rounded-pill" th:text="${p.score}">0.88</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-success rounded-pill" th:text="${p.score}">0.88</span>
+                                <form action="/admin/matchmaking/asignar" method="post" class="d-inline">
+                                    <input type="hidden" name="donacionId" th:value="${donacionSeleccionada}">
+                                    <input type="hidden" name="entidadId" th:value="${p.idEntidad}">
+                                    <input type="hidden" name="necesidadId" th:value="${p.necesidadId}">
+                                    <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2" style="font-size: 0.75rem;">Asignar</button>
+                                </form>
+                            </div>
                         </li>
                     </ul>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- 3. Donaciones Asignadas Recientemente -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="fw-bold text-dark mb-0">3. Donaciones Asignadas Recientemente</h5>
+                <small class="text-muted">Muestra el destino de las donaciones asignadas por el motor de Matchmaking o manualmente</small>
+            </div>
+            <span class="badge bg-success-subtle text-success" th:text="${donacionesAsignadas != null ? donacionesAsignadas.size() : 0} + ' asignadas'">0 asignadas</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Código</th>
+                        <th>Subcategoría</th>
+                        <th>Cantidad</th>
+                        <th>Entidad Asignada</th>
+                        <th>Estado Actual</th>
+                        <th>Fecha Asignación</th>
+                        <th class="text-end">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(donacionesAsignadas)}">
+                        <td colspan="7" class="text-center py-4 text-muted">No hay donaciones en estado de asignación reciente.</td>
+                    </tr>
+                    <tr th:each="a : ${donacionesAsignadas}">
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1"
+                                  th:text="${a.id != null ? 'DON-' + #numbers.formatInteger(a.id, 4) : 'DON-0000'}">DON-0001</span>
+                        </td>
+                        <td class="fw-semibold text-dark" th:text="${a.subcategoria}">Alimentos</td>
+                        <td th:text="${a.cantidad} + ' ' + ${a.unidadMedida}">10.0 kg</td>
+                        <td>
+                            <span class="fw-semibold text-success"
+                                  th:text="${a.entidadAsignada != null ? a.entidadAsignada.razonSocial : 'Sede Central'}">Comedor</span>
+                        </td>
+                        <td>
+                            <span th:class="'badge badge-status status-' + ${a.estado}" th:text="${a.estado}">ASIGNACION_REALIZADA</span>
+                        </td>
+                        <td class="small text-muted"
+                            th:text="${a.fechaActualizacionEstado != null ? #strings.substring(a.fechaActualizacionEstado, 0, 16) : '-'}">2026-10-12</td>
+                        <td class="text-end">
+                            <form th:if="${a.estado == 'ASIGNACION_REALIZADA'}" action="/admin/matchmaking/desasignar" method="post" class="d-inline">
+                                <input type="hidden" name="donacionId" th:value="${a.id}">
+                                <input type="hidden" name="motivo" value="Reingreso manual para reasignar">
+                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 0.75rem;"
+                                        title="Desasignar y regresar a depósito">
+                                    <i class="fa-solid fa-rotate-left me-1"></i>Desasignar
+                                </button>
+                            </form>
+                            <span th:if="${a.estado != 'ASIGNACION_REALIZADA'}" class="badge bg-light text-muted border">En ruta / Final</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

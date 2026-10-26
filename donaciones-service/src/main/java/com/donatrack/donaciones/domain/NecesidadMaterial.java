@@ -2,10 +2,13 @@ package com.donatrack.donaciones.domain;
 
 import com.donatrack.common.enums.TipoNecesidad;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "necesidades_materiales")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class NecesidadMaterial {
 
     @Id
@@ -31,18 +34,30 @@ public class NecesidadMaterial {
     @Column(name = "unidad_medida", nullable = false)
     private String unidadMedida;
 
-    // Solo para necesidades recurrentes: ej. "SEMANAL", "MENSUAL"
+    // Solo para necesidades recurrentes: ej. "SEMANAL", "MENSUAL" (CU-26)
     private String periodo;
+
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean activa = true;
+
+    @Column(name = "fecha_cierre")
+    private LocalDateTime fechaCierre;
+
+    @Column(name = "motivo_cierre", length = 500)
+    private String motivoCierre;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entidad_id", nullable = false)
     @JsonIgnore
     private EntidadBeneficiaria entidadBeneficiaria;
 
-    public NecesidadMaterial() {}
+    public NecesidadMaterial() {
+        this.activa = true;
+    }
 
     public NecesidadMaterial(String subcategoria, String descripcion, TipoNecesidad tipo,
                              double cantidadSolicitada, String unidadMedida, String periodo) {
+        this();
         this.subcategoria = subcategoria;
         this.descripcion = descripcion;
         this.tipo = tipo;
@@ -50,6 +65,7 @@ public class NecesidadMaterial {
         this.unidadMedida = unidadMedida;
         this.periodo = periodo;
         this.cantidadCubierta = 0.0;
+        this.activa = true;
     }
 
     public boolean estaSatisfecha() {
@@ -62,6 +78,38 @@ public class NecesidadMaterial {
 
     public void registrarCobertura(double cantidad) {
         this.cantidadCubierta += cantidad;
+        if (estaSatisfecha()) {
+            this.activa = false;
+            this.fechaCierre = LocalDateTime.now();
+            this.motivoCierre = "Completada y satisfecha en su totalidad";
+        }
+    }
+
+    public void revertirCobertura(double cantidad) {
+        this.cantidadCubierta = Math.max(0.0, this.cantidadCubierta - cantidad);
+        if (!estaSatisfecha() && "Completada y satisfecha en su totalidad".equals(this.motivoCierre)) {
+            this.activa = true;
+            this.fechaCierre = null;
+            this.motivoCierre = null;
+        }
+    }
+
+    public void reiniciarPeriodoRecurrente() {
+        if (this.tipo == TipoNecesidad.RECURRENTE && (this.motivoCierre == null || "Completada y satisfecha en su totalidad".equals(this.motivoCierre))) {
+            this.cantidadCubierta = 0.0;
+            this.activa = true;
+            this.fechaCierre = null;
+            this.motivoCierre = null;
+        }
+    }
+
+    public void cancelar(String motivo) {
+        if (motivo == null || motivo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El motivo de cancelación es obligatorio (CU-29)");
+        }
+        this.activa = false;
+        this.fechaCierre = LocalDateTime.now();
+        this.motivoCierre = motivo;
     }
 
     public Long getId() { return id; }
@@ -87,6 +135,15 @@ public class NecesidadMaterial {
 
     public String getPeriodo() { return periodo; }
     public void setPeriodo(String periodo) { this.periodo = periodo; }
+
+    public boolean isActiva() { return activa; }
+    public void setActiva(boolean activa) { this.activa = activa; }
+
+    public LocalDateTime getFechaCierre() { return fechaCierre; }
+    public void setFechaCierre(LocalDateTime fechaCierre) { this.fechaCierre = fechaCierre; }
+
+    public String getMotivoCierre() { return motivoCierre; }
+    public void setMotivoCierre(String motivoCierre) { this.motivoCierre = motivoCierre; }
 
     public EntidadBeneficiaria getEntidadBeneficiaria() { return entidadBeneficiaria; }
     public void setEntidadBeneficiaria(EntidadBeneficiaria entidadBeneficiaria) { this.entidadBeneficiaria = entidadBeneficiaria; }

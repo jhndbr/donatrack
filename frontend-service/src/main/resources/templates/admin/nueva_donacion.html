@@ -18,14 +18,79 @@
         </div>
     </div>
 
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i><span th:text="${mensajeExito}">Éxito</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${mensajeError}">Error</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3 border-bottom">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0 text-dark">
                         <i class="fa-solid fa-file-circle-plus text-secondary me-2"></i>Formulario de Ingreso de Bienes
                     </h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#collapseNuevoDonante">
+                        <i class="fa-solid fa-user-plus me-1"></i>Dar de Alta Nuevo Donante
+                    </button>
                 </div>
+
+                <!-- Sección colapsable para dar de alta un nuevo donante (Humano o Jurídico) desde Depósito -->
+                <div class="collapse border-bottom bg-light p-4" id="collapseNuevoDonante">
+                    <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-user-plus text-primary me-2"></i>Registrar Nuevo Donante en Depósito</h6>
+                    <form action="/admin/donantes/registrar" method="post" class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Tipo de Donante</label>
+                            <select name="tipoDonante" class="form-select form-select-sm" onchange="alternarCamposDonanteAdmin(this.value)">
+                                <option value="HUMANA" selected>Persona Humana</option>
+                                <option value="JURIDICA">Persona Jurídica / Empresa</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 campo-humana">
+                            <label class="form-label small fw-semibold">Nombre</label>
+                            <input type="text" name="nombre" class="form-control form-control-sm" placeholder="Ej. Laura">
+                        </div>
+                        <div class="col-md-4 campo-humana">
+                            <label class="form-label small fw-semibold">Apellido</label>
+                            <input type="text" name="apellido" class="form-control form-control-sm" placeholder="Ej. Martínez">
+                        </div>
+                        <div class="col-md-4 campo-humana">
+                            <label class="form-label small fw-semibold">DNI</label>
+                            <input type="text" name="dni" class="form-control form-control-sm" placeholder="Ej. 38112233">
+                        </div>
+                        <div class="col-md-4 campo-juridica d-none">
+                            <label class="form-label small fw-semibold">Razón Social</label>
+                            <input type="text" name="razonSocial" class="form-control form-control-sm" placeholder="Ej. Alimentos del Sur S.A.">
+                        </div>
+                        <div class="col-md-4 campo-juridica d-none">
+                            <label class="form-label small fw-semibold">CUIT</label>
+                            <input type="text" name="cuit" class="form-control form-control-sm" placeholder="Ej. 30-12345678-9">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control form-control-sm" placeholder="contacto@ejemplo.com" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Teléfono</label>
+                            <input type="text" name="telefono" class="form-control form-control-sm" placeholder="+54 11 4444-5555">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">Dirección</label>
+                            <input type="text" name="direccion" class="form-control form-control-sm" placeholder="Av. Medrano 951, CABA">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-sm btn-success w-100">
+                                <i class="fa-solid fa-check me-1"></i>Guardar Donante
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
                 <div class="card-body p-4">
                     <form th:action="@{/admin/donaciones/nueva}" method="post">
                         <!-- Donante selector -->
@@ -35,83 +100,100 @@
                                 <option value="" disabled selected>-- Seleccione el Donante Registrado --</option>
                                 <option th:each="d : ${donantes}" 
                                         th:value="${d.id}" 
-                                        th:text="${d.nombre + ' ' + (d.apellido != null ? d.apellido : '') + ' (' + d.email + ')'}">
+                                        th:text="${(d['nombreCompleto'] != null ? d['nombreCompleto'] : (d['razonSocial'] != null ? d['razonSocial'] : 'Donante #' + d['id'])) + ' (' + (d['emailPrincipal'] != null ? d['emailPrincipal'] : 'sin email') + ')'}">
                                     Juan Pérez (juan@example.com)
                                 </option>
                             </select>
-                            <div class="form-text">Si el donante no existe, impórtelo vía CSV o regístrelo en el sistema.</div>
+                            <div class="form-text">Si el donante no existe, impórtelo vía CSV o regístrelo con el botón superior.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción General del Lote / Remito <small class="text-muted fw-normal">(Opcional)</small></label>
+                            <input type="text" name="descripcionGeneral" class="form-control" placeholder="Ej. Donación recibida en puerta de depósito central">
                         </div>
 
                         <hr class="my-4">
 
-                        <h6 class="fw-bold text-primary mb-3">
-                            <i class="fa-solid fa-tags me-1"></i>Detalle del Bien a Segmentar
-                        </h6>
-
-                        <!-- Nombre del bien -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Descripción del Bien <span class="text-danger">*</span></label>
-                            <input type="text" name="nombreBien" class="form-control" placeholder="Ej. Leche Larga Vida, Zapatillas Talle 40, Fideos" required>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-primary mb-0">
+                                <i class="fa-solid fa-tags me-1"></i>Detalle de Bienes a Segmentar
+                            </h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="agregarOtroBienCarga()">
+                                <i class="fa-solid fa-plus me-1"></i>Agregar otro bien a la carga
+                            </button>
                         </div>
 
-                        <div class="row">
-                            <!-- Subcategoría (Criterio clave del modelo de dominio) -->
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Subcategoría (Unidad de Asignación) <span class="text-danger">*</span></label>
-                                <select name="subcategoria" class="form-select" required>
-                                    <option value="" disabled selected>-- Elija Subcategoría --</option>
-                                    <optgroup label="Alimentos">
-                                        <option value="ALIMENTOS_NO_PERECEDEROS">Alimentos No Perecederos</option>
-                                        <option value="LACTEOS">Lácteos y Derivados</option>
-                                        <option value="FRESCOS">Frutas, Verduras y Frescos</option>
-                                    </optgroup>
-                                    <optgroup label="Indumentaria y Calzado">
-                                        <option value="ROPA_ABRIGO">Ropa de Invierno y Abrigo</option>
-                                        <option value="CALZADO">Calzado (Zapatillas/Botas)</option>
-                                        <option value="ROPA_GENERAL">Ropa General / Diaria</option>
-                                    </optgroup>
-                                    <optgroup label="Higiene y Salud">
-                                        <option value="ARTICULOS_HIGIENE">Artículos de Higiene Personal</option>
-                                        <option value="LIMPIEZA">Artículos de Limpieza Institucional</option>
-                                        <option value="PRIMEROS_AUXILIOS">Botiquín y Primeros Auxilios</option>
-                                    </optgroup>
-                                    <optgroup label="Equipamiento y Otros">
-                                        <option value="UTILES_ESCOLARES">Útiles y Material Didáctico</option>
-                                        <option value="MOBILIARIO">Mobiliario y Enseres</option>
-                                        <option value="JUGUETES">Juguetes y Recreación</option>
-                                    </optgroup>
-                                </select>
-                                <div class="form-text">El algoritmo de matchmaking agrupa y asigna las donaciones por subcategoría.</div>
-                            </div>
+                        <div id="contenedorBienesCarga">
+                            <div class="item-bien-carga border rounded-3 p-3 bg-light mb-3">
+                                <!-- Nombre del bien -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Descripción del Bien <span class="text-danger">*</span></label>
+                                    <input type="text" name="nombreBien" class="form-control" placeholder="Ej. Leche Larga Vida, Zapatillas Talle 40, Fideos" required>
+                                </div>
 
-                            <!-- Cantidad -->
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">Cantidad <span class="text-danger">*</span></label>
-                                <input type="number" step="0.1" min="0.1" name="cantidad" class="form-control" placeholder="Ej. 50" required>
-                            </div>
+                                <div class="row">
+                                    <!-- Subcategoría (Criterio clave del modelo de dominio) -->
+                                    <div class="col-md-5 mb-3">
+                                        <label class="form-label fw-bold">Subcategoría (Unidad de Asignación) <span class="text-danger">*</span></label>
+                                        <select name="subcategoria" class="form-select" required>
+                                            <option value="" disabled selected>-- Elija Subcategoría --</option>
+                                            <optgroup label="Alimentos">
+                                                <option value="ALIMENTOS_NO_PERECEDEROS">Alimentos No Perecederos</option>
+                                                <option value="LACTEOS">Lácteos y Derivados</option>
+                                                <option value="FRESCOS">Frutas, Verduras y Frescos</option>
+                                            </optgroup>
+                                            <optgroup label="Indumentaria y Calzado">
+                                                <option value="ROPA_ABRIGO">Ropa de Invierno y Abrigo</option>
+                                                <option value="CALZADO">Calzado (Zapatillas/Botas)</option>
+                                                <option value="ROPA_GENERAL">Ropa General / Diaria</option>
+                                            </optgroup>
+                                            <optgroup label="Higiene y Salud">
+                                                <option value="ARTICULOS_HIGIENE">Artículos de Higiene Personal</option>
+                                                <option value="LIMPIEZA">Artículos de Limpieza Institucional</option>
+                                                <option value="PRIMEROS_AUXILIOS">Botiquín y Primeros Auxilios</option>
+                                            </optgroup>
+                                            <optgroup label="Equipamiento y Otros">
+                                                <option value="UTILES_ESCOLARES">Útiles y Material Didáctico</option>
+                                                <option value="MOBILIARIO">Mobiliario y Enseres</option>
+                                                <option value="JUGUETES">Juguetes y Recreación</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
 
-                            <!-- Unidad de Medida -->
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">Unidad <span class="text-danger">*</span></label>
-                                <select name="unidadMedida" class="form-select" required>
-                                    <option value="UNIDADES">Unidades</option>
-                                    <option value="KG">Kilogramos (kg)</option>
-                                    <option value="LITROS">Litros (L)</option>
-                                    <option value="CAJAS">Cajas</option>
-                                    <option value="BULTOS">Bultos</option>
-                                </select>
+                                    <!-- Cantidad -->
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label fw-bold">Cantidad <span class="text-danger">*</span></label>
+                                        <input type="number" step="0.1" min="0.1" name="cantidad" class="form-control" placeholder="50" required>
+                                    </div>
+
+                                    <!-- Unidad de Medida -->
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label fw-bold">Unidad <span class="text-danger">*</span></label>
+                                        <select name="unidadMedida" class="form-select" required>
+                                            <option value="UNIDADES">Unidades</option>
+                                            <option value="KG">Kilogramos (kg)</option>
+                                            <option value="LITROS">Litros (L)</option>
+                                            <option value="CAJAS">Cajas</option>
+                                            <option value="BULTOS">Bultos</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Fecha de Vencimiento -->
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label fw-bold">Vencimiento</label>
+                                        <input type="date" name="fechaVencimiento" class="form-control">
+                                    </div>
+                                </div>
+
+                                <!-- Estado Usado/Nuevo -->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="esUsado" name="esUsado" value="true">
+                                    <label class="form-check-label fw-semibold" for="esUsado">El bien es usado (en buenas condiciones de uso)</label>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Estado Usado/Nuevo -->
-                        <div class="mb-4">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="esUsado" name="esUsado" value="true">
-                                <label class="form-check-label fw-semibold" for="esUsado">El bien es usado (en buenas condiciones de uso)</label>
-                            </div>
-                        </div>
-
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a th:href="@{/admin}" class="btn btn-outline-secondary me-md-2">Cancelar</a>
                             <button type="submit" class="btn btn-dt-primary px-4">
                                 <i class="fa-solid fa-check me-1"></i> Registrar en Depósito
@@ -122,6 +204,29 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function alternarCamposDonanteAdmin(tipo) {
+            document.querySelectorAll('.campo-humana').forEach(function(el) {
+                el.classList.toggle('d-none', tipo === 'JURIDICA');
+            });
+            document.querySelectorAll('.campo-juridica').forEach(function(el) {
+                el.classList.toggle('d-none', tipo !== 'JURIDICA');
+            });
+        }
+
+        function agregarOtroBienCarga() {
+            var contenedor = document.getElementById('contenedorBienesCarga');
+            var original = contenedor.querySelector('.item-bien-carga');
+            if (!original) return;
+            var clon = original.cloneNode(true);
+            clon.querySelectorAll('input').forEach(function(inp) {
+                if (inp.type === 'checkbox') inp.checked = false;
+                else inp.value = '';
+            });
+            contenedor.appendChild(clon);
+        }
+    </script>
 </div>
 </body>
 </html>

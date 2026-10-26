@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Notificaciones y Comunicaciones - Entidad Beneficiaria</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill mb-1">
+                <i class="fa-solid fa-bell me-1"></i> Comunicaciones y Auditoría
+            </span>
+            <h2 class="fw-bold text-dark mb-0">Centro de Notificaciones y Avisos</h2>
+            <p class="text-secondary">Historial de alertas por asignación de recursos, despacho logístico y trazabilidad de donaciones.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/buzon" class="btn btn-dt-primary btn-sm">
+                <i class="fa-solid fa-inbox me-1"></i> Ver en Buzón de Correos
+            </a>
+            <a href="http://localhost:8025" target="_blank" class="btn btn-outline-secondary btn-sm" title="Mailpit nativo en puerto 8025">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Mailpit (:8025)
+            </a>
+            <a th:href="@{/beneficiaria(entidadId=${entidadId})}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Volver al Portal
+            </a>
+        </div>
+    </div>
+
+    <!-- Selector de Entidad para Administradores -->
+    <div th:if="${session.userSession != null and session.userSession.isAdmin()}" class="alert alert-light border rounded-3 mb-4 p-3 shadow-sm">
+        <label class="form-label fw-bold text-dark mb-1"><i class="fa-solid fa-building-user me-1 text-primary"></i> Cambiar Entidad a Gestionar (Modo Administrador)</label>
+        <select class="form-select form-select-sm" onchange="window.location.href='/beneficiaria/notificaciones?entidadId=' + this.value">
+            <option th:each="ent : ${entidades}"
+                    th:value="${ent.id}"
+                    th:selected="${ent.id == entidadId}"
+                    th:text="${ent.razonSocial + ' (ID #' + ent.id + ')'}">Comedor Los Chicos Felices</option>
+        </select>
+    </div>
+
+    <!-- Información de Correo / Notificaciones -->
+    <div class="alert alert-info border-0 rounded-4 shadow-sm p-4 mb-4 bg-white">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                <i class="fa-solid fa-inbox fs-3"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold text-dark mb-1">Bandeja de Entrada de Comunicaciones</h5>
+                <p class="text-muted small mb-0">
+                    Las notificaciones son emitidas de forma asíncrona mediante <strong>RabbitMQ</strong> hacia el servicio de notificaciones y despachadas por <strong>SMTP (Mailpit)</strong> y canales configurados.
+                    <span th:if="${emailEntidad != null and !emailEntidad.isBlank()}">
+                        Destinatario registrado: <strong class="text-dark" th:text="${emailEntidad}">entidad@comedor.org</strong>.
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Notificaciones -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>Historial de Eventos Notificados</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha / Hora</th>
+                        <th>Canal</th>
+                        <th>Destinatario</th>
+                        <th>Asunto / Evento</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(notificaciones)}">
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="fa-regular fa-bell-slash fs-4 d-block mb-2 text-secondary"></i>
+                            No hay notificaciones registradas para esta entidad en este momento.
+                        </td>
+                    </tr>
+                    <tr th:each="n : ${notificaciones}">
+                        <td class="small font-monospace text-muted" th:text="${n['timestamp'] != null ? (#strings.length(n['timestamp'].toString()) >= 19 ? #strings.substring(n['timestamp'].toString(), 0, 19).replace('T', ' ') : n['timestamp']) : 'Reciente'}">2026-10-13 20:00</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                <i th:class="${n['canal'] == 'EMAIL' ? 'fa-solid fa-envelope text-primary me-1' : 'fa-solid fa-mobile-screen-button text-success me-1'}"></i>
+                                <span th:text="${n['canal']}">EMAIL</span>
+                            </span>
+                        </td>
+                        <td class="small text-dark" th:text="${n['destinatario']}">correo@ejemplo.com</td>
+                        <td>
+                            <strong class="text-dark d-block" th:text="${n['asunto']}">Asunto de la notificación</strong>
+                            <small class="text-muted font-monospace" th:text="${n['claveEvento']}">notif-evento</small>
+                        </td>
+                        <td>
+                            <span th:class="'badge ' + (${n['estado'] == 'ENVIADO'} ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')"
+                                  th:text="${n['estado']}">ENVIADO</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'api-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['api-gateway:8080', 'host.docker.internal:8080']
+        labels:
+          application: 'api-gateway'
+
+  - job_name: 'donaciones-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['donaciones-service:8082', 'host.docker.internal:8082']
+        labels:
+          application: 'donaciones-service'
+
+  - job_name: 'logistica-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['logistica-service:8083', 'host.docker.internal:8083']
+        labels:
+          application: 'logistica-service'
+
+  - job_name: 'incentivos-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['incentivos-service:8084', 'host.docker.internal:8084']
+        labels:
+          application: 'incentivos-service'
+
+  - job_name: 'notificaciones-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['notificaciones-service:8085', 'host.docker.internal:8085']
+        labels:
+          application: 'notificaciones-service'
+
+  - job_name: 'frontend-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['frontend-service:8086', 'host.docker.internal:8086']
+        labels:
+          application: 'frontend-service'

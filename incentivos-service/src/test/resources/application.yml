@@ -1,0 +1,31 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: incentivos-service-test
+  datasource:
+    url: jdbc:h2:mem:incentivos_test_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ''
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+donatrack:
+  rabbitmq:
+    exchange: "donatrack.events.exchange"
+    routing-key:
+      mision-cumplida: "mision.cumplida"
+      categoria-ascendida: "categoria.ascendida"
+    queues:
+      incentivos-donaciones: "q.incentivos.donaciones"
+      incentivos-entregas: "q.incentivos.entregas"
+      incentivos-donaciones-registradas: "q.incentivos.donaciones-registradas"
+  integraciones:
+    n8n-webhook-url: "http://localhost:5678/webhook/insignias"

@@ -61,4 +61,27 @@ public class IncentivosSchedulerTest {
         assertEquals(2, guardados.get(1).getPosicion());
         assertEquals(1, guardados.get(1).getMisionesCompletadasMes());
     }
+
+    @Test
+    void testVerificarYResetearRachasMensualesReseteaPerfil() {
+        PerfilDonanteIncentivo p1 = new PerfilDonanteIncentivo(1L, "Donante 1", "d1@mail.com");
+        p1.setRachaMesesConsecutivos(4);
+        p1.setUltimaDonacionFecha(java.time.LocalDate.now().minusDays(45));
+
+        com.donatrack.incentivos.domain.Mision misionRacha = new com.donatrack.incentivos.domain.Mision(
+                "Racha", "Desc", com.donatrack.incentivos.domain.Mision.TipoMision.RACHA,
+                com.donatrack.common.enums.CategoriaDonante.COLABORADOR, 3.0, 1, "Badge");
+        ProgresoMision prog = new ProgresoMision(1L, misionRacha);
+        prog.setProgresoActual(2.0);
+
+        when(progresoRepository.findAll()).thenReturn(List.of(prog));
+        when(perfilRepository.findByIdDonante(1L)).thenReturn(java.util.Optional.of(p1));
+
+        scheduler.verificarYResetearRachasMensuales();
+
+        assertEquals(0.0, prog.getProgresoActual());
+        assertEquals(0, p1.getRachaMesesConsecutivos());
+        verify(progresoRepository, times(1)).save(prog);
+        verify(perfilRepository, times(1)).save(p1);
+    }
 }

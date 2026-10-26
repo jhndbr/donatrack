@@ -1,6 +1,7 @@
 package com.donatrack.incentivos.scheduler;
 
 import com.donatrack.incentivos.domain.PerfilDonanteIncentivo;
+import com.donatrack.incentivos.domain.ProgresoMision;
 import com.donatrack.incentivos.domain.RankingMensual;
 import com.donatrack.incentivos.repository.PerfilDonanteIncentivoRepository;
 import com.donatrack.incentivos.repository.ProgresoMisionRepository;
@@ -42,10 +43,15 @@ public class IncentivosScheduler {
     public void ejecutarCalculoRankingMensual() {
         LocalDate hoy = LocalDate.now();
         LocalDate mesAnterior = hoy.minusMonths(1);
-        int anio = mesAnterior.getYear();
-        int mes = mesAnterior.getMonthValue();
+        calcularRankingParaMes(mesAnterior.getYear(), mesAnterior.getMonthValue());
+    }
 
+    @Transactional
+    public List<RankingMensual> calcularRankingParaMes(int anio, int mes) {
         log.info("Iniciando calculo del ranking mensual de donantes activos para {}/{}", mes, anio);
+
+        // Limpiar cálculos previos para idempotencia del cierre mensual
+        rankingRepository.deleteByAnioAndMes(anio, mes);
 
         List<PerfilDonanteIncentivo> perfiles = perfilRepository.findAll();
 
@@ -53,12 +59,20 @@ public class IncentivosScheduler {
 
         List<DonanteMisiones> ranking = perfiles.stream()
                 .map(p -> {
-                    int misionesCompletadas = progresoRepository.findByIdDonanteAndCompletadaTrue(p.getIdDonante()).size();
+                    List<ProgresoMision> todas = progresoRepository.findByIdDonanteAndCompletadaTrue(p.getIdDonante());
+                    long filtradas = todas.stream()
+                            .filter(pm -> pm.getFechaCompletada() != null
+                                    && pm.getFechaCompletada().getYear() == anio
+                                    && pm.getFechaCompletada().getMonthValue() == mes)
+                            .count();
+                    boolean hayFechasDefinidas = todas.stream().anyMatch(pm -> pm.getFechaCompletada() != null);
+                    int misionesCompletadas = hayFechasDefinidas ? (int) filtradas : todas.size();
                     return new DonanteMisiones(p, misionesCompletadas);
                 })
                 .sorted(Comparator.comparingInt(DonanteMisiones::totalMisiones).reversed())
                 .toList();
 
+        List<RankingMensual> resultados = new java.util.ArrayList<>();
         int pos = 1;
         for (DonanteMisiones dm : ranking) {
             RankingMensual rm = new RankingMensual(
@@ -69,9 +83,36 @@ public class IncentivosScheduler {
                     dm.perfil().getNombre(),
                     dm.totalMisiones()
             );
-            rankingRepository.save(rm);
+            resultados.add(rankingRepository.save(rm));
         }
 
         log.info("Finalizado calculo de ranking mensual para {}/{} con {} participantes", mes, anio, ranking.size());
+        return resultados;
+    }
+
+    /**
+     * Control de racha mensual (CU-49 / CU-54):
+     * Si un donante pasa un mes sin colaborar, su progreso en misiones de racha se reinicia a 0.
+     */
+    @Scheduled(cron = "${donatrack.cron.control-racha:0 0 1 1 * ?}")
+    @Transactional
+    public void verificarYResetearRachasMensuales() {
+        log.info("Iniciando control mensual de racha para donantes...");
+        List<ProgresoMision> progresosRacha = progresoRepository.findAll().stream()
+                .filter(p -> !p.isCompletada() && p.getMision().getTipo() == com.donatrack.incentivos.domain.Mision.TipoMision.RACHA)
+                .toList();
+
+        for (ProgresoMision p : progresosRacha) {
+            PerfilDonanteIncentivo perfil = perfilRepository.findByIdDonante(p.getIdDonante()).orElse(null);
+            if (perfil != null) {
+                if (perfil.getUltimaDonacionFecha() == null || perfil.getUltimaDonacionFecha().isBefore(LocalDate.now().minusDays(30))) {
+                    p.resetearProgreso();
+                    progresoRepository.save(p);
+                    perfil.setRachaMesesConsecutivos(0);
+                    perfilRepository.save(perfil);
+                    log.info("Racha reiniciada a 0 para donante id={} por inactividad mensual.", perfil.getIdDonante());
+                }
+            }
+        }
     }
 }

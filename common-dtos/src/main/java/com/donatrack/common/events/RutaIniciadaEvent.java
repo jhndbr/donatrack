@@ -1,9 +1,10 @@
 package com.donatrack.common.events;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class RutaIniciadaEvent {
+public class RutaIniciadaEvent implements Serializable {
     private String idRuta;
     private String patenteCamion;
     private List<Long> idsDonaciones;

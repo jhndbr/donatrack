@@ -14,12 +14,19 @@ public class PersonaHumana extends PersonaDonante {
 
     private Integer edad;
 
+    @Column(name = "tipo_documento")
+    private String tipoDocumento = "DNI";
+
     @Column(name = "nro_documento", nullable = false, unique = true)
     private String nroDocumento;
 
     private String genero;
 
     private String direccion;
+
+    private Double latitud;
+
+    private Double longitud;
 
     public PersonaHumana() {
         super();
@@ -63,6 +70,9 @@ public class PersonaHumana extends PersonaDonante {
     public Integer getEdad() { return edad; }
     public void setEdad(Integer edad) { this.edad = edad; }
 
+    public String getTipoDocumento() { return tipoDocumento; }
+    public void setTipoDocumento(String tipoDocumento) { this.tipoDocumento = tipoDocumento; }
+
     public String getNroDocumento() { return nroDocumento; }
     public void setNroDocumento(String nroDocumento) { this.nroDocumento = nroDocumento; }
 
@@ -71,4 +81,10 @@ public class PersonaHumana extends PersonaDonante {
 
     public String getDireccion() { return direccion; }
     public void setDireccion(String direccion) { this.direccion = direccion; }
+
+    public Double getLatitud() { return latitud; }
+    public void setLatitud(Double latitud) { this.latitud = latitud; }
+
+    public Double getLongitud() { return longitud; }
+    public void setLongitud(Double longitud) { this.longitud = longitud; }
 }

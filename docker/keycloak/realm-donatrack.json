@@ -1,0 +1,126 @@
+{
+  "realm": "donatrack",
+  "enabled": true,
+  "displayName": "DonaTrack Solidario",
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "ROLE_ADMIN",
+        "description": "Administrador del Sistema DonaTrack"
+      },
+      {
+        "name": "ROLE_DONANTE",
+        "description": "Donante particular o corporativo"
+      },
+      {
+        "name": "ROLE_BENEFICIARIA",
+        "description": "Entidad receptora o comedor comunitario"
+      },
+      {
+        "name": "ROLE_CHOFER",
+        "description": "Operador de logística y chofer de flota"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "donatrack-client",
+      "name": "DonaTrack Web & Gateway",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://localhost:8086/*",
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "roles",
+        "profile",
+        "email"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@donatrack.org",
+      "firstName": "Administrador",
+      "lastName": "Central",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ROLE_ADMIN"
+      ]
+    },
+    {
+      "username": "juan.donante@example.com",
+      "enabled": true,
+      "email": "juan.donante@example.com",
+      "firstName": "Juan",
+      "lastName": "Pérez",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "donante123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ROLE_DONANTE"
+      ]
+    },
+    {
+      "username": "esperanza@comedor.org",
+      "enabled": true,
+      "email": "esperanza@comedor.org",
+      "firstName": "Comedor",
+      "lastName": "Esperanza",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "comedor123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ROLE_BENEFICIARIA"
+      ]
+    },
+    {
+      "username": "chofer",
+      "enabled": true,
+      "email": "chofer@donatrack.org",
+      "firstName": "Chofer",
+      "lastName": "Flota",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "chofer123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ROLE_CHOFER"
+      ]
+    }
+  ]
+}

@@ -1,31 +1,62 @@
 package com.donatrack.common.events;
 
+import com.donatrack.common.enums.CanalNotificacion;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class EntregaFallidaEvent {
+public class EntregaFallidaEvent implements Serializable {
     private String idEntrega;
     private Long idDonacion;
+    private Long idDonante;
     private Long idEntidadBeneficiaria;
     private String motivoFalla;
     private boolean replanificable;
     private String emailDonante;
     private String emailEntidad;
+    private CanalNotificacion canalPreferidoDonante;
+    private String contactoPreferidoDonante;
     private LocalDateTime timestamp;
 
     public EntregaFallidaEvent() {
         this.timestamp = LocalDateTime.now();
+        this.canalPreferidoDonante = CanalNotificacion.EMAIL;
     }
 
     public EntregaFallidaEvent(String idEntrega, Long idDonacion, Long idEntidadBeneficiaria,
                                String motivoFalla, boolean replanificable,
                                String emailDonante, String emailEntidad) {
+        this(idEntrega, idDonacion, null, idEntidadBeneficiaria, motivoFalla, replanificable, emailDonante, emailEntidad);
+    }
+
+    public EntregaFallidaEvent(String idEntrega, Long idDonacion, Long idDonante, Long idEntidadBeneficiaria,
+                               String motivoFalla, boolean replanificable,
+                               String emailDonante, String emailEntidad) {
+        this(idEntrega, idDonacion, idDonante, idEntidadBeneficiaria, motivoFalla, replanificable,
+             emailDonante, emailEntidad, CanalNotificacion.EMAIL, emailDonante);
+    }
+
+    public EntregaFallidaEvent(String idEntrega, Long idDonacion, Long idEntidadBeneficiaria,
+                               String motivoFalla, boolean replanificable,
+                               String emailDonante, String emailEntidad,
+                               CanalNotificacion canalPreferidoDonante, String contactoPreferidoDonante) {
+        this(idEntrega, idDonacion, null, idEntidadBeneficiaria, motivoFalla, replanificable,
+             emailDonante, emailEntidad, canalPreferidoDonante, contactoPreferidoDonante);
+    }
+
+    public EntregaFallidaEvent(String idEntrega, Long idDonacion, Long idDonante, Long idEntidadBeneficiaria,
+                               String motivoFalla, boolean replanificable,
+                               String emailDonante, String emailEntidad,
+                               CanalNotificacion canalPreferidoDonante, String contactoPreferidoDonante) {
         this.idEntrega = idEntrega;
         this.idDonacion = idDonacion;
+        this.idDonante = idDonante;
         this.idEntidadBeneficiaria = idEntidadBeneficiaria;
         this.motivoFalla = motivoFalla;
         this.replanificable = replanificable;
         this.emailDonante = emailDonante;
         this.emailEntidad = emailEntidad;
+        this.canalPreferidoDonante = canalPreferidoDonante != null ? canalPreferidoDonante : CanalNotificacion.EMAIL;
+        this.contactoPreferidoDonante = (contactoPreferidoDonante != null && !contactoPreferidoDonante.isBlank()) ? contactoPreferidoDonante : emailDonante;
         this.timestamp = LocalDateTime.now();
     }
 
@@ -34,6 +65,9 @@ public class EntregaFallidaEvent {
 
     public Long getIdDonacion() { return idDonacion; }
     public void setIdDonacion(Long idDonacion) { this.idDonacion = idDonacion; }
+
+    public Long getIdDonante() { return idDonante; }
+    public void setIdDonante(Long idDonante) { this.idDonante = idDonante; }
 
     public Long getIdEntidadBeneficiaria() { return idEntidadBeneficiaria; }
     public void setIdEntidadBeneficiaria(Long idEntidadBeneficiaria) { this.idEntidadBeneficiaria = idEntidadBeneficiaria; }
@@ -49,6 +83,12 @@ public class EntregaFallidaEvent {
 
     public String getEmailEntidad() { return emailEntidad; }
     public void setEmailEntidad(String emailEntidad) { this.emailEntidad = emailEntidad; }
+
+    public CanalNotificacion getCanalPreferidoDonante() { return canalPreferidoDonante; }
+    public void setCanalPreferidoDonante(CanalNotificacion canalPreferidoDonante) { this.canalPreferidoDonante = canalPreferidoDonante; }
+
+    public String getContactoPreferidoDonante() { return contactoPreferidoDonante; }
+    public void setContactoPreferidoDonante(String contactoPreferidoDonante) { this.contactoPreferidoDonante = contactoPreferidoDonante; }
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }

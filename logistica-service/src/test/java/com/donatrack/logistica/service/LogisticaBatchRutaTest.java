@@ -2,18 +2,26 @@ package com.donatrack.logistica.service;
 
 import com.donatrack.common.events.EntregaConfirmadaEvent;
 import com.donatrack.common.events.EntregaFallidaEvent;
+import com.donatrack.common.events.RutaIniciadaEvent;
+import com.donatrack.logistica.client.DonacionesServiceClient;
+import com.donatrack.logistica.client.MockVrpOptimizerClient;
+import com.donatrack.logistica.client.RutaOptimizerClient;
 import com.donatrack.logistica.domain.*;
+import com.donatrack.logistica.dto.ConfirmarEntregaRequestDto;
+import com.donatrack.logistica.dto.EntregaFallidaRequestDto;
 import com.donatrack.logistica.dto.PlanificadorCallbackDto;
+import com.donatrack.logistica.dto.TelemetriaRequestDto;
+import com.donatrack.logistica.exception.ResourceNotFoundException;
+import com.donatrack.logistica.publisher.LogisticaEventPublisher;
 import com.donatrack.logistica.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,7 +29,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,21 +47,48 @@ public class LogisticaBatchRutaTest {
     private UbicacionGPSRepository gpsRepository;
 
     @Mock
-    private RabbitTemplate rabbitTemplate;
+    private DonacionPendienteLoteRepository pendienteLoteRepository;
 
-    @InjectMocks
+    @Mock
+    private DonacionesServiceClient donacionesServiceClient;
+
+    @Mock
+    private LogisticaEventPublisher eventPublisher;
+
+    private FlotaService flotaService;
+    private PlanificacionRutasService planificacionService;
+    private RecorridoService recorridoService;
+    private EntregaService entregaService;
+    private TelemetriaService telemetriaService;
     private LogisticaService logisticaService;
 
     private Camion camion;
 
     @BeforeEach
     void setUp() {
+        flotaService = new FlotaServiceImpl(camionRepository, rutaRepository);
+        RutaOptimizerClient optimizerClient = new MockVrpOptimizerClient();
+        planificacionService = new PlanificacionRutasServiceImpl(
+                flotaService, optimizerClient, donacionesServiceClient,
+                rutaRepository, entregaRepository, pendienteLoteRepository
+        );
+        recorridoService = new RecorridoServiceImpl(
+                rutaRepository, entregaRepository, donacionesServiceClient, eventPublisher
+        );
+        entregaService = new EntregaServiceImpl(
+                entregaRepository, donacionesServiceClient, eventPublisher
+        );
+        telemetriaService = new TelemetriaServiceImpl(
+                camionRepository, gpsRepository, rutaRepository
+        );
+        logisticaService = new LogisticaService(
+                planificacionService, recorridoService, entregaService, telemetriaService
+        );
+
         camion = new Camion("AE789XY", 20.0, 3.0, 3500.0);
         camion.setId("CAMION-01");
-        org.springframework.test.util.ReflectionTestUtils.setField(logisticaService, "exchange", "donatrack.events.exchange");
-        org.springframework.test.util.ReflectionTestUtils.setField(logisticaService, "routingKeyRutaIniciada", "ruta.iniciada");
-        org.springframework.test.util.ReflectionTestUtils.setField(logisticaService, "routingKeyEntregaConfirmada", "entrega.confirmada");
-        org.springframework.test.util.ReflectionTestUtils.setField(logisticaService, "routingKeyEntregaFallida", "entrega.fallida");
+        lenient().when(rutaRepository.save(any(Ruta.class))).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(rutaRepository.findByLoteId(anyString())).thenReturn(Collections.emptyList());
     }
 
     @Test
@@ -69,7 +103,7 @@ public class LogisticaBatchRutaTest {
 
         List<PlanificadorCallbackDto> lotes = logisticaService.planificarLotes(donaciones250, "CAMION-01");
 
-        // Debe haber generado 3 lotes: 100, 100 y 50
+        // Debe haber generado 3 lotes: 100, 100 y 50 (restricción estricta <= 100)
         assertEquals(3, lotes.size());
         assertEquals(100, lotes.get(0).getRutasGeneradas().get(0).getParadas().size());
         assertEquals(100, lotes.get(1).getRutasGeneradas().get(0).getParadas().size());
@@ -101,14 +135,14 @@ public class LogisticaBatchRutaTest {
 
         assertEquals(Ruta.EstadoRuta.EN_CURSO, iniciada.getEstado());
         assertEquals(Entrega.EstadoEntrega.EN_TRASLADO, entrega.getEstado());
-        verify(rabbitTemplate, times(1)).convertAndSend(eq("donatrack.events.exchange"), eq("ruta.iniciada"), any(Object.class));
+        verify(eventPublisher, times(1)).publicarRutaIniciada(any(RutaIniciadaEvent.class));
     }
 
     @Test
     void testIniciarRutaInexistenteLanzaExcepcion() {
         when(rutaRepository.findById("RUTA-999")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> logisticaService.iniciarRuta("RUTA-999"));
+        assertThrows(ResourceNotFoundException.class, () -> logisticaService.iniciarRuta("RUTA-999"));
     }
 
     @Test
@@ -127,18 +161,29 @@ public class LogisticaBatchRutaTest {
         assertNotNull(confirmada.getFechaActualizacion());
 
         ArgumentCaptor<EntregaConfirmadaEvent> captor = ArgumentCaptor.forClass(EntregaConfirmadaEvent.class);
-        verify(rabbitTemplate, times(1)).convertAndSend(eq("donatrack.events.exchange"), eq("entrega.confirmada"), captor.capture());
+        verify(eventPublisher, times(1)).publicarEntregaConfirmada(captor.capture());
         EntregaConfirmadaEvent evento = captor.getValue();
         assertEquals(101L, evento.getIdDonacion());
         assertEquals("donante@mail.com", evento.getEmailDonante());
     }
 
     @Test
+    void testConfirmarEntregaSinFotosLanzaExcepcion() {
+        Entrega entrega = new Entrega("RUTA-01", 101L, 1L, "Comedor", "entidad@mail.com", 50L, "donante@mail.com", "AE789XY");
+        entrega.setId("ENTREGA-01");
+        when(entregaRepository.findById("ENTREGA-01")).thenReturn(Optional.of(entrega));
+
+        assertThrows(IllegalArgumentException.class, () ->
+                logisticaService.confirmarEntrega("ENTREGA-01", List.of())
+        );
+    }
+
+    @Test
     void testConfirmarEntregaInexistenteLanzaExcepcion() {
         when(entregaRepository.findById("ENTREGA-999")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () ->
-                logisticaService.confirmarEntrega("ENTREGA-999", List.of())
+        assertThrows(ResourceNotFoundException.class, () ->
+                logisticaService.confirmarEntrega("ENTREGA-999", List.of("http://foto.jpg"))
         );
     }
 
@@ -156,15 +201,27 @@ public class LogisticaBatchRutaTest {
         assertEquals("Comedor cerrado por reformas", fallida.getMotivoFalla());
 
         ArgumentCaptor<EntregaFallidaEvent> captor = ArgumentCaptor.forClass(EntregaFallidaEvent.class);
-        verify(rabbitTemplate, times(1)).convertAndSend(eq("donatrack.events.exchange"), eq("entrega.fallida"), captor.capture());
+        verify(eventPublisher, times(1)).publicarEntregaFallida(captor.capture());
         EntregaFallidaEvent evento = captor.getValue();
         assertEquals("Comedor cerrado por reformas", evento.getMotivoFalla());
         assertTrue(evento.isReplanificable());
     }
 
     @Test
+    void testRegistrarEntregaFallidaSinMotivoLanzaExcepcion() {
+        Entrega entrega = new Entrega("RUTA-01", 101L, 1L, "Comedor", "entidad@mail.com", 50L, "donante@mail.com", "AE789XY");
+        entrega.setId("ENTREGA-01");
+        when(entregaRepository.findById("ENTREGA-01")).thenReturn(Optional.of(entrega));
+
+        assertThrows(IllegalArgumentException.class, () ->
+                logisticaService.registrarEntregaFallida("ENTREGA-01", "   ", false)
+        );
+    }
+
+    @Test
     void testRegistrarTelemetriaGPS() {
         UbicacionGPS ubicacion = new UbicacionGPS("CAMION-01", "AE789XY", -34.6037, -58.3816, 45.0);
+        when(camionRepository.findById("CAMION-01")).thenReturn(Optional.of(camion));
         when(gpsRepository.save(any(UbicacionGPS.class))).thenReturn(ubicacion);
 
         UbicacionGPS resultado = logisticaService.registrarTelemetriaGPS("CAMION-01", "AE789XY", -34.6037, -58.3816, 45.0);

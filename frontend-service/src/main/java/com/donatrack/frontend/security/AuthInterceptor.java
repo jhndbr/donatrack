@@ -45,6 +45,11 @@ public class AuthInterceptor implements HandlerInterceptor {
                 response.sendRedirect("/login?denied=true");
                 return false;
             }
+        } else if (uri.startsWith("/chofer")) {
+            if (!userSession.isChofer() && !userSession.isAdmin()) {
+                response.sendRedirect("/login?denied=true");
+                return false;
+            }
         }
 
         return true;
@@ -58,9 +63,12 @@ public class AuthInterceptor implements HandlerInterceptor {
                 uri.startsWith("/registro/") ||
                 uri.equals("/comprobantes") ||
                 uri.equals("/privacidad") ||
+                uri.startsWith("/api/direcciones/") ||
                 uri.startsWith("/css/") ||
                 uri.startsWith("/js/") ||
                 uri.startsWith("/images/") ||
-                uri.startsWith("/webjars/");
+                uri.startsWith("/webjars/") ||
+                uri.startsWith("/uploads/") ||
+                uri.startsWith("/api/v1/donaciones/imagenes/");
     }
 }

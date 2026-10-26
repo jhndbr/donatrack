@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "medios_contacto")
+@Table(name = "medios_contacto", indexes = {
+    @Index(name = "idx_medio_tipo_valor", columnList = "tipo, valor")
+})
 public class MedioContacto {
 
     @Id

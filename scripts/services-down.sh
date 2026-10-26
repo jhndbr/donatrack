@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # scripts/services-down.sh
-# Detiene todos los microservicios en ejecución
+# Detiene todos los microservicios de DonaTrack en ejecución
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$DIR"
@@ -30,6 +30,17 @@ pkill -f "notificaciones-service.*jar" 2>/dev/null || true
 pkill -f "api-gateway.*jar" 2>/dev/null || true
 pkill -f "frontend-service.*jar" 2>/dev/null || true
 
+# Esperar hasta 5 segundos a que liberen los puertos
+for _ in {1..10}; do
+    if ! pgrep -f "((donaciones|logistica|incentivos|notificaciones|frontend)-service|api-gateway).*jar" >/dev/null 2>&1; then
+        break
+    fi
+    sleep 0.5
+done
+
+# Si alguno sigue colgado, forzar cierre inmediato
+pkill -9 -f "((donaciones|logistica|incentivos|notificaciones|frontend)-service|api-gateway).*jar" 2>/dev/null || true
 sleep 1
+
 echo "Todos los microservicios han sido detenidos correctamente."
 echo "=========================================================="

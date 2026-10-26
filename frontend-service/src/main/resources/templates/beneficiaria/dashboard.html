@@ -7,13 +7,29 @@
 <div th:fragment="content">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
+            <span class="badge bg-success-subtle text-success fw-semibold px-3 py-2 rounded-pill mb-1">
+                <i class="fa-solid fa-building me-1"></i> <span th:text="${nombreEntidad != null ? nombreEntidad : 'Entidad Beneficiaria'}">Comedor Los Chicos Felices</span>
+            </span>
             <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-building text-success me-2"></i>Portal de Entidad Beneficiaria</h2>
             <p class="text-secondary">Gestiona tus necesidades de recursos, verifica donaciones asignadas y confirma recepciones con fotos.</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="/beneficiaria/necesidades" class="btn btn-dt-secondary"><i class="fa-solid fa-plus me-1"></i>Registrar Necesidad</a>
-            <a href="/beneficiaria/confirmar" class="btn btn-outline-success"><i class="fa-solid fa-camera me-1"></i>Confirmar Recepción</a>
+            <a th:href="@{/beneficiaria/necesidades(entidadId=${entidadId})}" class="btn btn-dt-secondary"><i class="fa-solid fa-plus me-1"></i>Registrar Necesidad</a>
+            <a th:href="@{/beneficiaria/confirmar(entidadId=${entidadId})}" class="btn btn-outline-success"><i class="fa-solid fa-camera me-1"></i>Confirmar Recepción</a>
+            <a th:href="@{/beneficiaria/notificaciones(entidadId=${entidadId})}" class="btn btn-outline-primary"><i class="fa-solid fa-bell me-1"></i>Notificaciones</a>
         </div>
+    </div>
+
+    <!-- Selector de Entidad para Administradores -->
+    <div th:if="${session.userSession != null and session.userSession.isAdmin()}" class="alert alert-light border rounded-3 mb-4 p-3 shadow-sm">
+        <label class="form-label fw-bold text-dark mb-1"><i class="fa-solid fa-building-user me-1 text-primary"></i> Cambiar Entidad a Gestionar (Modo Administrador)</label>
+        <select class="form-select form-select-sm" onchange="window.location.href='/beneficiaria?entidadId=' + this.value">
+            <option th:each="ent : ${entidades}"
+                    th:value="${ent.id}"
+                    th:selected="${ent.id == entidadId}"
+                    th:text="${ent.razonSocial + ' (ID #' + ent.id + ')'}">Comedor Los Chicos Felices</option>
+        </select>
+        <small class="text-muted">Como administrador puedes inspeccionar el portal de cualquiera de las entidades registradas en DonaTrack.</small>
     </div>
 
     <!-- Alertas Flash -->
@@ -46,15 +62,23 @@
                         <td colspan="6" class="text-center py-4 text-muted">No tienes donaciones asignadas actualmente.</td>
                     </tr>
                     <tr th:each="don : ${donacionesAsignadas}">
-                        <td class="fw-bold" th:text="'#' + ${don.id}">#1</td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1"
+                                  th:text="${don.id != null ? 'DON-' + #numbers.formatInteger(don.id, 4) : 'DON-0000'}">DON-0001</span>
+                        </td>
                         <td><span class="badge bg-light text-dark border" th:text="${don.subcategoria}">Alimentos</span></td>
                         <td th:text="${don.cantidad} + ' ' + ${don.unidadMedida}">20 kg</td>
                         <td th:text="${don['donante'] != null ? don['donante']['nombreCompleto'] : 'Donante Solidario'}">Carlos Gomez</td>
                         <td><span th:class="'badge badge-status status-' + ${don.estado}" th:text="${don.estado}">ASIGNACION_REALIZADA</span></td>
                         <td>
-                            <a th:href="@{/beneficiaria/confirmar(donacionId=${don.id})}" class="btn btn-sm btn-outline-success">
-                                <i class="fa-solid fa-check me-1"></i>Confirmar Entrega
+                            <a th:if="${don.estado != 'ENTREGADA'}"
+                               th:href="@{/beneficiaria/confirmar(donacionId=${don.id}, entidadId=${entidadId})}"
+                               class="btn btn-sm btn-outline-success">
+                                <i class="fa-solid fa-check me-1"></i>Confirmar Recepción
                             </a>
+                            <span th:if="${don.estado == 'ENTREGADA'}" class="badge bg-success-subtle text-success">
+                                <i class="fa-solid fa-circle-check me-1"></i>Recibida
+                            </span>
                         </td>
                     </tr>
                 </tbody>

@@ -1,17 +1,18 @@
 package com.donatrack.logistica.controller;
 
 import com.donatrack.logistica.domain.Entrega;
-import com.donatrack.logistica.domain.Parada;
 import com.donatrack.logistica.domain.Ruta;
 import com.donatrack.logistica.dto.PlanificadorCallbackDto;
 import com.donatrack.logistica.repository.EntregaRepository;
 import com.donatrack.logistica.repository.RutaRepository;
+import com.donatrack.logistica.service.EntregaService;
 import com.donatrack.logistica.service.LogisticaService;
+import com.donatrack.logistica.service.PlanificacionRutasService;
+import com.donatrack.logistica.service.RecorridoService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -22,13 +23,22 @@ public class RutaController {
     private final RutaRepository rutaRepository;
     private final EntregaRepository entregaRepository;
     private final LogisticaService logisticaService;
+    private final PlanificacionRutasService planificacionRutasService;
+    private final RecorridoService recorridoService;
+    private final EntregaService entregaService;
 
     public RutaController(RutaRepository rutaRepository,
                            EntregaRepository entregaRepository,
-                           LogisticaService logisticaService) {
+                           LogisticaService logisticaService,
+                           @Autowired(required = false) PlanificacionRutasService planificacionRutasService,
+                           @Autowired(required = false) RecorridoService recorridoService,
+                           @Autowired(required = false) EntregaService entregaService) {
         this.rutaRepository = rutaRepository;
         this.entregaRepository = entregaRepository;
         this.logisticaService = logisticaService;
+        this.planificacionRutasService = planificacionRutasService;
+        this.recorridoService = recorridoService;
+        this.entregaService = entregaService;
     }
 
     @GetMapping
@@ -44,7 +54,7 @@ public class RutaController {
     }
 
     /**
-     * Requerimiento del TP: Lotes de maximo 100 donaciones hacia el ruteador externo
+     * Planificación de lotes de hasta 100 donaciones (CU-37).
      */
     @PostMapping("/planificar-lote")
     public ResponseEntity<List<PlanificadorCallbackDto>> planificarLote(@RequestBody Map<String, Object> body) {
@@ -64,60 +74,39 @@ public class RutaController {
     }
 
     /**
-     * Requerimiento del TP: URL de callback donde el componente externo notifica el resultado de la planificacion
+     * Webhook de callback invocado por el optimizador VRP (CU-38).
      */
     @PostMapping("/callback")
     public ResponseEntity<Map<String, Object>> callbackPlanificador(@RequestBody PlanificadorCallbackDto callbackDto) {
-        List<Ruta> rutasGuardadas = new ArrayList<>();
-
-        if (callbackDto.getRutasGeneradas() != null) {
-            for (PlanificadorCallbackDto.RutaPropuestaDto propuesta : callbackDto.getRutasGeneradas()) {
-                Ruta ruta = new Ruta(propuesta.getIdCamion(), propuesta.getPatenteCamion(), LocalDate.now().plusDays(1));
-                if (propuesta.getParadas() != null) {
-                    for (PlanificadorCallbackDto.ParadaPropuestaDto paradaDto : propuesta.getParadas()) {
-                        Parada p = new Parada(
-                                paradaDto.getOrden(),
-                                paradaDto.getIdEntidad(),
-                                paradaDto.getNombreEntidad(),
-                                paradaDto.getDireccion(),
-                                paradaDto.getLatitud(),
-                                paradaDto.getLongitud(),
-                                paradaDto.getIdDonacion()
-                        );
-                        ruta.agregarParada(p);
-                    }
-                }
-                Ruta salvada = rutaRepository.save(ruta);
-                rutasGuardadas.add(salvada);
-
-                // Crear entregas asociadas a la ruta
-                for (Parada p : ruta.getParadas()) {
-                    Entrega entrega = new Entrega(
-                            salvada.getId(),
-                            p.getIdDonacion(),
-                            p.getIdEntidadBeneficiaria(),
-                            p.getNombreEntidad(),
-                            "", // email se completa con servicio
-                            null,
-                            "",
-                            salvada.getPatenteCamion()
-                    );
-                    entregaRepository.save(entrega);
-                }
-            }
+        if (planificacionRutasService != null) {
+            Map<String, Object> resultado = planificacionRutasService.procesarCallback(callbackDto);
+            return ResponseEntity.ok(resultado);
         }
-
-        return ResponseEntity.ok(Map.of(
-                "status", "PROCESADO",
-                "loteId", callbackDto.getLoteId() != null ? callbackDto.getLoteId() : "N/A",
-                "rutasCreadas", rutasGuardadas.size(),
-                "donacionesSinAsignarParaReintento", callbackDto.getDonacionesSinAsignar() != null ? callbackDto.getDonacionesSinAsignar().size() : 0
-        ));
+        return ResponseEntity.ok(Map.of("status", "PROCESADO", "loteId", callbackDto.getLoteId() != null ? callbackDto.getLoteId() : "N/A"));
     }
 
+    /**
+     * Inicio de recorrido por el chofer (CU-40).
+     */
     @PostMapping("/{id}/iniciar")
     public ResponseEntity<Ruta> iniciarRuta(@PathVariable("id") String id) {
         return ResponseEntity.ok(logisticaService.iniciarRuta(id));
+    }
+
+    /**
+     * Fin de recorrido por el chofer.
+     */
+    @PostMapping("/{id}/finalizar")
+    public ResponseEntity<Ruta> finalizarRuta(@PathVariable("id") String id) {
+        if (recorridoService != null) {
+            return ResponseEntity.ok(recorridoService.finalizarRuta(id));
+        }
+        return rutaRepository.findById(id)
+                .map(r -> {
+                    r.finalizarRuta();
+                    return ResponseEntity.ok(rutaRepository.save(r));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/entregas/{idEntrega}/confirmar")

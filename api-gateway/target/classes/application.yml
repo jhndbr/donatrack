@@ -5,6 +5,9 @@ spring:
   application:
     name: api-gateway
 
+  codec:
+    max-in-memory-size: 30MB
+
   cloud:
     gateway:
       routes:
@@ -12,7 +15,37 @@ spring:
         - id: donaciones-service
           uri: ${DONACIONES_SERVICE_URL:http://localhost:8082}
           predicates:
-            - Path=/api/v1/donaciones/**, /api/v1/donantes/**, /api/v1/entidades/**
+            - Path=/api/v1/donaciones/**
+
+        - id: donantes-service
+          uri: ${DONACIONES_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/donantes/**, /api/v1/personas-donantes/**
+
+        - id: entidades-service
+          uri: ${DONACIONES_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/entidades/**
+
+        - id: necesidades-service
+          uri: ${DONACIONES_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/necesidades/**
+
+        - id: matchmaking-service
+          uri: ${DONACIONES_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/matchmaking/**
+
+        - id: direcciones-service
+          uri: ${DONACIONES_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/direcciones/**
+
+        - id: graphql-service
+          uri: ${DONACIONES_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/graphql/**, /graphiql/**
 
         # Rutas hacia el Servicio de Logistica
         - id: logistica-service
@@ -20,11 +53,27 @@ spring:
           predicates:
             - Path=/api/v1/logistica/**
 
+        - id: camiones-service
+          uri: ${LOGISTICA_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/camiones/**
+
+        - id: pendientes-lote-service
+          uri: ${LOGISTICA_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/pendientes-lote/**
+
         # Rutas hacia el Servicio de Incentivos
         - id: incentivos-service
           uri: ${INCENTIVOS_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/api/v1/incentivos/**
+
+        # Rutas hacia el Servicio de Notificaciones
+        - id: notificaciones-service
+          uri: ${NOTIFICACIONES_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/notificaciones/**
 
       globalcors:
         corsConfigurations:
@@ -39,8 +88,20 @@ spring:
               - OPTIONS
             allowedHeaders: "*"
 
+donatrack:
+  gateway:
+    rate-limit:
+      enabled: ${GATEWAY_RATE_LIMIT_ENABLED:true}
+      capacity: ${GATEWAY_RATE_LIMIT_CAPACITY:120}
+    security:
+      enabled: ${GATEWAY_SECURITY_ENABLED:true}
+      enforce-strict-jwt: ${GATEWAY_ENFORCE_STRICT_JWT:false}
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,metrics,prometheus,gateway
+  endpoint:
+    health:
+      show-details: always

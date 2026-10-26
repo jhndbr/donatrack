@@ -54,6 +54,22 @@ public class BienDonado {
         this.esUsado = esUsado;
         this.fechaVencimiento = fechaVencimiento;
         this.fotoUrl = fotoUrl;
+        validarConsistencia();
+    }
+
+    public void validarConsistencia() {
+        if (cantidad <= 0) {
+            throw new IllegalArgumentException("La cantidad debe ser mayor a cero (CU-14)");
+        }
+        if (unidadMedida == null || unidadMedida.trim().isEmpty()) {
+            throw new IllegalArgumentException("La unidad de medida es obligatoria (CU-14)");
+        }
+        if (subcategoria == null || subcategoria.trim().isEmpty()) {
+            throw new IllegalArgumentException("La subcategoría es obligatoria (CU-14)");
+        }
+        if (fechaVencimiento != null && fechaVencimiento.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("La fecha de vencimiento no puede ser anterior a hoy para un bien ingresado (CU-14)");
+        }
     }
 
     public boolean estaVencido() {

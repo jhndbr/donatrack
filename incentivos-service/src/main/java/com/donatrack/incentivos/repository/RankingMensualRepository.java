@@ -10,4 +10,5 @@ import java.util.List;
 public interface RankingMensualRepository extends JpaRepository<RankingMensual, Long> {
     List<RankingMensual> findByAnioAndMesOrderByPosicionAsc(int anio, int mes);
     List<RankingMensual> findTop3ByAnioAndMesOrderByPosicionAsc(int anio, int mes);
+    void deleteByAnioAndMes(int anio, int mes);
 }

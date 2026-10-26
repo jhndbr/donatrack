@@ -34,57 +34,77 @@ package "common-dtos (Contratos de Eventos y Enums)" #F0F0F0 {
     }
 
     enum CategoriaDonante {
-        BRONCE
-        PLATA
-        ORO
-        PLATINO
+        COLABORADOR
+        SOSTENEDOR
+        TRANSFORMADOR
+    }
+
+    class DonacionRegistradaEvent <<Event>> {
+        + idDonacion: Long
+        + idDonante: Long
+        + nombreDonante: String
+        + emailDonante: String
+        + canalPreferidoDonante: String
+        + contactoPreferidoDonante: String
+        + subcategoria: String
+        + cantidad: double
+        + fechaRegistro: LocalDateTime
     }
 
     class DonacionAsignadaEvent <<Event>> {
-        + donacionId: Long
-        + donanteId: Long
+        + idDonacion: Long
+        + idDonante: Long
         + emailDonante: String
-        + entidadId: Long
+        + canalPreferido: CanalNotificacion
+        + contactoPreferido: String
+        + idEntidadBeneficiaria: Long
         + nombreEntidad: String
+        + emailEntidad: String
         + subcategoria: String
         + cantidad: double
-        + timestamp: LocalDateTime
-    }
-
-    class RutaIniciadaEvent <<Event>> {
-        + rutaId: String
-        + camionId: String
-        + choferNombre: String
-        + totalParadas: int
-        + timestamp: LocalDateTime
+        + fechaAsignacion: LocalDateTime
     }
 
     class EntregaConfirmadaEvent <<Event>> {
-        + entregaId: String
-        + donacionId: Long
-        + entidadId: Long
-        + receptorNombre: String
-        + receptorDni: String
-        + fechaHora: LocalDateTime
+        + idEntrega: String
+        + idRuta: String
+        + idDonacion: Long
+        + idEntidadBeneficiaria: Long
+        + nombreEntidad: String
+        + emailEntidad: String
+        + idDonante: Long
+        + emailDonante: String
+        + canalPreferidoDonante: String
+        + contactoPreferidoDonante: String
+        + patenteCamion: String
+        + fotosUrls: List<String>
+        + fechaConfirmacion: LocalDateTime
     }
 
     class EntregaFallidaEvent <<Event>> {
-        + entregaId: String
-        + donacionId: Long
-        + entidadId: Long
-        + motivoFallo: String
-        + requiereReprogramacion: boolean
-        + fechaHora: LocalDateTime
+        + idEntrega: String
+        + idRuta: String
+        + idDonacion: Long
+        + idEntidadBeneficiaria: Long
+        + nombreEntidad: String
+        + idDonante: Long
+        + emailDonante: String
+        + canalPreferidoDonante: String
+        + contactoPreferidoDonante: String
+        + motivoFalla: String
+        + replanificable: boolean
+        + fechaFalla: LocalDateTime
     }
 
     class MisionCumplidaEvent <<Event>> {
-        + donanteId: Long
+        + idDonante: Long
         + emailDonante: String
-        + misionId: Long
+        + canalPreferido: String
+        + contactoPreferido: String
+        + idMision: Long
         + nombreMision: String
-        + insigniaOtorgada: String
-        + puntosGanados: int
-        + timestamp: LocalDateTime
+        + nombreInsignia: String
+        + fechaCumplimiento: LocalDateTime
     }
 }
 
@@ -97,10 +117,15 @@ package "donaciones-service (PostgreSQL)" #EEF4FF {
         - id: Long
         - fechaRegistro: LocalDateTime
         - ultimaActividad: LocalDateTime
+        - ultimaAlertaInactividad: LocalDateTime
+        - activo: boolean
+        - fechaBaja: LocalDateTime
+        - motivoBaja: String
         + {abstract} getNombreCompleto(): String
         + {abstract} getIdentificadorPrincipal(): String
         + {abstract} getEmailPrincipal(): String
         + registrarActividad(): void
+        + darDeBaja(motivo: String): void
         + agregarMedioContacto(m: MedioContacto): void
         + getMedioContactoPredeterminado(): MedioContacto
     }
@@ -109,9 +134,12 @@ package "donaciones-service (PostgreSQL)" #EEF4FF {
         - nombre: String
         - apellido: String
         - edad: Integer
+        - tipoDocumento: String
         - nroDocumento: String
         - genero: String
         - direccion: String
+        - latitud: Double
+        - longitud: Double
     }
 
     class PersonaJuridica {
@@ -119,6 +147,9 @@ package "donaciones-service (PostgreSQL)" #EEF4FF {
         - cuit: String
         - tipo: String
         - rubro: String
+        - direccion: String
+        - latitud: Double
+        - longitud: Double
         - representantes: List<String>
         + agregarRepresentante(rep: String): void
     }
@@ -134,9 +165,12 @@ package "donaciones-service (PostgreSQL)" #EEF4FF {
         - id: Long
         - razonSocial: String
         - direccion: String
+        - latitud: Double
+        - longitud: Double
         - telefono: String
         - emailsRepresentantes: List<String>
         - donacionesRecibidasTrimestre: int
+        - activo: boolean
         + agregarNecesidad(n: NecesidadMaterial): void
         + registrarDonacionRecibida(): void
     }
@@ -150,36 +184,62 @@ package "donaciones-service (PostgreSQL)" #EEF4FF {
         - cantidadCubierta: double
         - unidadMedida: String
         - periodo: String
+        - activa: boolean
         + estaSatisfecha(): boolean
         + registrarCobertura(cant: double): void
+        + revertirCobertura(cant: double): void
     }
 
     class Donacion {
         - id: Long
+        - version: Long
         - subcategoria: String
         - cantidad: double
         - unidadMedida: String
         - esUsado: boolean
         - fechaVencimiento: LocalDate
+        - fechaRecepcion: LocalDateTime
+        - fechaActualizacionEstado: LocalDateTime
         - estado: EstadoDonacion
-        - motivoRechazoOFallo: String
-        - fechaCarga: LocalDateTime
-        - fechaAsignacion: LocalDateTime
-        - fechaEntrega: LocalDateTime
-        + cambiarEstado(nuevoEstado: EstadoDonacion): void
-        + asignarAEntidad(e: EntidadBeneficiaria): void
-        + registrarFalloEntrega(justificacion: String): void
-        + estaVencida(): boolean
+        - justificacionFalla: String
+        + asignarA(e: EntidadBeneficiaria, n: NecesidadMaterial, resp: String): void
+        + desasignar(motivo: String, resp: String): void
+        + marcarListaParaEntregar(resp: String): void
+        + iniciarTraslado(resp: String): void
+        + confirmarEntrega(resp: String): void
+        + registrarEntregaFallida(justificacion: String, resp: String): void
+        + reingresarADeposito(resp: String): void
+        + marcarVencida(resp: String): void
     }
 
     class BienDonado {
         - id: Long
-        - nombre: String
+        - descripcion: String
+        - categoria: String
         - subcategoria: String
         - cantidad: double
         - unidadMedida: String
-        - volumenM3: double
-        - pesoKg: double
+        - esUsado: boolean
+        - fechaVencimiento: LocalDate
+        - fotoUrl: String
+    }
+
+    class HistorialEstadoDonacion {
+        - id: Long
+        - fechaHora: LocalDateTime
+        - estadoAnterior: EstadoDonacion
+        - nuevoEstado: EstadoDonacion
+        - usuarioResponsable: String
+        - justificacion: String
+    }
+
+    class ConfiguracionMatchmaking {
+        - id: Long
+        - a1: double
+        - a2: double
+        - a3: double
+        - alpha: double
+        - fechaActualizacion: LocalDateTime
     }
 
     class OutboxEvent {
@@ -187,45 +247,43 @@ package "donaciones-service (PostgreSQL)" #EEF4FF {
         - aggregateType: String
         - aggregateId: String
         - eventType: String
+        - routingKey: String
         - payload: String
+        - status: OutboxStatus
         - createdAt: LocalDateTime
-        - processed: boolean
-        - processedAt: LocalDateTime
-        + markAsProcessed(): void
+        - publishedAt: LocalDateTime
+        - retries: int
     }
 
     interface MatchmakingStrategy <<Strategy>> {
-        + calcularScore(donacion: Donacion, entidad: EntidadBeneficiaria, necesidad: NecesidadMaterial): double
+        + ordenarCandidatos(donacion: Donacion, necesidades: List<NecesidadMaterial>): List<MatchmakingResult>
     }
 
     class CompatibilidadSemanticaStrategy {
-        - chi1: double
-        - chi2: double
-        - chi3: double
-        + calcularScore(...): double
-        - distanciaLevenshtein(s1: String, s2: String): int
+        - a1: double
+        - a2: double
+        - a3: double
     }
 
-    class PrioridadSubatendidosDecorator {
-        - innerStrategy: MatchmakingStrategy
+    class PrioridadSubatendidosStrategy {
         - alpha: double
-        + calcularScore(...): double
     }
 
     PersonaDonante <|-- PersonaHumana
     PersonaDonante <|-- PersonaJuridica
-    PersonaDonante "1" *-- "0..*" MedioContacto
+    PersonaDonante "1" *-- "1..*" MedioContacto
     PersonaDonante "1" o-- "0..*" Donacion : efectúa
 
     EntidadBeneficiaria "1" *-- "0..*" NecesidadMaterial
-    EntidadBeneficiaria "1" o-- "0..*" Donacion : recibe
+    EntidadBeneficiaria "0..1" o-- "0..*" Donacion : recibe
+    NecesidadMaterial "0..1" o-- "0..*" Donacion : cubre
 
     Donacion "1" *-- "1..*" BienDonado : contiene
+    Donacion "1" *-- "1..*" HistorialEstadoDonacion : audita
     Donacion --> EstadoDonacion
 
     MatchmakingStrategy <|.. CompatibilidadSemanticaStrategy
-    MatchmakingStrategy <|.. PrioridadSubatendidosDecorator
-    PrioridadSubatendidosDecorator o-- MatchmakingStrategy
+    MatchmakingStrategy <|.. PrioridadSubatendidosStrategy
 }
 
 ' ========================================================
@@ -236,59 +294,80 @@ package "logistica-service (MongoDB)" #E6FFFA {
     class Camion <<Document>> {
         - id: String
         - patente: String
-        - choferNombre: String
-        - choferTelefono: String
-        - capacidadKg: double
-        - volumenMaxM3: double
-        - ubicacionActual: UbicacionGPS
-        - disponible: boolean
-        + actualizarUbicacion(lat: double, lon: double): void
+        - marcaModelo: String
+        - capacidadVolumenM3: double
+        - alturaM: double
+        - capacidadPesoKg: double
+        - activo: boolean
+        - ubicacionActual: CoordenadaGPS
+        + actualizarUbicacion(lat: double, lon: double, vel: double, ts: LocalDateTime, dir: String): boolean
     }
 
-    class UbicacionGPS {
+    class CoordenadaGPS <<ValueObject>> {
         - latitud: double
         - longitud: double
+        - velocidadKmH: double
         - timestamp: LocalDateTime
+        - direccionAproximada: String
     }
 
     class Ruta <<Document>> {
         - id: String
-        - camionId: String
-        - estado: String
-        - distanciaKmTotal: double
-        - tiempoEstimadoMinutos: int
+        - loteId: String
+        - idCamion: String
+        - patenteCamion: String
+        - fechaPlanificada: LocalDate
+        - estado: EstadoRuta
+        - distanciaKmTotal: Double
+        - tiempoEstimadoMinutos: Integer
         - paradas: List<Parada>
-        - fechaCreacion: LocalDateTime
-        - fechaFin: LocalDateTime
         + iniciarRuta(): void
         + finalizarRuta(): void
-        + avanzarParada(orden: int): void
+        + completarParada(orden: int): void
     }
 
-    class Parada {
+    class Parada <<Embedded>> {
         - orden: int
+        - tipo: TipoParada
+        - idEntidadBeneficiaria: Long
+        - nombreEntidad: String
         - direccion: String
-        - ubicacion: UbicacionGPS
-        - tipo: String
-        - donacionId: Long
+        - latitud: double
+        - longitud: double
+        - idDonacion: Long
         - completada: boolean
     }
 
     class Entrega <<Document>> {
         - id: String
-        - donacionId: Long
-        - entidadBeneficiariaId: Long
+        - idRuta: String
+        - idDonacion: Long
+        - idEntidadBeneficiaria: Long
+        - idDonante: Long
+        - emailDonante: String
+        - canalPreferidoDonante: String
+        - contactoPreferidoDonante: String
+        - patenteCamion: String
+        - estado: EstadoEntrega
         - receptorNombre: String
         - receptorDni: String
         - firmaDigitalUrl: String
-        - fechaHora: LocalDateTime
-        - exitosa: boolean
-        - justificacionFallo: String
+        - fotosConfirmacionUrls: List<String>
+        - motivoFalla: String
+        - replanificable: boolean
     }
 
-    Camion "1" *-- "1" UbicacionGPS
+    class DonacionPendienteLote <<Document>> {
+        - id: String
+        - loteId: String
+        - idDonacion: Long
+        - motivoNoAsignacion: String
+        - procesado: boolean
+    }
+
+    Camion "1" *-- "0..1" CoordenadaGPS
     Ruta "1" *-- "1..*" Parada
-    Parada "1" *-- "1" UbicacionGPS
+    Ruta "1" ..> "1..*" Entrega
 }
 
 ' ========================================================
@@ -296,45 +375,93 @@ package "logistica-service (MongoDB)" #E6FFFA {
 ' ========================================================
 package "incentivos-service (PostgreSQL)" #FFF9E6 {
 
-    class DonantePuntos {
+    class PerfilDonanteIncentivo {
         - id: Long
-        - donanteId: Long
-        - puntosAcumulados: int
+        - idDonante: Long
+        - nombre: String
+        - email: String
+        - canalPreferido: String
+        - contactoPreferido: String
         - categoria: CategoriaDonante
-        - totalDonacionesRealizadas: int
-        + acumularPuntos(pts: int): void
-        + recalcularCategoria(): void
+        - totalDonaciones: int
+        - totalBienesDonados: double
+        - organizacionesAyudadas: int
+        - rachaMesesConsecutivos: int
+        - ultimaDonacionFecha: LocalDate
+        - subcategoriasDonadas: Set<String>
+        - organizacionesAyudadasIds: Set<Long>
+        + ascenderCategoria(): void
+        + actualizarRachaMensual(fecha: LocalDate): void
     }
 
     class Mision {
         - id: Long
-        - ordenSecuencial: int
         - nombre: String
         - descripcion: String
-        - objetivoDonaciones: int
-        - insigniaRecompensa: String
-        - puntosRecompensa: int
+        - tipo: TipoMision
+        - categoriaRequerida: CategoriaDonante
+        - objetivo: double
+        - ordenSecuencia: int
+        - nombreInsignia: String
     }
 
     class ProgresoMision {
         - id: Long
-        - donanteId: Long
+        - idDonante: Long
         - mision: Mision
-        - donacionesProgreso: int
+        - progresoActual: double
         - completada: boolean
         - fechaCompletada: LocalDateTime
-        + incrementarProgreso(): boolean
+        + agregarProgreso(delta: double): void
     }
 
-    class InsigniaOtorgada {
+    class Insignia {
         - id: Long
-        - donanteId: Long
-        - codigoInsignia: String
-        - fechaOtorgada: LocalDateTime
+        - nombre: String
+        - descripcion: String
+        - imagenUrl: String
+        - fechaObtencion: LocalDateTime
+        - esPublica: boolean
     }
 
-    DonantePuntos --> CategoriaDonante
+    class RankingMensual {
+        - id: Long
+        - anio: int
+        - mes: int
+        - posicion: int
+        - idDonante: Long
+        - nombreDonante: String
+        - misionesCompletadasMes: int
+    }
+
+    PerfilDonanteIncentivo --> CategoriaDonante
+    PerfilDonanteIncentivo "1" *-- "0..*" Insignia
     ProgresoMision --> Mision
+}
+
+' ========================================================
+' SERVICIO DE NOTIFICACIONES (PostgreSQL)
+' ========================================================
+package "notificaciones-service (PostgreSQL)" #F9EBEA {
+
+    class AuditoriaNotificacion {
+        - id: Long
+        - claveEvento: String
+        - destinatario: String
+        - canal: CanalNotificacion
+        - asunto: String
+        - mensaje: String
+        - estado: EstadoNotificacion
+        - intentos: int
+        - timestamp: LocalDateTime
+    }
+
+    class RegistroEventoNotificacion {
+        - id: Long
+        - claveEvento: String
+        - tipoEvento: String
+        - fechaProcesado: LocalDateTime
+    }
 }
 
 @enduml

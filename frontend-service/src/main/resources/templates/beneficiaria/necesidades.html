@@ -23,11 +23,22 @@
         <div class="col-md-8 mx-auto">
             <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
                 <form action="/beneficiaria/necesidades" method="post">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Entidad Beneficiaria</label>
+                    <!-- Entidad Solicitante: Solo modificable por Administrador -->
+                    <div class="mb-3" th:if="${session.userSession != null and session.userSession.isAdmin()}">
+                        <label class="form-label fw-semibold"><i class="fa-solid fa-building me-1 text-primary"></i>Entidad Beneficiaria (Modo Administrador)</label>
                         <select name="entidadId" class="form-select" required>
-                            <option th:each="ent : ${entidades}" th:value="${ent.id}" th:selected="${ent.id == entidadId}" th:text="${ent.razonSocial}">Comedor Los Chicos</option>
+                            <option th:each="ent : ${entidades}" th:value="${ent.id}" th:selected="${ent.id == entidadId}" th:text="${ent.razonSocial + ' (ID #' + ent.id + ')'}">Comedor Los Chicos</option>
                         </select>
+                        <small class="text-muted">Como administrador central, puedes registrar necesidades para cualquier sede.</small>
+                    </div>
+                    <div class="mb-3" th:unless="${session.userSession != null and session.userSession.isAdmin()}">
+                        <label class="form-label fw-semibold"><i class="fa-solid fa-building me-1 text-primary"></i>Entidad Beneficiaria Solicitante</label>
+                        <div class="p-2 px-3 bg-light border rounded-3 d-flex align-items-center">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-2">Tu Sede</span>
+                            <span class="fw-bold text-dark fs-6" th:text="${nombreEntidad}">comerdor 444</span>
+                            <input type="hidden" name="entidadId" th:value="${entidadId}">
+                        </div>
+                        <small class="text-muted">Las necesidades de recursos se asignan exclusivamente a tu sede comunitaria.</small>
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -77,6 +88,56 @@
                         </button>
                     </div>
                 </form>
+            </div>
+
+            <!-- Tabla de Necesidades Registradas con Edición y Baja -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mt-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>Necesidades Materiales Registradas</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Subcategoría</th>
+                                <th>Tipo</th>
+                                <th>Solicitado</th>
+                                <th>Descripción</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(necesidades)}">
+                                <td colspan="5" class="text-center text-muted py-3">No hay necesidades materiales activas registradas aún.</td>
+                            </tr>
+                            <tr th:each="n : ${necesidades}">
+                                <td><span class="badge bg-primary-subtle text-primary" th:text="${n.subcategoria}">arroz</span></td>
+                                <td><span class="badge bg-light text-dark border" th:text="${n.tipo}">EXTRAORDINARIA</span></td>
+                                <td th:text="${n.cantidadSolicitada} + ' ' + ${n.unidadMedida}">50.0 kg</td>
+                                <td class="small text-muted" th:text="${n.descripcion}">Detalle</td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <form th:action="@{'/beneficiaria/necesidades/' + ${n.id} + '/editar'}" method="post" class="d-inline-flex gap-1 align-items-center">
+                                            <input type="hidden" name="entidadId" th:value="${entidadId}">
+                                            <input type="hidden" name="subcategoria" th:value="${n.subcategoria}">
+                                            <input type="hidden" name="descripcion" th:value="${n.descripcion}">
+                                            <input type="hidden" name="tipo" th:value="${n.tipo}">
+                                            <input type="hidden" name="unidadMedida" th:value="${n.unidadMedida}">
+                                            <input type="number" step="0.1" name="cantidadSolicitada" th:value="${n.cantidadSolicitada}" class="form-control form-control-sm" style="width: 80px;" title="Modificar cantidad">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Actualizar necesidad">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                        </form>
+                                        <form th:action="@{'/beneficiaria/necesidades/' + ${n.id} + '/eliminar'}" method="post" class="d-inline">
+                                            <input type="hidden" name="entidadId" th:value="${entidadId}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Dar de baja / eliminar necesidad">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

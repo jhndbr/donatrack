@@ -4,6 +4,36 @@ El microservicio de **Incentivos** lidera la gamificación y fidelización de do
 
 ---
 
+## 0. Flujos Principales Resumidos y Requerimientos Esenciales
+
+### 0.1. Flujos de Gamificación Clave
+1. **Progreso en Misiones Secuenciales (CU-48, CU-49)**:
+   - Al registrarse una donación o entrega exitosa, se evalúa el progreso de la misión activa del donante.
+   - Las misiones se completan en orden estrictamente **secuencial**: completar $M_k$ desbloquea $M_{k+1}$.
+   - Tipos oficiales: *Racha* (meses consecutivos, con penalización de pérdida de progreso ante inactividad), *Completitud* (variedad de categorías donadas), *Hábil Donador* (cantidad de bienes donados) y *Donaciones Exitosas* (entregas confirmadas).
+   - Al cumplir el objetivo, se otorga la insignia (CU-50), se emite `mision.cumplida` a RabbitMQ y se dispara el webhook a n8n para difusión social (CU-55).
+2. **Escalafón y Ascenso de Categorías (CU-53)**:
+   - Categorías oficiales de la cátedra: `COLABORADOR` (inicial) $\rightarrow$ `SOSTENEDOR` $\rightarrow$ `TRANSFORMADOR`.
+   - Se muestra públicamente junto al nombre de usuario.
+   - Al completar todas las misiones de la categoría actual, asciende de rango y se publica `categoria.ascendida` a RabbitMQ.
+3. **Difusión en Redes Sociales vía n8n (CU-55)**:
+   - Despacho HTTP POST asincrónico a n8n con payload estructurado para publicación en redes (con imagen y mención).
+4. **Ranking Mensual e Histórico (CU-54)**:
+   - Scheduler cron ejecutado el primer día de cada mes a las 00:00:00.
+   - Ordena por **cantidad de misiones cumplidas durante el mes calendario vencido** (sin importar la categoría).
+   - Persiste la tabla de posiciones y destaca a los 3 primeros (podio) para la aplicación.
+5. **Métricas de Impacto y Visibilidad de Insignias (CU-47, CU-51, CU-52)**:
+   - Donante consulta totales históricos, comparativas mensuales y número de organizaciones beneficiadas.
+   - Donante configura qué insignias son visibles públicamente en su perfil.
+
+### 0.2. Lo Necesario del Service
+* **Persistencia Relacional**: PostgreSQL (`incentivos_db`) con Spring Data JPA.
+* **Consumo AMQP**: Escucha eventos `donacion.asignada` y `entrega.confirmada` con control de idempotencia (FT-06).
+* **Productor AMQP**: Emisión de `mision.cumplida` y `categoria.ascendida` hacia `donatrack.events`.
+* **Integración Externa n8n**: Webhook HTTP saliente con tolerancia a fallas y timeouts.
+
+---
+
 ## 1. Ficha Técnica y Dependencias
 
 * **Puerto HTTP**: `8084` (Expuesto también vía Gateway en `8080/api/v1/incentivos/**`)
@@ -126,5 +156,33 @@ Content-Type: application/json
 | `GET` | `/api/v1/incentivos/donantes/{id}/perfil` | Resumen de puntos, nivel, misiones e insignias | `DONANTE`, `ADMIN` |
 | `POST`| `/api/v1/incentivos/donantes/{id}/sumar-puntos`| Suma manual o programada de puntos por donación | `INTERNO`, `ADMIN` |
 | `GET` | `/api/v1/incentivos/misiones/activas` | Listar catálogo de misiones disponibles | Público |
-| `GET` | `/api/v1/incentivos/rankings/mensual` | Consulta del Top 10 del ranking mensual actual | Público |
 | `POST`| `/api/v1/incentivos/rankings/forzar-calculo` | Ejecución forzada manual del scheduler de ranking | `ADMIN` |
+
+---
+
+## 5. TO-DO Maestro del Servicio (Gaps y Funcionalidades Faltantes según Enunciado y Casos de Uso)
+
+### 5.1. Misiones Secuenciales del Dominio (CU-48, CU-49, CU-50)
+- [x] **TODO-INC-01 (CU-49)**: Implementar la lógica y reglas completas para las 4 misiones oficiales del enunciado:
+  - **Racha**: donación durante $X$ meses consecutivos. Implementado con `actualizarRachaMensual(LocalDate)` con reseteo a 1 por discontinuidad/inactividad mensual.
+  - **Completitud**: realizar donaciones de $X$ categorías de bienes distintas. Implementado con registro dinámico en `perfil_subcategorias_donadas` y validación de unicidad.
+  - **Hábil Donador**: verificar donación que supere $X$ cantidad de bienes unitarios en una única carga o acumulativo.
+  - **Donaciones Exitosas**: acumular $X$ donaciones efectivamente entregadas y confirmadas por entidades beneficiarias (escucha de `entrega.confirmada`).
+- [x] **TODO-INC-01b (CU-48)**: Garantizar el desbloqueo secuencial estricto ($M_k \rightarrow M_{k+1}$) impidiendo avanzar en misiones posteriores sin haber finalizado la inmediata anterior (ordenación por `ordenSecuencia`).
+
+### 5.2. Insignias y Configuración de Visibilidad (CU-51, CU-52)
+- [x] **TODO-INC-02 (CU-52)**: Incorporar atributo `esPublica` (booleano) en la entidad `Insignia` y exponer endpoint `PATCH /api/v1/incentivos/insignias/{id}/visibilidad?visible={bool}` para que el donante elija qué logros mostrar públicamente en su perfil.
+
+### 5.3. Categorías de Donantes (CU-53)
+- [x] **TODO-INC-03 (CU-53)**: Mapear el ascenso estricto a través de las 3 categorías del enunciado (`COLABORADOR` $\rightarrow$ `SOSTENEDOR` $\rightarrow$ `TRANSFORMADOR`) tras completar el paquete de misiones de cada nivel.
+
+### 5.4. Ranking Mensual e Histórico (CU-54)
+- [x] **TODO-INC-04 (CU-54)**: Ajustar el scheduler de ranking mensual (`IncentivosScheduler`) para ordenar a los donantes por **cantidad de misiones cumplidas en el mes vencido** (sin importar categoría), persistir la tabla histórica mensual (`anio`, `mes`, `posicion`), y exponer endpoints `GET /api/v1/incentivos/rankings/mensual` y `POST /api/v1/incentivos/rankings/forzar-calculo`.
+
+### 5.5. Analítica y Métricas de Actividad (CU-47)
+- [x] **TODO-INC-05 (CU-47)**: Endpoint `GET /api/v1/incentivos/donantes/{idDonante}/analitica` y cálculo de analítica avanzada: evolución temporal por períodos, comparativa mes actual vs mes anterior, insgnias desbloqueadas, subcategorías diversas y total de entidades beneficiarias distintas ayudadas.
+
+### 5.6. Resiliencia, Idempotencia e Integración n8n (CU-55, FT-06)
+- [x] **TODO-INC-06 (CU-55)**: Integración con webhook hacia n8n con tolerancia a fallas y timeouts, y endpoint de difusión social `POST /api/v1/incentivos/insignias/{id}/publicar-red-social`.
+- [x] **TODO-INC-07 (FT-06)**: Implementar control de duplicados en `DonacionEventConsumer` mediante la entidad relacional `RegistroEventoProcesado` para descartar mensajes de RabbitMQ reintentados o duplicados (`donacion-asignada-...` y `entrega-confirmada-...`).
+

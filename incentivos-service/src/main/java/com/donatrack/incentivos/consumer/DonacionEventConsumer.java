@@ -22,24 +22,52 @@ public class DonacionEventConsumer {
     private static final Logger log = LoggerFactory.getLogger(DonacionEventConsumer.class);
 
     private final IncentivosService incentivosService;
+    private final com.donatrack.incentivos.repository.RegistroEventoProcesadoRepository eventoRepo;
     private final ObjectMapper objectMapper;
 
-    public DonacionEventConsumer(IncentivosService incentivosService, ObjectMapper objectMapper) {
+    public DonacionEventConsumer(IncentivosService incentivosService,
+                                 com.donatrack.incentivos.repository.RegistroEventoProcesadoRepository eventoRepo,
+                                 ObjectMapper objectMapper) {
         this.incentivosService = incentivosService;
+        this.eventoRepo = eventoRepo;
         this.objectMapper = objectMapper;
+        if (this.objectMapper != null) {
+            this.objectMapper.findAndRegisterModules();
+        }
     }
 
     @RabbitListener(queues = "${donatrack.rabbitmq.queues.incentivos-donaciones:q.incentivos.donaciones}")
     public void recibirDonacionAsignada(Object payload) {
+        procesarDonacionAsignada(payload);
+    }
+
+    public void procesarDonacionAsignada(Object payload) {
         try {
             DonacionAsignadaEvent evento = parsearEvento(payload, DonacionAsignadaEvent.class);
-            log.info("Incentivos AMQP: Registrando donación asignada para donante id={}", evento.getIdDonante());
-            incentivosService.registrarImpactoDonacion(
+            String claveEvento = "donacion-asignada-" + evento.getIdDonacion() + "-" + evento.getIdDonante();
+
+            // Control de idempotencia (FT-06)
+            if (eventoRepo.existsByClaveEvento(claveEvento)) {
+                log.info("Incentivos AMQP: Evento ya procesado previamente (idempotencia activa): {}", claveEvento);
+                return;
+            }
+
+            log.info("Incentivos AMQP: Registrando organización ayudada por donación asignada para donante id={}", evento.getIdDonante());
+            if (evento.getCanalPreferidoDonante() != null || evento.getContactoPreferidoDonante() != null) {
+                incentivosService.actualizarContactoPreferidoDonante(
+                        evento.getIdDonante(),
+                        evento.getCanalPreferidoDonante(),
+                        evento.getContactoPreferidoDonante()
+                );
+            }
+            incentivosService.registrarOrganizacionAyudadaPorAsignacion(
                     evento.getIdDonante(),
                     evento.getNombreDonante(),
                     evento.getEmailDonante(),
-                    evento.getCantidad()
+                    evento.getIdEntidadBeneficiaria()
             );
+
+            eventoRepo.save(new com.donatrack.incentivos.domain.RegistroEventoProcesado(claveEvento, "DONACION_ASIGNADA"));
         } catch (Exception e) {
             log.error("Error al procesar donacion.asignada en incentivos: {}", e.getMessage(), e);
         }
@@ -49,10 +77,58 @@ public class DonacionEventConsumer {
     public void recibirEntregaConfirmada(Object payload) {
         try {
             EntregaConfirmadaEvent evento = parsearEvento(payload, EntregaConfirmadaEvent.class);
-            log.info("Incentivos AMQP: Registrando entrega confirmada para donante email={}", evento.getEmailDonante());
-            incentivosService.registrarEntregaExitosaPorEmail(evento.getEmailDonante());
+            String claveEvento = "entrega-confirmada-" + evento.getIdEntrega();
+
+            // Control de idempotencia (FT-06)
+            if (eventoRepo.existsByClaveEvento(claveEvento)) {
+                log.info("Incentivos AMQP: Evento ya procesado previamente (idempotencia activa): {}", claveEvento);
+                return;
+            }
+
+            if (evento.getIdDonante() != null) {
+                log.info("Incentivos AMQP: Registrando entrega confirmada para donante id={}", evento.getIdDonante());
+                incentivosService.registrarEntregaExitosa(evento.getIdDonante(), evento.getEmailDonante());
+            } else {
+                log.info("Incentivos AMQP: Registrando entrega confirmada para donante email={}", evento.getEmailDonante());
+                incentivosService.registrarEntregaExitosaPorEmail(evento.getEmailDonante());
+            }
+
+            eventoRepo.save(new com.donatrack.incentivos.domain.RegistroEventoProcesado(claveEvento, "ENTREGA_CONFIRMADA"));
         } catch (Exception e) {
             log.error("Error al procesar entrega.confirmada en incentivos: {}", e.getMessage(), e);
+        }
+    }
+
+    @RabbitListener(queues = "${donatrack.rabbitmq.queues.incentivos-donaciones-registradas:q.incentivos.donaciones-registradas}")
+    public void recibirDonacionRegistrada(Object payload) {
+        try {
+            com.donatrack.common.events.DonacionRegistradaEvent evento = parsearEvento(payload, com.donatrack.common.events.DonacionRegistradaEvent.class);
+            String claveEvento = "donacion-registrada-" + evento.getIdDonacion() + "-" + evento.getIdDonante();
+
+            if (eventoRepo.existsByClaveEvento(claveEvento)) {
+                return;
+            }
+
+            log.info("Incentivos AMQP: Registrando donación en depósito para donante id={}", evento.getIdDonante());
+            if (evento.getCanalPreferidoDonante() != null || evento.getContactoPreferidoDonante() != null) {
+                incentivosService.actualizarContactoPreferidoDonante(
+                        evento.getIdDonante(),
+                        evento.getCanalPreferidoDonante(),
+                        evento.getContactoPreferidoDonante()
+                );
+            }
+            incentivosService.registrarImpactoDonacionCompleto(
+                    evento.getIdDonante(),
+                    evento.getNombreDonante(),
+                    evento.getEmailDonante(),
+                    evento.getCantidad(),
+                    evento.getSubcategoria(),
+                    null
+            );
+
+            eventoRepo.save(new com.donatrack.incentivos.domain.RegistroEventoProcesado(claveEvento, "DONACION_REGISTRADA"));
+        } catch (Exception e) {
+            log.error("Error al procesar donacion.registrada en incentivos: {}", e.getMessage(), e);
         }
     }
 
@@ -60,15 +136,20 @@ public class DonacionEventConsumer {
         if (clazz.isInstance(payload)) {
             return clazz.cast(payload);
         }
+        String json = null;
         if (payload instanceof org.springframework.amqp.core.Message msg) {
-            String json = new String(msg.getBody(), StandardCharsets.UTF_8);
+            json = new String(msg.getBody(), StandardCharsets.UTF_8);
+        } else if (payload instanceof String str) {
+            json = str;
+        } else if (payload instanceof byte[] bytes) {
+            json = new String(bytes, StandardCharsets.UTF_8);
+        }
+        if (json != null) {
+            String trimmed = json.trim();
+            if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+                json = objectMapper.readValue(trimmed, String.class);
+            }
             return objectMapper.readValue(json, clazz);
-        }
-        if (payload instanceof String str) {
-            return objectMapper.readValue(str, clazz);
-        }
-        if (payload instanceof byte[] bytes) {
-            return objectMapper.readValue(new String(bytes, StandardCharsets.UTF_8), clazz);
         }
         return objectMapper.convertValue(payload, clazz);
     }

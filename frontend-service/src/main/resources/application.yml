@@ -1,5 +1,10 @@
 server:
   port: 8086
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
 
 spring:
   application:
@@ -10,6 +15,18 @@ spring:
     mode: HTML
     encoding: UTF-8
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 25MB
+      max-request-size: 30MB
+
 donatrack:
   api-gateway:
     url: ${API_GATEWAY_URL:http://localhost:8080}
+  keycloak:
+    url: ${KEYCLOAK_URL:http://localhost:8081}
+    realm: ${KEYCLOAK_REALM:donatrack}
+    client-id: ${KEYCLOAK_CLIENT_ID:donatrack-client}
+  mailpit:
+    url: ${MAILPIT_URL:http://localhost:8025}

@@ -10,6 +10,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
@@ -39,14 +40,40 @@ public class HomeController {
                 .mapToDouble(d -> ((Number) d.get("cantidad")).doubleValue())
                 .sum();
 
+        List<Map<String, Object>> publicasMapa = apiClient.listarDonacionesPublicasMapa();
+
+        List<Map<String, Object>> destacadas = donaciones.stream()
+                .filter(this::esDeUltimoMes)
+                .limit(6)
+                .toList();
+
         model.addAttribute("totalDonaciones", donaciones.size());
         model.addAttribute("totalEntregadas", entregadas.size());
         model.addAttribute("totalKilos", totalKilos);
-        model.addAttribute("donacionesDestacadas", donaciones.stream().limit(6).toList());
+        model.addAttribute("donacionesDestacadas", destacadas);
         model.addAttribute("donacionesEntregadas", entregadas);
+        model.addAttribute("donacionesPublicasMapa", publicasMapa);
         model.addAttribute("userSession", session.getAttribute(AuthInterceptor.SESSION_USER_KEY));
 
         return "index";
+    }
+
+    private boolean esDeUltimoMes(Map<String, Object> d) {
+        if (d == null) return false;
+        Object rawDate = d.get("fechaRegistro");
+        if (rawDate == null) rawDate = d.get("fechaCreacion");
+        if (rawDate == null) rawDate = d.get("fechaRecepcion");
+        if (rawDate == null) return true;
+        String str = rawDate.toString().trim();
+        if (str.length() >= 10) {
+            try {
+                java.time.LocalDate fecha = java.time.LocalDate.parse(str.substring(0, 10));
+                return !fecha.isBefore(java.time.LocalDate.now().minusDays(30));
+            } catch (Exception ignored) {
+                return true;
+            }
+        }
+        return true;
     }
 
     @GetMapping("/comprobantes")
@@ -109,13 +136,15 @@ public class HomeController {
         UserSession userSession = userSessionOpt.get();
         session.setAttribute(AuthInterceptor.SESSION_USER_KEY, userSession);
 
-        if (redirect != null && !redirect.isBlank() && !redirect.equals("/login")) {
+        if (redirect != null && !redirect.isBlank() && redirect.startsWith("/") && !redirect.startsWith("//") && !redirect.equals("/login")) {
             return "redirect:" + redirect;
         }
 
         // Redirección inteligente según el rol del usuario
         if (userSession.isAdmin()) {
             return "redirect:/admin";
+        } else if (userSession.isChofer()) {
+            return "redirect:/chofer";
         } else if (userSession.isDonante()) {
             return "redirect:/donante";
         } else {
@@ -136,32 +165,129 @@ public class HomeController {
         return "registro";
     }
 
+    /**
+     * Endpoint AJAX para validación en tiempo real de direcciones argentinas (Georef AR).
+     */
+    @GetMapping("/api/direcciones/validar")
+    @ResponseBody
+    public Map<String, Object> validarDireccion(@RequestParam(value = "direccion", required = false) String direccion) {
+        if (direccion == null || direccion.trim().isBlank()) {
+            return Map.of("esValida", false, "mensajeValidacion", "Ingrese una dirección para validar.");
+        }
+        return apiClient.normalizarDireccion(direccion.trim());
+    }
+
     @PostMapping("/registro/donante")
     public String registrarDonante(@RequestParam("nombre") String nombre,
                                    @RequestParam("apellido") String apellido,
                                    @RequestParam("dni") String dni,
                                    @RequestParam(value = "edad", defaultValue = "25") Integer edad,
                                    @RequestParam("email") String email,
+                                   @RequestParam(value = "password", defaultValue = "donante123") String password,
                                    @RequestParam(value = "telefono", required = false) String telefono,
+                                   @RequestParam(value = "medioPreferido", defaultValue = "EMAIL") String medioPreferido,
                                    @RequestParam(value = "direccion", required = false) String direccion,
                                    RedirectAttributes redirectAttrs) {
+
+        String dirFinal = (direccion != null && !direccion.isBlank()) ? direccion.trim() : "Sin dirección";
+        if (!dirFinal.equalsIgnoreCase("Sin dirección")) {
+            Map<String, Object> norm = apiClient.normalizarDireccion(dirFinal);
+            if (norm != null && Boolean.FALSE.equals(norm.get("esValida"))) {
+                redirectAttrs.addFlashAttribute("mensajeError", "Dirección no válida: " + norm.get("mensajeValidacion"));
+                return "redirect:/registro";
+            }
+            if (norm != null && norm.get("nomenclatura") != null) {
+                dirFinal = (String) norm.get("nomenclatura");
+            }
+        }
+
+        boolean tieneTelefono = telefono != null && !telefono.trim().isEmpty();
+        boolean prefTelefono = tieneTelefono && "TELEFONO".equalsIgnoreCase(medioPreferido);
+        java.util.List<Map<String, Object>> mediosContacto = new java.util.ArrayList<>();
+        mediosContacto.add(Map.of("tipo", "EMAIL", "valor", email, "esPredeterminado", !prefTelefono));
+        if (tieneTelefono) {
+            mediosContacto.add(Map.of("tipo", "TELEFONO", "valor", telefono.trim(), "esPredeterminado", prefTelefono));
+        }
+
         Map<String, Object> body = Map.of(
                 "nombre", nombre,
                 "apellido", apellido,
                 "nroDocumento", dni,
                 "edad", edad,
                 "genero", "No especificado",
-                "direccion", direccion != null ? direccion : "Sin dirección",
-                "mediosContacto", List.of(
-                        Map.of("tipo", "EMAIL", "valor", email, "esPredeterminado", true)
-                )
+                "direccion", dirFinal,
+                "mediosContacto", mediosContacto
         );
 
         Map<String, Object> nuevoDonante = apiClient.crearDonanteHumana(body);
         if (nuevoDonante != null) {
-            redirectAttrs.addFlashAttribute("mensajeExito", "¡Registro exitoso como Donante! Inicia sesión con tu correo (" + email + ") y tu contraseña (ej: donante123).");
+            authService.registrarCredencial(email, password);
+            if (dni != null && !dni.isBlank()) {
+                authService.registrarCredencial(dni, password);
+            }
+            redirectAttrs.addFlashAttribute("mensajeExito", "¡Registro exitoso como Donante! Inicia sesión con tu correo (" + email + ") y la contraseña elegida.");
         } else {
             redirectAttrs.addFlashAttribute("mensajeError", "No se pudo completar el registro. Verifique que el DNI no se encuentre registrado.");
+        }
+        return "redirect:/login";
+    }
+
+    @PostMapping("/registro/juridica")
+    public String registrarDonanteJuridico(@RequestParam("razonSocial") String razonSocial,
+                                          @RequestParam("cuit") String cuit,
+                                          @RequestParam(value = "tipo", defaultValue = "Empresa") String tipo,
+                                          @RequestParam(value = "rubro", defaultValue = "General") String rubro,
+                                          @RequestParam("email") String email,
+                                          @RequestParam(value = "password", defaultValue = "empresa123") String password,
+                                          @RequestParam(value = "telefono", required = false) String telefono,
+                                          @RequestParam(value = "medioPreferido", defaultValue = "EMAIL") String medioPreferido,
+                                          @RequestParam(value = "representante", required = false) String representante,
+                                          @RequestParam(value = "direccion", required = false) String direccion,
+                                          RedirectAttributes redirectAttrs) {
+
+        String dirFinal = (direccion != null && !direccion.isBlank()) ? direccion.trim() : "Sin dirección";
+        if (!dirFinal.equalsIgnoreCase("Sin dirección")) {
+            Map<String, Object> norm = apiClient.normalizarDireccion(dirFinal);
+            if (norm != null && Boolean.FALSE.equals(norm.get("esValida"))) {
+                redirectAttrs.addFlashAttribute("mensajeError", "Dirección no válida: " + norm.get("mensajeValidacion"));
+                return "redirect:/registro";
+            }
+            if (norm != null && norm.get("nomenclatura") != null) {
+                dirFinal = (String) norm.get("nomenclatura");
+            }
+        }
+
+        boolean tieneTelefono = telefono != null && !telefono.trim().isEmpty();
+        boolean prefTelefono = tieneTelefono && "TELEFONO".equalsIgnoreCase(medioPreferido);
+        java.util.List<Map<String, Object>> mediosContacto = new java.util.ArrayList<>();
+        mediosContacto.add(Map.of("tipo", "EMAIL", "valor", email, "esPredeterminado", !prefTelefono));
+        if (tieneTelefono) {
+            mediosContacto.add(Map.of("tipo", "TELEFONO", "valor", telefono.trim(), "esPredeterminado", prefTelefono));
+        }
+
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("razonSocial", razonSocial);
+        body.put("cuit", cuit);
+        body.put("tipo", tipo);
+        body.put("rubro", rubro);
+        body.put("direccion", dirFinal);
+        body.put("mediosContacto", mediosContacto);
+        if (representante != null && !representante.trim().isEmpty()) {
+            body.put("representantes", List.of(representante.trim()));
+        }
+
+        Map<String, Object> nuevoDonante = apiClient.crearDonanteJuridica(body);
+        if (nuevoDonante != null) {
+            authService.registrarCredencial(email, password);
+            if (cuit != null && !cuit.isBlank()) {
+                authService.registrarCredencial(cuit, password);
+            }
+            if (razonSocial != null && !razonSocial.isBlank()) {
+                authService.registrarCredencial(razonSocial, password);
+            }
+            redirectAttrs.addFlashAttribute("mensajeExito", "¡Registro exitoso como Empresa/Institución donante! Inicia sesión con tu correo (" + email + ") o CUIT.");
+        } else {
+            redirectAttrs.addFlashAttribute("mensajeError", "No se pudo completar el registro. Verifique que el CUIT no se encuentre registrado.");
         }
         return "redirect:/login";
     }
@@ -171,17 +297,35 @@ public class HomeController {
                                    @RequestParam("direccion") String direccion,
                                    @RequestParam("telefono") String telefono,
                                    @RequestParam("email") String email,
+                                   @RequestParam(value = "password", defaultValue = "comedor123") String password,
                                    RedirectAttributes redirectAttrs) {
+
+        if (direccion == null || direccion.trim().isBlank()) {
+            redirectAttrs.addFlashAttribute("mensajeError", "La dirección de la sede o comedor es obligatoria para la logística de entregas.");
+            return "redirect:/registro";
+        }
+
+        String dirTrim = direccion.trim();
+        Map<String, Object> norm = apiClient.normalizarDireccion(dirTrim);
+        if (norm != null && Boolean.FALSE.equals(norm.get("esValida"))) {
+            redirectAttrs.addFlashAttribute("mensajeError", "Dirección de la entidad inválida: " + norm.get("mensajeValidacion"));
+            return "redirect:/registro";
+        }
+        if (norm != null && norm.get("nomenclatura") != null) {
+            dirTrim = (String) norm.get("nomenclatura");
+        }
+
         Map<String, Object> body = Map.of(
                 "razonSocial", razonSocial,
-                "direccion", direccion,
+                "direccion", dirTrim,
                 "telefono", telefono,
                 "emailsRepresentantes", List.of(email)
         );
 
         Map<String, Object> nuevaEntidad = apiClient.crearEntidad(body);
         if (nuevaEntidad != null) {
-            redirectAttrs.addFlashAttribute("mensajeExito", "¡Registro exitoso para " + razonSocial + "! Inicia sesión con el email (" + email + ") y tu contraseña (ej: comedor123).");
+            authService.registrarCredencial(email, password);
+            redirectAttrs.addFlashAttribute("mensajeExito", "¡Registro exitoso para " + razonSocial + "! Inicia sesión con el email (" + email + ") y la contraseña elegida.");
         } else {
             redirectAttrs.addFlashAttribute("mensajeError", "No se pudo registrar la entidad beneficiaria. Intente nuevamente.");
         }

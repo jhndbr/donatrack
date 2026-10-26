@@ -9,107 +9,140 @@ title Arquitectura Física y Lógica de Microservicios - DonaTrack (DDSI 2026)
 actor "Usuario Web / Donante" as WebUser
 actor "Entidad Beneficiaria" as BeneficiariaUser
 actor "Chofer / Transportista" as ChoferUser
-actor "Administrador Cátedra" as AdminUser
+actor "Administrador Operativo" as AdminUser
 
-package "Capa Perimetral y Seguridad" {
-    [API Gateway\n(Spring Cloud Gateway :8080)] as Gateway
+package "Capa de Presentación SSR y Seguridad Perimetral" {
+    component "frontend-service (:8086)\n(Spring MVC + Thymeleaf + Leaflet + Chart.js)" as FrontendSvc {
+        [Controladores Web SSR] as Web_Ctrl
+        [AuthService & AuthInterceptor] as Web_Auth
+        [ApiClientService (RestTemplate)] as Api_Client
+    }
+
+    component "api-gateway (:8080)\n(Spring Cloud Gateway Reactive)" as Gateway {
+        [RateLimitingFilter (Token Bucket IP)] as RateLimit_Filter
+        [AuthenticationGatewayFilter (JWT Claims)] as Auth_Filter
+        [Reverse Proxy Router] as Gateway_Router
+    }
+
     [Keycloak Identity Provider\n(OIDC / OAuth2 / JWT :8081)] as Keycloak
 }
 
-package "Ecosistema de Microservicios (Spring Boot 3.2)" {
+package "Ecosistema de Microservicios de Dominio (Spring Boot 3.2.5 / Java 21)" {
     component "donaciones-service (:8082)" as DonacionesSvc {
-        [API REST Donaciones] as API_Don
-        [Motor Matchmaking (Strategy)] as Engine_Match
-        [Streaming CSV Importer] as CSV_Stream
+        [API REST & GraphQL Donaciones] as API_Don
+        [Motor Matchmaking (Strategy + Config DB)] as Engine_Match
+        [Streaming CSV Importer (>20k filas)] as CSV_Stream
         [Transactional Outbox Scheduler] as Outbox_Pub
+        [Georef Normalizador Direcciones] as Georef_Client
     }
 
     component "logistica-service (:8083)" as LogisticaSvc {
-        [API REST Logística & Flotas] as API_Log
-        [Agrupador de Lotes (<= 100)] as Batch_Router
+        [API REST Logística, Rutas & Entregas] as API_Log
+        [Agrupador de Lotes VRP (<= 100)] as Batch_Router
         [Webhook Callback Listener] as Webhook_Log
         [Telemetría GPS Tracker] as GPS_Tracker
     }
 
     component "incentivos-service (:8084)" as IncentivosSvc {
-        [API REST Gamificación] as API_Inc
-        [Motor de Misiones e Insignias] as Engine_Gamif
-        [Cron Ranking Mensual (0 0 0 1 * ?)] as Cron_Ranking
+        [API REST Gamificación & Analítica] as API_Inc
+        [Motor Secuencial de Misiones e Insignias] as Engine_Gamif
+        [Cron Ranking Mensual y Racha] as Cron_Ranking
     }
 
     component "notificaciones-service (:8085)" as NotificacionesSvc {
-        [AMQP Consumer (RabbitListener)] as AMQP_Sub
-        [Despachador Multi-Canal] as Dispatcher
+        [AMQP Consumer Idempotente (RabbitListener)] as AMQP_Sub
+        [Despachador Multi-Canal (Email/SMS/WhatsApp)] as Dispatcher
+        [API REST Auditoría Notificaciones] as API_Notif
     }
 }
 
 package "Broker de Mensajería Asíncrona" {
-    queue "Topic Exchange: donatrack.events\n(RabbitMQ AMQP :5672 / UI :15672)" as RabbitMQ
-    queue "q.notificaciones.donaciones" as Q_Notif_Don
-    queue "q.notificaciones.logistica" as Q_Notif_Log
-    queue "q.notificaciones.incentivos" as Q_Notif_Inc
+    queue "Topic Exchange: donatrack.events.exchange\n(RabbitMQ AMQP :5672 / UI :15672)" as RabbitMQ
+    queue "q.notificaciones.*" as Q_Notif_All
+    queue "q.incentivos.donaciones-registradas" as Q_Inc_Reg
     queue "q.incentivos.donaciones" as Q_Inc_Don
+    queue "q.incentivos.entregas" as Q_Inc_Ent
 }
 
-package "Persistencia Políglota" {
+package "Persistencia Políglota Desacoplada" {
     database "PostgreSQL 16 (Relacional)\ndonaciones_db (:5432)" as DB_Donaciones
     database "MongoDB 7.0 (NoSQL Documental)\nlogistica_db (:27017)" as DB_Logistica
     database "PostgreSQL 16 (Relacional)\nincentivos_db (:5432)" as DB_Incentivos
+    database "PostgreSQL 16 (Relacional)\nnotificaciones_db (:5432)" as DB_Notificaciones
     database "PostgreSQL 16\nkeycloak_db (:5432)" as DB_Keycloak
 }
 
-package "Servicios Externos y Automatización" {
+package "Observabilidad, Servicios Externos y Automatización (Entrega 6)" {
+    [Prometheus Metrics (:9090)\n(/actuator/prometheus)] as Prometheus
+    [Grafana Dashboards (:3000)] as Grafana
     [Mailpit SMTP Server (:1025 / UI :8025)] as Mailpit
-    [n8n Workflow Automation\n(Difusión en Redes Sociales)] as N8N
-    [Optimizador Externo de Rutas\n(Algoritmo VRP / Lotes <= 100)] as RoutePlanner
+    [n8n Workflow Automation (:5678)\n(Difusión en Redes Sociales)] as N8N
+    [API Georef Argentina\n(apis.datos.gob.ar)] as GeorefAPI
+    [Optimizador Externo de Rutas VRP\n(Algoritmo VRP / Lotes <= 100)] as RoutePlanner
 }
 
 ' Flujos de acceso de usuarios
-WebUser --> Gateway : HTTPS / JWT Bearer
-BeneficiariaUser --> Gateway : HTTPS / JWT Bearer
-ChoferUser --> Gateway : HTTPS / Telemetría GPS
-AdminUser --> Gateway : HTTPS / Administracion
+WebUser --> Web_Ctrl : HTTP / Sesión SSR
+BeneficiariaUser --> Web_Ctrl : HTTP / Sesión SSR
+ChoferUser --> Web_Ctrl : HTTP / Telemetría GPS
+AdminUser --> Web_Ctrl : HTTP / Administración
+Web_Ctrl --> Web_Auth : Control de Roles e IDOR
+Web_Ctrl --> Api_Client
+Api_Client --> RateLimit_Filter : HTTP + Bearer JWT / X-User-*
 
 ' Seguridad y Validación
-Gateway .right.> Keycloak : 1. Valida Tokens JWT (JWKS / Introspect)
+Web_Auth .right.> Keycloak : OIDC Token Grant
+RateLimit_Filter --> Auth_Filter
+Auth_Filter .right.> Keycloak : Verifica JWT / Claims
+Auth_Filter --> Gateway_Router : X-Gateway-Verified: true
 Keycloak --> DB_Keycloak : Persiste Realms / Usuarios
 
 ' Enrutamiento Inverso desde Gateway
-Gateway --> API_Don : /api/v1/donaciones/**
-Gateway --> API_Log : /api/v1/logistica/**
-Gateway --> API_Inc : /api/v1/incentivos/**
+Gateway_Router --> API_Don : /api/v1/donaciones/**, /donantes/**, /personas-donantes/**, /entidades/**, /necesidades/**
+Gateway_Router --> API_Log : /api/v1/logistica/**, /camiones/**, /pendientes-lote/**
+Gateway_Router --> API_Inc : /api/v1/incentivos/**
+Gateway_Router --> API_Notif : /api/v1/notificaciones/**
 
 ' Persistencia por Servicio
 DonacionesSvc --> DB_Donaciones : JPA / Hibernate Batch
 IncentivosSvc --> DB_Incentivos : JPA / Hibernate
-LogisticaSvc --> DB_Logistica : Spring Data MongoDB (GeoSpatial 2dsphere)
+LogisticaSvc --> DB_Logistica : Spring Data MongoDB
+NotificacionesSvc --> DB_Notificaciones : JPA / Auditoría & Idempotencia
 
 ' Integración Inter-Servicios Sincrónica
-LogisticaSvc ..> API_Don : REST Sincrónico\n(Consultar donaciones ASIGNACION_REALIZADA\nActualizar estados a EN_TRASLADO / ENTREGADA)
+LogisticaSvc ..> API_Don : REST Sincrónico\n(Consultar donaciones y actualizar estados\nEN_TRASLADO / ENTREGADA / ENTREGA_FALLIDA)
+Georef_Client ..> GeorefAPI : Normalización y Geocodificación
 
 ' Planificación de Rutas Externa
-Batch_Router --> RoutePlanner : POST /optimizar (Lotes <= 100 elementos)
-RoutePlanner --> Webhook_Log : POST /api/v1/logistica/rutas/callback (JSON)
+Batch_Router --> RoutePlanner : POST /optimizar (Lotes <= 100)
+RoutePlanner --> Webhook_Log : POST /api/v1/logistica/rutas/callback
 
 ' Mensajería Asíncrona (RabbitMQ)
-Outbox_Pub --> RabbitMQ : Publica donacion.asignada, donante.inactivo
+Outbox_Pub --> RabbitMQ : Publica donacion.registrada, donacion.asignada, donante.inactivo, donante.registrado
 LogisticaSvc --> RabbitMQ : Publica ruta.iniciada, entrega.confirmada, entrega.fallida
 IncentivosSvc --> RabbitMQ : Publica mision.cumplida, categoria.ascendida
 
 ' Enrutamiento interno de RabbitMQ
-RabbitMQ --> Q_Notif_Don : binding: donacion.*
-RabbitMQ --> Q_Notif_Log : binding: ruta.*, entrega.*
-RabbitMQ --> Q_Notif_Inc : binding: mision.*, categoria.*
-RabbitMQ --> Q_Inc_Don : binding: donacion.asignada
+RabbitMQ --> Q_Notif_All : bindings hacia notificaciones
+RabbitMQ --> Q_Inc_Reg : donacion.registrada
+RabbitMQ --> Q_Inc_Don : donacion.asignada
+RabbitMQ --> Q_Inc_Ent : entrega.confirmada
 
 ' Consumo Asíncrono
-AMQP_Sub <-- Q_Notif_Don : Mensajes AMQP
-AMQP_Sub <-- Q_Notif_Log : Mensajes AMQP
-AMQP_Sub <-- Q_Notif_Inc : Mensajes AMQP
-API_Inc <-- Q_Inc_Don : Suma Puntos Donante
+AMQP_Sub <-- Q_Notif_All : Mensajes AMQP
+Engine_Gamif <-- Q_Inc_Reg : Métricas y Misiones
+Engine_Gamif <-- Q_Inc_Don : Organización Ayudada
+Engine_Gamif <-- Q_Inc_Ent : Donaciones Exitosas
 
-' Salidas hacia el exterior
+' Salidas hacia el exterior y Observabilidad
 Dispatcher --> Mailpit : Correo SMTP (:1025)
-Engine_Gamif ..> N8N : Webhook POST (Difusión Insignias / Logros)
+Engine_Gamif ..> N8N : Webhook POST (Difusión Insignias)
+Prometheus ..> Gateway : Scrape /actuator/prometheus
+Prometheus ..> DonacionesSvc : Scrape /actuator/prometheus
+Prometheus ..> LogisticaSvc : Scrape /actuator/prometheus
+Prometheus ..> IncentivosSvc : Scrape /actuator/prometheus
+Prometheus ..> NotificacionesSvc : Scrape /actuator/prometheus
+Prometheus ..> FrontendSvc : Scrape /actuator/prometheus
+Grafana --> Prometheus : PromQL Datasource
 
 @enduml

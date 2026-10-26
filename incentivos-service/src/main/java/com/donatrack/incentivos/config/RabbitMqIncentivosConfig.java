@@ -21,9 +21,13 @@ public class RabbitMqIncentivosConfig {
     @Value("${donatrack.rabbitmq.queues.incentivos-entregas:q.incentivos.entregas}")
     private String qIncentivosEntregas;
 
+    @Value("${donatrack.rabbitmq.queues.incentivos-donaciones-registradas:q.incentivos.donaciones-registradas}")
+    private String qIncentivosDonacionesRegistradas;
+
     @Bean
-    public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+    public MessageConverter jsonMessageConverter(com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+        objectMapper.findAndRegisterModules();
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 
     @Bean
@@ -49,8 +53,18 @@ public class RabbitMqIncentivosConfig {
     }
 
     @Bean
+    public Queue incentivosDonacionesRegistradasQueue() {
+        return QueueBuilder.durable(qIncentivosDonacionesRegistradas).build();
+    }
+
+    @Bean
     public Binding bindIncentivosDonaciones(Queue incentivosDonacionesQueue, TopicExchange eventsExchange) {
         return BindingBuilder.bind(incentivosDonacionesQueue).to(eventsExchange).with("donacion.asignada");
+    }
+
+    @Bean
+    public Binding bindIncentivosDonacionesRegistradas(Queue incentivosDonacionesRegistradasQueue, TopicExchange eventsExchange) {
+        return BindingBuilder.bind(incentivosDonacionesRegistradasQueue).to(eventsExchange).with("donacion.registrada");
     }
 
     @Bean

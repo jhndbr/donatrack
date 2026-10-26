@@ -1,8 +1,10 @@
 package com.donatrack.common.events;
 
+import com.donatrack.common.enums.CanalNotificacion;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class MisionCumplidaEvent {
+public class MisionCumplidaEvent implements Serializable {
     private Long idDonante;
     private String nombreDonante;
     private String emailDonante;
@@ -10,15 +12,26 @@ public class MisionCumplidaEvent {
     private String nombreInsignia;
     private String descripcionInsignia;
     private String categoriaActual;
+    private CanalNotificacion canalPreferido;
+    private String contactoPreferido;
     private LocalDateTime timestamp;
 
     public MisionCumplidaEvent() {
         this.timestamp = LocalDateTime.now();
+        this.canalPreferido = CanalNotificacion.EMAIL;
     }
 
     public MisionCumplidaEvent(Long idDonante, String nombreDonante, String emailDonante,
                                 String tipoMision, String nombreInsignia,
                                 String descripcionInsignia, String categoriaActual) {
+        this(idDonante, nombreDonante, emailDonante, tipoMision, nombreInsignia,
+             descripcionInsignia, categoriaActual, CanalNotificacion.EMAIL, emailDonante);
+    }
+
+    public MisionCumplidaEvent(Long idDonante, String nombreDonante, String emailDonante,
+                                String tipoMision, String nombreInsignia,
+                                String descripcionInsignia, String categoriaActual,
+                                CanalNotificacion canalPreferido, String contactoPreferido) {
         this.idDonante = idDonante;
         this.nombreDonante = nombreDonante;
         this.emailDonante = emailDonante;
@@ -26,6 +39,8 @@ public class MisionCumplidaEvent {
         this.nombreInsignia = nombreInsignia;
         this.descripcionInsignia = descripcionInsignia;
         this.categoriaActual = categoriaActual;
+        this.canalPreferido = canalPreferido != null ? canalPreferido : CanalNotificacion.EMAIL;
+        this.contactoPreferido = contactoPreferido != null ? contactoPreferido : emailDonante;
         this.timestamp = LocalDateTime.now();
     }
 
@@ -49,6 +64,12 @@ public class MisionCumplidaEvent {
 
     public String getCategoriaActual() { return categoriaActual; }
     public void setCategoriaActual(String categoriaActual) { this.categoriaActual = categoriaActual; }
+
+    public CanalNotificacion getCanalPreferido() { return canalPreferido; }
+    public void setCanalPreferido(CanalNotificacion canalPreferido) { this.canalPreferido = canalPreferido; }
+
+    public String getContactoPreferido() { return contactoPreferido; }
+    public void setContactoPreferido(String contactoPreferido) { this.contactoPreferido = contactoPreferido; }
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }

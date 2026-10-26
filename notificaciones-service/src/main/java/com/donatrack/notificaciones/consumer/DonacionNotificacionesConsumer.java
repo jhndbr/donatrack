@@ -2,7 +2,8 @@ package com.donatrack.notificaciones.consumer;
 
 import com.donatrack.common.events.DonacionAsignadaEvent;
 import com.donatrack.common.events.DonanteInactivoEvent;
-import com.donatrack.notificaciones.sender.EmailNotificationSender;
+import com.donatrack.common.events.DonanteRegistradoEvent;
+import com.donatrack.notificaciones.service.NotificacionesService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,36 +17,23 @@ public class DonacionNotificacionesConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(DonacionNotificacionesConsumer.class);
 
-    private final EmailNotificationSender emailSender;
+    private final NotificacionesService notificacionesService;
     private final ObjectMapper objectMapper;
 
-    public DonacionNotificacionesConsumer(EmailNotificationSender emailSender, ObjectMapper objectMapper) {
-        this.emailSender = emailSender;
+    public DonacionNotificacionesConsumer(NotificacionesService notificacionesService, ObjectMapper objectMapper) {
+        this.notificacionesService = notificacionesService;
         this.objectMapper = objectMapper;
+        if (this.objectMapper != null) {
+            this.objectMapper.findAndRegisterModules();
+        }
     }
 
     @RabbitListener(queues = "${donatrack.rabbitmq.queues.donacion-asignada:q.notificaciones.donacion-asignada}")
     public void recibirDonacionAsignada(Object payload) {
         try {
             DonacionAsignadaEvent evento = parsearEvento(payload, DonacionAsignadaEvent.class);
-            log.info("Consumidor AMQP: Procesando evento donacion.asignada para donacion id={}", evento.getIdDonacion());
-
-            // 1. Notificar al Donante
-            if (evento.getEmailDonante() != null && !evento.getEmailDonante().isEmpty()) {
-                String asunto = "¡Tu donación ha sido asignada a una entidad beneficiaria!";
-                String cuerpo = String.format("Hola %s,\n\nTu donación de %.2f %s de '%s' ha sido asignada a la entidad: %s.\nPronto se coordinará la entrega logística.",
-                        evento.getNombreDonante(), evento.getCantidad(), evento.getUnidadMedida(), evento.getSubcategoria(), evento.getNombreEntidad());
-                emailSender.enviar(evento.getEmailDonante(), asunto, cuerpo);
-            }
-
-            // 2. Notificar a la Entidad Beneficiaria
-            if (evento.getEmailEntidad() != null && !evento.getEmailEntidad().isEmpty()) {
-                String asunto = "¡Nueva donación asignada a tu entidad!";
-                String cuerpo = String.format("Estimados de %s,\n\nSe les ha asignado una donación de %.2f %s de '%s'.\nRecibirán novedades cuando el camión inicie la ruta.",
-                        evento.getNombreEntidad(), evento.getCantidad(), evento.getUnidadMedida(), evento.getSubcategoria());
-                emailSender.enviar(evento.getEmailEntidad(), asunto, cuerpo);
-            }
-
+            log.info("Consumidor AMQP: Procesando donacion.asignada para donacion id={}", evento.getIdDonacion());
+            notificacionesService.notificarDonacionAsignada(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de donacion asignada: {}", e.getMessage(), e);
         }
@@ -55,16 +43,21 @@ public class DonacionNotificacionesConsumer {
     public void recibirDonanteInactivo(Object payload) {
         try {
             DonanteInactivoEvent evento = parsearEvento(payload, DonanteInactivoEvent.class);
-            log.info("Consumidor AMQP: Notificando inactividad al donante id={}", evento.getIdDonante());
-
-            if (evento.getEmail() != null && !evento.getEmail().isEmpty()) {
-                String asunto = "¡Te extrañamos en DonaTrack! Ayúdanos a seguir sumando";
-                String cuerpo = String.format("Hola %s,\n\nHan pasado %d días desde tu última donación. Varias entidades beneficiarias necesitan tu apoyo. ¡Suma tu granito de arena hoy!",
-                        evento.getNombre(), evento.getDiasInactivo());
-                emailSender.enviar(evento.getEmail(), asunto, cuerpo);
-            }
+            log.info("Consumidor AMQP: Procesando donante.inactivo para donante id={}", evento.getIdDonante());
+            notificacionesService.notificarDonanteInactivo(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de donante inactivo: {}", e.getMessage(), e);
+        }
+    }
+
+    @RabbitListener(queues = "${donatrack.rabbitmq.queues.donante-registrado:q.notificaciones.donante-registrado}")
+    public void recibirDonanteRegistrado(Object payload) {
+        try {
+            DonanteRegistradoEvent evento = parsearEvento(payload, DonanteRegistradoEvent.class);
+            log.info("Consumidor AMQP: Procesando donante.registrado para donante id={}", evento.getIdDonante());
+            notificacionesService.notificarBienvenidaDonante(evento);
+        } catch (Exception e) {
+            log.error("Error al procesar mensaje de donante registrado: {}", e.getMessage(), e);
         }
     }
 
@@ -72,15 +65,20 @@ public class DonacionNotificacionesConsumer {
         if (clazz.isInstance(payload)) {
             return clazz.cast(payload);
         }
+        String json = null;
         if (payload instanceof org.springframework.amqp.core.Message msg) {
-            String json = new String(msg.getBody(), StandardCharsets.UTF_8);
+            json = new String(msg.getBody(), StandardCharsets.UTF_8);
+        } else if (payload instanceof String str) {
+            json = str;
+        } else if (payload instanceof byte[] bytes) {
+            json = new String(bytes, StandardCharsets.UTF_8);
+        }
+        if (json != null) {
+            String trimmed = json.trim();
+            if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+                json = objectMapper.readValue(trimmed, String.class);
+            }
             return objectMapper.readValue(json, clazz);
-        }
-        if (payload instanceof String str) {
-            return objectMapper.readValue(str, clazz);
-        }
-        if (payload instanceof byte[] bytes) {
-            return objectMapper.readValue(new String(bytes, StandardCharsets.UTF_8), clazz);
         }
         return objectMapper.convertValue(payload, clazz);
     }

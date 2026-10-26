@@ -1,2 +1,6 @@
+com/donatrack/logistica/service/TelemetriaServiceTest.class
+com/donatrack/logistica/service/EntregaServiceTest.class
+com/donatrack/logistica/service/PlanificacionRutasServiceTest.class
 com/donatrack/logistica/controller/RutaControllerTest.class
+com/donatrack/logistica/service/FlotaServiceTest.class
 com/donatrack/logistica/service/LogisticaBatchRutaTest.class

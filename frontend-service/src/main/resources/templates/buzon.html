@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Buzón de Correos Electrónicos - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <!-- Encabezado Principal -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill mb-1">
+                <i class="fa-solid fa-envelope-open-text me-1"></i> Servidor SMTP Mailpit Integrado (:8025)
+            </span>
+            <h2 class="fw-bold text-dark mb-0">Buzón de Notificaciones por Correo</h2>
+            <p class="text-secondary mb-0">Visualiza en tiempo real los correos emitidos por DonaTrack con la plantilla corporativa, enlaces de trazabilidad y botones CTA.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <!-- Botón Volver al Portal según rol -->
+            <a th:if="${session.userSession != null and session.userSession.isDonante()}" href="/donante" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Portal Donante
+            </a>
+            <a th:if="${session.userSession != null and session.userSession.isBeneficiaria()}" href="/beneficiaria" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Portal Beneficiaria
+            </a>
+
+            <!-- Acciones de Administración (Solo Administrador) -->
+            <a th:if="${isAdmin}" th:href="${mailpitUrl}" target="_blank" class="btn btn-outline-secondary btn-sm" title="Abrir consola original de Mailpit en puerto 8025">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Mailpit Nativo (:8025)
+            </a>
+            <a href="/buzon" class="btn btn-outline-primary btn-sm" title="Refrescar lista de correos">
+                <i class="fa-solid fa-arrows-rotate me-1"></i> Actualizar
+            </a>
+            <form th:if="${isAdmin}" action="/buzon/vaciar" method="post" onsubmit="return confirm('¿Está seguro de vaciar todos los correos del buzón de prueba?');">
+                <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar todos los correos del servidor Mailpit">
+                    <i class="fa-solid fa-trash-can me-1"></i> Vaciar Buzón
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alertas Flash -->
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i><span th:text="${mensajeExito}">Éxito</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+        <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${mensajeError}">Error</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Banner Informativo de Privacidad y Aislamiento para Donantes y Entidades -->
+    <div th:if="${filtradoPorUsuario}" class="alert alert-info border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center gap-3 bg-white">
+        <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+            <i class="fa-solid fa-user-shield fs-3"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold text-dark mb-1">Buzón Privado de Comunicaciones</h5>
+            <p class="text-secondary small mb-0">
+                Por motivos de confidencialidad y protección de datos, este buzón visualiza <strong>únicamente los correos emitidos hacia tu cuenta</strong>:
+                <strong class="text-dark font-monospace" th:text="${emailUsuario}">usuario@donatrack.org</strong>.
+            </p>
+        </div>
+    </div>
+
+    <!-- Banner de Auditoría Global para Administradores -->
+    <div th:if="${isAdmin}" class="alert alert-warning border-0 shadow-sm rounded-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-screwdriver-wrench text-warning-emphasis fs-4"></i>
+            <div>
+                <strong class="d-block text-dark">Modo Auditoría Central (Administrador)</strong>
+                <span class="text-secondary small">Posees permisos para visualizar, buscar y gestionar todos los correos generados por el ecosistema.</span>
+            </div>
+        </div>
+        <div>
+            <a th:href="${mailpitUrl}" target="_blank" class="btn btn-sm btn-outline-dark bg-white shadow-sm">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Abrir Consola Mailpit (:8025)
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Búsqueda y Estadísticas -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-7">
+                <form action="/buzon" method="get" class="d-flex gap-2">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-secondary"></i></span>
+                        <input type="text" name="query" class="form-control border-start-0"
+                               th:placeholder="${filtradoPorUsuario} ? 'Buscar en mis correos (asunto, palabra clave)...' : 'Buscar por destinatario, asunto o palabra clave (ej. carlos, comedor)...'"
+                               th:value="${query}">
+                    </div>
+                    <button type="submit" class="btn btn-dt-primary px-3">Buscar</button>
+                    <a th:if="${!#strings.isEmpty(query)}" href="/buzon" class="btn btn-outline-secondary">Limpiar</a>
+                </form>
+            </div>
+            <div class="col-md-5 d-flex justify-content-md-end gap-3 text-muted small">
+                <div>
+                    <i class="fa-solid fa-inbox text-primary me-1"></i>
+                    <span th:text="${filtradoPorUsuario} ? 'Mis Correos: ' : 'Total Correos: '">Total Correos: </span>
+                    <strong class="text-dark" th:text="${total}">0</strong>
+                </div>
+                <div>
+                    <i class="fa-solid fa-envelope text-warning me-1"></i>
+                    <span th:text="${filtradoPorUsuario} ? 'Recibidos: ' : 'Sin leer: '">Sin leer: </span>
+                    <strong class="text-dark" th:text="${filtradoPorUsuario} ? ${#lists.size(messages)} : ${unread}">0</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Layout Dividido Estilo Webmail -->
+    <div class="row g-4">
+        <!-- Columna Izquierda: Lista de Correos -->
+        <div class="col-lg-5 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden h-100">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-dark"><i class="fa-solid fa-list-ul me-2 text-primary"></i>Mensajes Recibidos</span>
+                    <span class="badge bg-light text-secondary border" th:text="${#lists.size(messages)} + ' mensajes'">0</span>
+                </div>
+                <div class="list-group list-group-flush" style="max-height: 650px; overflow-y: auto;">
+                    <div th:if="${#lists.isEmpty(messages)}" class="text-center py-5 text-muted">
+                        <i class="fa-regular fa-envelope-open fs-2 mb-2 d-block text-secondary"></i>
+                        No se encontraron correos en el buzón.
+                    </div>
+
+                    <a th:each="m : ${messages}"
+                       th:href="@{/buzon(id=${m['ID']}, query=${query})}"
+                       th:class="'list-group-item list-group-item-action p-3 border-bottom text-decoration-none ' + (${mensajeSeleccionado != null and mensajeSeleccionado['ID'] == m['ID']} ? 'bg-light border-start border-primary border-4' : '')">
+                        <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                            <span class="badge bg-primary-subtle text-primary text-truncate font-monospace" style="max-width: 170px;"
+                                  th:text="${m['To'] != null and !#lists.isEmpty(m['To']) ? m['To'][0]['Address'] : 'Sin destinatario'}">
+                                destinatario@donatrack.org
+                            </span>
+                            <small class="text-muted font-monospace"
+                                   th:text="${m['Created'] != null ? (#strings.length(m['Created'].toString()) >= 19 ? #strings.substring(m['Created'].toString(), 11, 16) : 'Hoy') : ''}">
+                                10:30
+                            </small>
+                        </div>
+                        <h6 class="mb-1 fw-bold text-dark text-truncate" th:text="${m['Subject']}">Asunto del correo</h6>
+                        <p class="mb-1 text-muted small text-truncate" th:text="${m['Snippet'] != null ? m['Snippet'] : 'Vista previa no disponible'}">
+                            Vista previa del contenido del correo...
+                        </p>
+                        <div class="small text-secondary mt-1">
+                            <i class="fa-solid fa-paper-plane me-1 text-muted"></i>
+                            <span th:text="${m['From'] != null ? (m['From']['Name'] != null and !#strings.isEmpty(m['From']['Name']) ? m['From']['Name'] : m['From']['Address']) : 'DonaTrack'}">DonaTrack</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Lector de Correo -->
+        <div class="col-lg-7 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100 overflow-hidden" th:if="${mensajeSeleccionado != null}">
+                <!-- Encabezado del Mensaje -->
+                <div class="card-header bg-white p-4 border-bottom">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                        <h4 class="fw-bold text-dark mb-0" th:text="${mensajeSeleccionado['Subject']}">Asunto del Correo</h4>
+                        <div class="d-flex gap-2">
+                            <a th:href="@{'/buzon/raw/' + ${mensajeSeleccionado['ID']}}" target="_blank" class="btn btn-outline-secondary btn-sm" title="Abrir en ventana independiente">
+                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Pantalla Completa
+                            </a>
+                            <form th:action="@{'/buzon/' + ${mensajeSeleccionado['ID']} + '/eliminar'}" method="post" onsubmit="return confirm('¿Desea eliminar este correo?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar mensaje">
+                                    <i class="fa-solid fa-trash me-1"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="row g-2 small text-muted">
+                        <div class="col-md-6">
+                            <i class="fa-solid fa-user text-primary me-1"></i>
+                            <strong>De:</strong>
+                            <span class="text-dark" th:text="${mensajeSeleccionado['From'] != null ? (mensajeSeleccionado['From']['Name'] + ' &lt;' + mensajeSeleccionado['From']['Address'] + '&gt;') : 'DonaTrack'}">Remitente</span>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <i class="fa-regular fa-clock text-secondary me-1"></i>
+                            <strong>Fecha:</strong>
+                            <span class="text-dark" th:text="${mensajeSeleccionado['Date'] != null ? mensajeSeleccionado['Date'] : 'Reciente'}">Fecha</span>
+                        </div>
+                        <div class="col-12">
+                            <i class="fa-solid fa-envelope text-success me-1"></i>
+                            <strong>Para:</strong>
+                            <span class="badge bg-light text-dark border font-monospace ms-1"
+                                  th:each="to : ${mensajeSeleccionado['To']}"
+                                  th:text="${to['Address']}">destinatario@donatrack.org</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuerpo del Correo (Iframe Responsivo de la Plantilla HTML) -->
+                <div class="card-body p-0 bg-light">
+                    <div class="p-2 border-bottom bg-white d-flex justify-content-between align-items-center">
+                        <span class="small text-muted fw-semibold">
+                            <i class="fa-solid fa-palette text-primary me-1"></i> Renderizado Visual del Mensaje
+                        </span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle small">
+                            <i class="fa-solid fa-shield-halved me-1"></i> Sandbox Seguro
+                        </span>
+                    </div>
+                    <div class="p-3">
+                        <iframe th:src="@{'/buzon/raw/' + ${mensajeSeleccionado['ID']}}"
+                                style="width: 100%; height: 560px; border: 1px solid #e2e8f0; border-radius: 10px; background-color: #ffffff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);"
+                                title="Contenido del Correo">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado Vacío cuando no hay mensaje seleccionado -->
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-5 text-center h-100 justify-content-center" th:if="${mensajeSeleccionado == null}">
+                <div class="py-5">
+                    <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex p-4 mb-3">
+                        <i class="fa-solid fa-envelope-open fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Ningún Correo Seleccionado</h5>
+                    <p class="text-muted small mb-3">Haz clic en cualquiera de los mensajes del panel izquierdo para previsualizar su contenido HTML y enlaces interactivos.</p>
+                    <a th:if="${isAdmin}" href="/admin/notificaciones" class="btn btn-outline-primary btn-sm">
+                        <i class="fa-solid fa-paper-plane me-1"></i> Enviar Notificación de Prueba
+                    </a>
+                    <a th:if="${!isAdmin and session.userSession != null and session.userSession.isDonante()}" href="/donante/donaciones" class="btn btn-dt-primary btn-sm">
+                        <i class="fa-solid fa-hand-holding-heart me-1"></i> Ver Mis Donaciones
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

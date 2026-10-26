@@ -7,74 +7,160 @@
 <div th:fragment="content">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-truck-fast text-success me-2"></i>Seguimiento de Entregas Activas</h2>
-            <p class="text-secondary">Monitorea en tiempo real la geolocalización de los camiones que transportan las donaciones asignadas.</p>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-truck-fast text-success me-2"></i>Seguimiento Satelital de Entregas</h2>
+            <p class="text-secondary">Monitorea en tiempo real la geolocalización de los camiones y el estado de traslado de tus aportes.</p>
         </div>
-        <a href="/donante" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+        <div class="d-flex gap-2">
+            <a href="/donante/donaciones" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-boxes-packing me-1"></i>Mis Donaciones</a>
+            <a href="/donante" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+        </div>
+    </div>
+
+    <!-- Panel de Trazabilidad por Donación -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white" th:if="${!#lists.isEmpty(misDonaciones)}">
+        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-clipboard-check text-primary me-2"></i>Estado de Tus Donaciones Activas</h5>
+        <div class="row g-3">
+            <div th:each="d : ${misDonaciones}" class="col-md-6 col-lg-4">
+                <div class="p-3 rounded-3 border bg-light h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-primary-subtle text-primary font-monospace fw-bold"
+                              th:text="${d.id != null ? 'DON-' + #numbers.formatInteger(d.id, 4) : 'DON-0000'}">DON-0019</span>
+                        <span th:class="'badge badge-status status-' + ${d.estado}" th:text="${d.estado}">EN_DEPOSITO</span>
+                    </div>
+                    <div class="fw-semibold text-dark" th:text="${d.subcategoria + ' (' + d.cantidad + ' ' + d.unidadMedida + ')'}">caldo seco (10.0 kg)</div>
+                    <div class="small text-muted mt-1">
+                        <i class="fa-solid fa-building-ngo me-1"></i>
+                        <span th:text="${d.entidadAsignada != null ? d.entidadAsignada.razonSocial : 'Pendiente de asignación (Matchmaking)'}">Comedor Esperanza</span>
+                    </div>
+                    <div class="mt-3 pt-2 border-top small text-muted">
+                        <span th:if="${d.estado == 'EN_DEPOSITO'}"><i class="fa-solid fa-warehouse text-warning me-1"></i>En Depósito Central</span>
+                        <span th:if="${d.estado == 'ASIGNACION_REALIZADA' || d.estado == 'LISTA_PARA_ENTREGAR'}"><i class="fa-solid fa-clock text-info me-1"></i>Aguardando salida de ruta</span>
+                        <span th:if="${d.estado == 'EN_TRASLADO'}"><i class="fa-solid fa-truck-moving text-success me-1"></i><strong>En camino</strong> a la sede beneficiaria</span>
+                        <span th:if="${d.estado == 'ENTREGADA'}"><i class="fa-solid fa-circle-check text-success me-1"></i>Entregada con éxito</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Live Map -->
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
         <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-            <span class="fw-bold"><i class="fa-solid fa-satellite-dish text-primary me-2"></i>Posicionamiento Satelital en Vivo</span>
-            <span class="badge bg-success"><i class="fa-solid fa-signal me-1"></i>Telemetría Activa</span>
+            <span class="fw-bold"><i class="fa-solid fa-satellite-dish text-primary me-2"></i>Mapa Satelital de Rutas y Telemetría</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                <i class="fa-solid fa-signal me-1"></i>Servicio de Logística Operativo
+            </span>
         </div>
         <div class="card-body p-0">
-            <div id="trackingMap" class="map-container" style="height: 480px;"></div>
+            <div id="trackingMap" class="map-container" style="height: 480px; width: 100%;"></div>
         </div>
     </div>
 
     <!-- Lista de Camiones Activos -->
-    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
-        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-truck me-2"></i>Flota de Camiones en Operación</h5>
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-truck text-secondary me-2"></i>Monitoreo de Flota Logística en Tiempo Real</h5>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Patente</th>
-                        <th>Capacidad Volumen</th>
+                        <th>Capacidad / Coordenadas</th>
                         <th>Capacidad Peso</th>
-                        <th>Altura</th>
-                        <th>Estado</th>
+                        <th>Velocidad GPS</th>
+                        <th>Última Actualización</th>
+                        <th>Estado de Operación</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:if="${#lists.isEmpty(camiones)}">
-                        <td colspan="5" class="text-center text-muted">No hay camiones registrados en este momento.</td>
+                    <tr th:if="${#lists.isEmpty(camiones) and #lists.isEmpty(flotaEnVivo)}">
+                        <td colspan="6" class="text-center text-muted py-4">No hay camiones registrados en la flota logística.</td>
                     </tr>
-                    <tr th:each="c : ${camiones}">
-                        <td class="fw-bold text-primary" th:text="${c.patente}">AE789XY</td>
-                        <td th:text="${c.capacidadVolumenM3} + ' m³'">20.0 m³</td>
-                        <td th:text="${c.capacidadPesoKg} + ' kg'">3500 kg</td>
-                        <td th:text="${c.alturaM} + ' m'">3.0 m</td>
-                        <td><span class="badge bg-success-subtle text-success">Disponible / En Ruta</span></td>
+                    <tr th:each="c : ${!#lists.isEmpty(flotaEnVivo) ? flotaEnVivo : camiones}">
+                        <td class="fw-bold text-primary font-monospace" th:text="${c.patente}">AE789XY</td>
+                        <td th:text="${c['latitud'] != null ? (c['latitud'] + ', ' + c['longitud']) : ((c['capacidadVolumenM3'] != null ? c['capacidadVolumenM3'] : '20.0') + ' m³')}">20.0 m³</td>
+                        <td th:text="${(c['capacidadPesoKg'] != null ? c['capacidadPesoKg'] : '3500') + ' kg'}">3500 kg</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                <i class="fa-solid fa-gauge-high text-primary me-1"></i><span th:text="${c['velocidadKmH'] != null ? c['velocidadKmH'] + ' km/h' : (c['velocidadKmh'] != null ? c['velocidadKmh'] + ' km/h' : (c['ubicacionActual'] != null and c['ubicacionActual']['velocidadKmH'] != null ? c['ubicacionActual']['velocidadKmH'] + ' km/h' : 'En tránsito'))}">40 km/h</span>
+                            </span>
+                        </td>
+                        <td class="small text-muted">
+                            <i class="fa-regular fa-clock me-1"></i>
+                            <span th:text="${c['ultimaActualizacion'] != null ? c['ultimaActualizacion'] : (c['timestamp'] != null ? c['timestamp'] : (c['ubicacionActual'] != null and c['ubicacionActual']['timestamp'] != null ? c['ubicacionActual']['timestamp'] : 'En tiempo real'))}">En tiempo real</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <i class="fa-solid fa-circle-check me-1"></i>Operativo / Conectado
+                            </span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <script>
+    <!-- Leaflet Script Dinámico -->
+    <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
-            var map = L.map('trackingMap').setView([-34.6037, -58.3816], 13);
+            var map = L.map('trackingMap').setView([-34.6037, -58.4000], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap'
+                attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
-            // Depósito Central UTN Medrano
-            L.marker([-34.5985, -58.4201]).addTo(map)
-                .bindPopup("<b>Depósito Central UTN Medrano</b><br>Punto de partida de todos los camiones.");
-
-            // Camión en traslado
-            var camionIcon = L.divIcon({
-                className: 'custom-div-icon',
-                html: "<div style='background-color:#1e40af;color:white;padding:6px;border-radius:50%;text-align:center;width:32px;height:32px;box-shadow:0 2px 4px rgba(0,0,0,0.3);'><i class='fa-solid fa-truck'></i></div>",
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
+            // Depósito Central Metropolitano
+            var depositoIcon = L.divIcon({
+                className: 'custom-deposito-icon',
+                html: "<div style='background-color:#0284c7;color:white;padding:7px;border-radius:50%;text-align:center;width:34px;height:34px;box-shadow:0 2px 6px rgba(0,0,0,0.3);'><i class='fa-solid fa-warehouse'></i></div>",
+                iconSize: [34, 34],
+                iconAnchor: [17, 17]
             });
 
-            L.marker([-34.6060, -58.3900], { icon: camionIcon }).addTo(map)
-                .bindPopup("<b>Camión AE789XY</b><br>En traslado hacia Comedor Los Chicos Felices.<br>Velocidad: 42 km/h");
+            L.marker([-34.5985, -58.4201], { icon: depositoIcon }).addTo(map)
+                .bindPopup("<b>Depósito Central Metropolitano</b><br>Av. Belgrano 1450, Almagro, CABA<br><i>Punto de salida y control de lotes</i>")
+                .openPopup();
+
+            var comedorIcon = L.divIcon({
+                className: 'custom-comedor-icon',
+                html: "<div style='background-color:#16a34a;color:white;padding:7px;border-radius:50%;text-align:center;width:34px;height:34px;box-shadow:0 2px 6px rgba(0,0,0,0.3);'><i class='fa-solid fa-house-chimney-heart'></i></div>",
+                iconSize: [34, 34],
+                iconAnchor: [17, 17]
+            });
+
+            var camionIcon = L.divIcon({
+                className: 'custom-camion-icon',
+                html: "<div style='background-color:#ea580c;color:white;padding:7px;border-radius:50%;text-align:center;width:34px;height:34px;box-shadow:0 2px 6px rgba(0,0,0,0.4);animation:pulse 2s infinite;'><i class='fa-solid fa-truck'></i></div>",
+                iconSize: [34, 34],
+                iconAnchor: [17, 17]
+            });
+
+            var misDonaciones = /*[[${misDonaciones}]]*/ [];
+            if (misDonaciones && misDonaciones.length > 0) {
+                misDonaciones.forEach(function(d, idx) {
+                    if (d.entidadAsignada) {
+                        var ent = d.entidadAsignada;
+                        var lat = ent.latitud || (-34.6100 - (idx * 0.008));
+                        var lng = ent.longitud || (-58.3900 - (idx * 0.008));
+                        var razon = ent.razonSocial || "Entidad Beneficiaria";
+                        var dir = ent.direccion || "CABA";
+                        L.marker([lat, lng], { icon: comedorIcon }).addTo(map)
+                            .bindPopup("<b>" + razon + "</b><br>" + dir + "<br><i>Donación: " + (d.subcategoria || "") + " [" + (d.estado || "") + "]</i>");
+                        L.polyline([[-34.5985, -58.4201], [lat, lng]], { color: '#0284c7', weight: 3, dashArray: '6, 8', opacity: 0.7 }).addTo(map);
+                    }
+                });
+            }
+
+            var flotaEnVivo = /*[[${flotaEnVivo}]]*/ [];
+            if (flotaEnVivo && flotaEnVivo.length > 0) {
+                flotaEnVivo.forEach(function(c) {
+                    var lat = c.latitud || (c.ubicacionActual && c.ubicacionActual.latitud) || -34.6065;
+                    var lng = c.longitud || (c.ubicacionActual && c.ubicacionActual.longitud) || -58.3980;
+                    var patente = c.patente || c.idCamion || "Unidad Activa";
+                    var vel = (c.velocidadKmh || c.velocidadKmH || c.velocidad || "38") + " km/h";
+                    var ultimaAct = c.ultimaActualizacion || c.timestamp || (c.ubicacionActual && c.ubicacionActual.timestamp) || "En tiempo real";
+                    L.marker([lat, lng], { icon: camionIcon }).addTo(map)
+                        .bindPopup("<b>Camión " + patente + "</b><br>Coordenadas: [" + lat + ", " + lng + "]<br>Velocidad: " + vel + "<br><small>Última actualización: " + ultimaAct + "</small>");
+                });
+            }
         });
     </script>
 </div>

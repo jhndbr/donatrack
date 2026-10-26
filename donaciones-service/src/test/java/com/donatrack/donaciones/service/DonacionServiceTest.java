@@ -1,7 +1,9 @@
 package com.donatrack.donaciones.service;
 
 import com.donatrack.common.enums.EstadoDonacion;
+import com.donatrack.common.enums.TipoNecesidad;
 import com.donatrack.donaciones.domain.*;
+import com.donatrack.donaciones.exception.DonacionYaAsignadaException;
 import com.donatrack.donaciones.repository.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -32,6 +35,9 @@ public class DonacionServiceTest {
 
     @Mock
     private EntidadBeneficiariaRepository entidadRepository;
+
+    @Mock
+    private NecesidadMaterialRepository necesidadRepository;
 
     @Mock
     private OutboxEventRepository outboxEventRepository;
@@ -107,6 +113,17 @@ public class DonacionServiceTest {
     }
 
     @Test
+    void testAsignarDonacionYaAsignadaLanzaDonacionYaAsignadaException() {
+        Donacion d = new Donacion(donante, "Pastas Secas", 20.0, "kg", false, null);
+        d.setId(100L);
+        d.asignarA(entidad); // Ya está en ASIGNACION_REALIZADA
+
+        when(donacionRepository.findById(100L)).thenReturn(Optional.of(d));
+
+        assertThrows(DonacionYaAsignadaException.class, () -> donacionService.asignarDonacion(100L, 10L));
+    }
+
+    @Test
     void testAsignarDonacionInexistenteLanzaExcepcion() {
         when(donacionRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -120,6 +137,59 @@ public class DonacionServiceTest {
         when(entidadRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () -> donacionService.asignarDonacion(100L, 999L));
+    }
+
+    @Test
+    void testDesasignarDonacionExitoso() {
+        Donacion d = new Donacion(donante, "Pastas Secas", 20.0, "kg", false, null);
+        d.setId(100L);
+        NecesidadMaterial nec = new NecesidadMaterial("Pastas Secas", "Víveres", TipoNecesidad.EXTRAORDINARIA, 50.0, "kg", null);
+        nec.setEntidadBeneficiaria(entidad);
+        d.asignarA(entidad, nec);
+
+        when(donacionRepository.findById(100L)).thenReturn(Optional.of(d));
+        when(donacionRepository.save(any(Donacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Donacion desasignada = donacionService.desasignarDonacion(100L, "Reasignación", "ADMIN");
+
+        assertEquals(EstadoDonacion.EN_DEPOSITO, desasignada.getEstado());
+        assertNull(desasignada.getEntidadAsignada());
+        assertNull(desasignada.getNecesidadAsignada());
+        assertEquals(0.0, nec.getCantidadCubierta());
+        verify(necesidadRepository, times(1)).save(nec);
+    }
+
+    @Test
+    void testModificarDonacionSoloPermitidoEnDeposito() {
+        Donacion d = new Donacion(donante, "Arroz", 10.0, "kg", false, null);
+        d.setId(100L);
+
+        when(donacionRepository.findById(100L)).thenReturn(Optional.of(d));
+        when(donacionRepository.save(any(Donacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // En depósito es editable
+        Donacion mod = donacionService.modificarDonacion(100L, "Arroz Integral", 15.0, "kg", false);
+        assertEquals("Arroz Integral", mod.getSubcategoria());
+        assertEquals(15.0, mod.getCantidad());
+
+        // Si cambia a ASIGNACION_REALIZADA, debe rechazar edición
+        d.asignarA(entidad);
+        assertThrows(IllegalStateException.class, () ->
+                donacionService.modificarDonacion(100L, "Arroz Blanco", 20.0, "kg", false)
+        );
+    }
+
+    @Test
+    void testFiltrarDonacionesSpecification() {
+        when(donacionRepository.findAll(any(Specification.class))).thenReturn(List.of(new Donacion()));
+
+        List<Donacion> res = donacionService.filtrarDonaciones(
+                List.of(EstadoDonacion.EN_DEPOSITO), "Arroz", 1L, null, null, null, false
+        );
+
+        assertNotNull(res);
+        assertEquals(1, res.size());
+        verify(donacionRepository, times(1)).findAll(any(Specification.class));
     }
 
     @Test

@@ -11,6 +11,12 @@ import java.util.List;
 @Repository
 public interface NecesidadMaterialRepository extends JpaRepository<NecesidadMaterial, Long> {
 
-    @Query("SELECT n FROM NecesidadMaterial n WHERE LOWER(n.subcategoria) = LOWER(:subcategoria) AND n.cantidadCubierta < n.cantidadSolicitada")
+    @Query("SELECT n FROM NecesidadMaterial n JOIN FETCH n.entidadBeneficiaria WHERE LOWER(n.subcategoria) = LOWER(:subcategoria) AND n.cantidadCubierta < n.cantidadSolicitada AND n.activa = true AND n.entidadBeneficiaria.activo = true")
     List<NecesidadMaterial> findPendientesPorSubcategoria(@Param("subcategoria") String subcategoria);
+
+    List<NecesidadMaterial> findByEntidadBeneficiariaIdAndActivaTrue(Long entidadId);
+
+    List<NecesidadMaterial> findByTipo(com.donatrack.common.enums.TipoNecesidad tipo);
+
+    List<NecesidadMaterial> findByTipoAndPeriodoIgnoreCase(com.donatrack.common.enums.TipoNecesidad tipo, String periodo);
 }

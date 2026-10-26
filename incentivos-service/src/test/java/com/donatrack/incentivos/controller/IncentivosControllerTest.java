@@ -51,6 +51,9 @@ public class IncentivosControllerTest {
     @MockBean
     private com.donatrack.incentivos.repository.InsigniaRepository insigniaRepository;
 
+    @MockBean
+    private com.donatrack.incentivos.scheduler.IncentivosScheduler incentivosScheduler;
+
     @Test
     void testListarMisionesActivas() throws Exception {
         Mision m = new Mision("Mision 1", "Desc 1", Mision.TipoMision.RACHA, CategoriaDonante.COLABORADOR, 1.0, 1, "Insignia 1");
@@ -105,5 +108,32 @@ public class IncentivosControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void testObtenerAnaliticaDonante() throws Exception {
+        when(incentivosService.obtenerAnaliticaDonante(10L)).thenReturn(java.util.Map.of(
+                "idDonante", 10L,
+                "nombre", "Donante 10",
+                "categoria", "COLABORADOR",
+                "misionesCompletadasTotales", 3
+        ));
+
+        mockMvc.perform(get("/api/v1/incentivos/donantes/10/analitica"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.idDonante").value(10L))
+                .andExpect(jsonPath("$.nombre").value("Donante 10"))
+                .andExpect(jsonPath("$.categoria").value("COLABORADOR"));
+    }
+
+    @Test
+    void testForzarCalculoRanking() throws Exception {
+        RankingMensual r = new RankingMensual(2026, 10, 1, 10L, "Donante 10", 12);
+        when(incentivosScheduler.calcularRankingParaMes(2026, 10)).thenReturn(List.of(r));
+
+        mockMvc.perform(post("/api/v1/incentivos/rankings/forzar-calculo?anio=2026&mes=10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].posicion").value(1))
+                .andExpect(jsonPath("$[0].misionesCompletadasMes").value(12));
     }
 }

@@ -25,19 +25,22 @@ public class IncentivosController {
     private final RankingMensualRepository rankingRepository;
     private final com.donatrack.incentivos.repository.MisionRepository misionRepository;
     private final com.donatrack.incentivos.repository.InsigniaRepository insigniaRepository;
+    private final com.donatrack.incentivos.scheduler.IncentivosScheduler incentivosScheduler;
 
     public IncentivosController(IncentivosService incentivosService,
                                 PerfilDonanteIncentivoRepository perfilRepository,
                                 ProgresoMisionRepository progresoRepository,
                                 RankingMensualRepository rankingRepository,
                                 com.donatrack.incentivos.repository.MisionRepository misionRepository,
-                                com.donatrack.incentivos.repository.InsigniaRepository insigniaRepository) {
+                                com.donatrack.incentivos.repository.InsigniaRepository insigniaRepository,
+                                @org.springframework.beans.factory.annotation.Autowired(required = false) com.donatrack.incentivos.scheduler.IncentivosScheduler incentivosScheduler) {
         this.incentivosService = incentivosService;
         this.perfilRepository = perfilRepository;
         this.progresoRepository = progresoRepository;
         this.rankingRepository = rankingRepository;
         this.misionRepository = misionRepository;
         this.insigniaRepository = insigniaRepository;
+        this.incentivosScheduler = incentivosScheduler;
     }
 
     @GetMapping("/misiones/activas")
@@ -50,6 +53,18 @@ public class IncentivosController {
         return perfilRepository.findByIdDonante(idDonante)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * CU-47: Consulta de métricas y analítica avanzada del donante.
+     */
+    @GetMapping("/donantes/{idDonante}/analitica")
+    public ResponseEntity<Map<String, Object>> obtenerAnalitica(@PathVariable("idDonante") Long idDonante) {
+        Map<String, Object> analitica = incentivosService.obtenerAnaliticaDonante(idDonante);
+        if (analitica.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(analitica);
     }
 
     @GetMapping("/donantes/{idDonante}/misiones")
@@ -72,6 +87,21 @@ public class IncentivosController {
         return ResponseEntity.ok(rankingRepository.findByAnioAndMesOrderByPosicionAsc(a, m));
     }
 
+    /**
+     * Ejecución forzada manual del scheduler de ranking mensual (CU-54).
+     */
+    @PostMapping("/rankings/forzar-calculo")
+    public ResponseEntity<List<RankingMensual>> forzarCalculoRanking(@RequestParam(value = "anio", required = false) Integer anio,
+                                                                    @RequestParam(value = "mes", required = false) Integer mes) {
+        if (incentivosScheduler == null) {
+            return ResponseEntity.internalServerError().build();
+        }
+        int a = anio != null ? anio : LocalDate.now().getYear();
+        int m = mes != null ? mes : LocalDate.now().getMonthValue();
+        List<RankingMensual> ranking = incentivosScheduler.calcularRankingParaMes(a, m);
+        return ResponseEntity.ok(ranking);
+    }
+
     @PostMapping("/donantes/{idDonante}/actividad")
     public ResponseEntity<Void> registrarActividad(@PathVariable("idDonante") Long idDonante,
                                                    @RequestBody Map<String, Object> body) {
@@ -85,12 +115,23 @@ public class IncentivosController {
 
     /**
      * CU-52: Configurar visibilidad de insignias (publica / privada)
+     * Soporta tanto query param (?visible=true) como body JSON ({"visible": true}) defensivamente.
      */
     @PatchMapping("/insignias/{id}/visibilidad")
     public ResponseEntity<Insignia> configurarVisibilidadInsignia(@PathVariable("id") Long id,
-                                                                  @RequestParam("visible") boolean visible) {
+                                                                  @RequestParam(value = "visible", required = false) Boolean visibleParam,
+                                                                  @RequestBody(required = false) Map<String, Object> body) {
+        boolean visible = true;
+        if (visibleParam != null) {
+            visible = visibleParam;
+        } else if (body != null && body.containsKey("visible")) {
+            Object val = body.get("visible");
+            visible = Boolean.parseBoolean(String.valueOf(val));
+        }
+
+        final boolean esVisible = visible;
         return insigniaRepository.findById(id).map(insignia -> {
-            insignia.setEsPublica(visible);
+            insignia.setEsPublica(esVisible);
             return ResponseEntity.ok(insigniaRepository.save(insignia));
         }).orElse(ResponseEntity.notFound().build());
     }

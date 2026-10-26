@@ -26,5 +26,9 @@ donatrack:
   servicios:
     donaciones-url: ${DONACIONES_SERVICE_URL:http://localhost:8082}
 
+  vrp:
+    url: ${DONATRACK_VRP_URL:http://localhost:5000}
+    http-enabled: ${DONATRACK_VRP_HTTP_ENABLED:false}
+
   rutas:
     max-lote-donaciones: 100

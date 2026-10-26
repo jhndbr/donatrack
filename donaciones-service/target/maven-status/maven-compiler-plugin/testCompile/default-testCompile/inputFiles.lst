@@ -1,8 +1,13 @@
 /home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/controller/DonacionControllerTest.java
 /home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/domain/DonacionStateTest.java
+/home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/domain/Fase1DominioTest.java
+/home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/dto/Fase4DtoYMapaTest.java
+/home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/matchmaking/Fase3MatchmakingTest.java
 /home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/matchmaking/MatchmakingStrategyTest.java
 /home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/scheduler/DonacionesSchedulerTest.java
 /home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/service/CsvDonanteImporterTest.java
 /home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/service/DonacionServiceTest.java
+/home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/service/Fase2ServiciosTest.java
 /home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/service/MatchmakingServiceTest.java
+/home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/service/NormalizacionDireccionTest.java
 /home/jhon/Documentos/Github/TP-DDSI/donaciones-service/src/test/java/com/donatrack/donaciones/service/OutboxPublisherTest.java

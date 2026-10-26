@@ -117,8 +117,8 @@ public class IncentivosProgresoTest {
     }
 
     @Test
-    void testProgresoTipoHabilDonadorSumaCantidadDeBienes() {
-        Mision misionHabil = new Mision("Gran Donador", "Donar 50 bienes en total",
+    void testProgresoTipoHabilDonadorExigeUmbralEnDonacionUnica() {
+        Mision misionHabil = new Mision("Gran Donador", "Donar 50 bienes en una sola entrega",
                 Mision.TipoMision.HABIL_DONADOR, CategoriaDonante.COLABORADOR, 50.0, 1, "Insignia Generoso");
         misionHabil.setId(30L);
         ProgresoMision progresoHabil = new ProgresoMision(42L, misionHabil);
@@ -126,11 +126,19 @@ public class IncentivosProgresoTest {
         when(perfilRepository.findByIdDonante(42L)).thenReturn(Optional.of(perfil));
         when(progresoRepository.findByIdDonante(42L)).thenReturn(List.of(progresoHabil));
 
-        // Impacto con 30 bienes
+        // Impacto con 30 bienes (< 50): no debe acumular donaciones menores
         incentivosService.registrarImpactoDonacion(42L, "Lucía Benítez", "lucia@mail.com", 30.0);
 
-        assertEquals(30.0, progresoHabil.getProgresoActual());
+        assertEquals(0.0, progresoHabil.getProgresoActual());
         assertFalse(progresoHabil.isCompletada());
+
+        // Impacto con 50 bienes (>= 50): cumple el umbral de una sola vez
+        when(misionRepository.findByCategoriaRequeridaOrderByOrdenSecuenciaAsc(CategoriaDonante.COLABORADOR)).thenReturn(List.of(misionHabil));
+        when(progresoRepository.findByIdDonanteAndCompletadaTrue(42L)).thenReturn(List.of(progresoHabil));
+        incentivosService.registrarImpactoDonacion(42L, "Lucía Benítez", "lucia@mail.com", 50.0);
+
+        assertEquals(50.0, progresoHabil.getProgresoActual());
+        assertTrue(progresoHabil.isCompletada());
     }
 
     @Test
@@ -146,5 +154,78 @@ public class IncentivosProgresoTest {
         assertEquals("Nuevo Donante", nuevo.getNombre());
         verify(perfilRepository, times(1)).save(nuevo);
         verify(progresoRepository, times(1)).save(any(ProgresoMision.class));
+    }
+
+    @Test
+    void testMisionCompletitudSumaProgresoConNuevaSubcategoria() {
+        Mision misionComp = new Mision("Variedad Solidaria", "Donar 2 subcategorías distintas",
+                Mision.TipoMision.COMPLETITUD, CategoriaDonante.COLABORADOR, 2.0, 1, "Insignia Multifacético");
+        misionComp.setId(40L);
+        ProgresoMision progresoComp = new ProgresoMision(42L, misionComp);
+
+        when(perfilRepository.findByIdDonante(42L)).thenReturn(Optional.of(perfil));
+        when(progresoRepository.findByIdDonante(42L)).thenReturn(List.of(progresoComp));
+
+        // Primera subcategoría "alimentos"
+        incentivosService.registrarImpactoDonacionCompleto(42L, "Lucía", "lucia@mail.com", 1.0, "alimentos", 1L);
+        assertEquals(1.0, progresoComp.getProgresoActual());
+        assertFalse(progresoComp.isCompletada());
+
+        // Segunda donación con misma subcategoría "alimentos" -> no debe sumar progreso
+        incentivosService.registrarImpactoDonacionCompleto(42L, "Lucía", "lucia@mail.com", 1.0, "alimentos", 1L);
+        assertEquals(1.0, progresoComp.getProgresoActual());
+
+        // Tercera donación con subcategoría nueva "ropa" -> debe sumar y completar
+        when(misionRepository.findByCategoriaRequeridaOrderByOrdenSecuenciaAsc(CategoriaDonante.COLABORADOR)).thenReturn(List.of(misionComp));
+        when(progresoRepository.findByIdDonanteAndCompletadaTrue(42L)).thenReturn(List.of(progresoComp));
+
+        incentivosService.registrarImpactoDonacionCompleto(42L, "Lucía", "lucia@mail.com", 1.0, "ropa", 1L);
+        assertEquals(2.0, progresoComp.getProgresoActual());
+        assertTrue(progresoComp.isCompletada());
+    }
+
+    @Test
+    void testRachaMensualIncrementoYReseteoPorInactividad() {
+        java.time.LocalDate hoy = java.time.LocalDate.now();
+        java.time.LocalDate haceTresMeses = hoy.minusMonths(3);
+
+        perfil.setUltimaDonacionFecha(haceTresMeses);
+        perfil.setRachaMesesConsecutivos(5);
+
+        // Donación hoy tras inactividad: debe reiniciar la racha a 1
+        perfil.actualizarRachaMensual(hoy);
+        assertEquals(1, perfil.getRachaMesesConsecutivos());
+        assertEquals(hoy, perfil.getUltimaDonacionFecha());
+
+        // Donación en el mes siguiente consecutivo: racha debe incrementar a 2
+        java.time.LocalDate proximoMes = hoy.plusMonths(1);
+        perfil.actualizarRachaMensual(proximoMes);
+        assertEquals(2, perfil.getRachaMesesConsecutivos());
+    }
+
+    @Test
+    void testSecuencialidadEstrictaNoEvaluaSegundaMisionSiPrimeraNoAvanza() {
+        Mision misionComp = new Mision("Variedad Solidaria", "Donar 2 subcategorías distintas",
+                Mision.TipoMision.COMPLETITUD, CategoriaDonante.COLABORADOR, 2.0, 1, "Insignia 1");
+        misionComp.setId(40L);
+        ProgresoMision prog1 = new ProgresoMision(42L, misionComp);
+        prog1.setProgresoActual(1.0);
+        perfil.registrarSubcategoria("alimentos");
+
+        Mision misionHabil = new Mision("Gran Donador", "Donar 10 bienes de una vez",
+                Mision.TipoMision.HABIL_DONADOR, CategoriaDonante.COLABORADOR, 10.0, 2, "Insignia 2");
+        misionHabil.setId(41L);
+        ProgresoMision prog2 = new ProgresoMision(42L, misionHabil);
+
+        when(perfilRepository.findByIdDonante(42L)).thenReturn(Optional.of(perfil));
+        when(progresoRepository.findByIdDonante(42L)).thenReturn(List.of(prog1, prog2));
+
+        // Repite subcategoría "alimentos" con 50 bienes: prog1 no avanza y prog2 NO debe evaluarse por secuencialidad
+        incentivosService.registrarImpactoDonacionCompleto(42L, "Lucía", "lucia@mail.com", 50.0, "alimentos", null);
+
+        assertEquals(1.0, prog1.getProgresoActual());
+        assertFalse(prog1.isCompletada());
+        assertEquals(0.0, prog2.getProgresoActual());
+        assertFalse(prog2.isCompletada());
     }
 }

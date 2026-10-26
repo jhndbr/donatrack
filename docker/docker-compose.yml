@@ -1,7 +1,9 @@
-version: '3.8'
-
 services:
-  # Base de Datos Relacional para donaciones-service, incentivos-service y keycloak
+  # =========================================================================
+  # INFRAESTRUCTURA BASE (Levantada por defecto con docker compose up -d)
+  # =========================================================================
+
+  # Base de Datos Relacional para donaciones-service, incentivos-service, notificaciones-service y keycloak
   postgres:
     image: postgres:16-alpine
     container_name: donatrack-postgres
@@ -32,6 +34,11 @@ services:
       MONGO_INITDB_DATABASE: logistica_db
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Message Broker para desacoplamiento asíncrono y Transactional Outbox
   rabbitmq:
@@ -46,6 +53,11 @@ services:
       RABBITMQ_DEFAULT_PASS: donatrack_password
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Servidor SMTP de desarrollo con UI Web para previsualizar notificaciones
   mailpit:
@@ -63,17 +75,241 @@ services:
     image: quay.io/keycloak/keycloak:24.0.5
     container_name: donatrack-keycloak
     restart: unless-stopped
-    command: start-dev --db=postgres --db-url=jdbc:postgresql://postgres:5432/keycloak_db --db-username=donatrack --db-password=donatrack_password --http-port=8081
+    command: start-dev --db=postgres --db-url=jdbc:postgresql://postgres:5432/keycloak_db --db-username=donatrack --db-password=donatrack_password --http-port=8081 --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - "8081:8081"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
     depends_on:
       postgres:
         condition: service_healthy
+
+  # =========================================================================
+  # OBSERVABILIDAD Y AUTOMATIZACIÓN (Entrega 2 y Entrega 6)
+  # =========================================================================
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: donatrack-prometheus
+    restart: unless-stopped
+    profiles: ["full", "cloud", "observability"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: donatrack-grafana
+    restart: unless-stopped
+    profiles: ["full", "cloud", "observability"]
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  n8n:
+    image: n8nio/n8n:1.38.1
+    container_name: donatrack-n8n
+    restart: unless-stopped
+    profiles: ["full", "cloud", "observability"]
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "false"
+      N8N_PORT: 5678
+      WEBHOOK_URL: http://localhost:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  # =========================================================================
+  # MICROSERVICIOS CONTENEDORIZADOS (Entrega 6 — Despliegue Cloud / Full)
+  # =========================================================================
+
+  donaciones-service:
+    build:
+      context: ../donaciones-service
+      dockerfile: Dockerfile
+    container_name: donatrack-donaciones-service
+    restart: unless-stopped
+    profiles: ["full", "cloud", "observability"]
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/donaciones_db
+      SPRING_DATASOURCE_USERNAME: donatrack
+      SPRING_DATASOURCE_PASSWORD: donatrack_password
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: donatrack
+      SPRING_RABBITMQ_PASSWORD: donatrack_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  logistica-service:
+    build:
+      context: ../logistica-service
+      dockerfile: Dockerfile
+    container_name: donatrack-logistica-service
+    restart: unless-stopped
+    profiles: ["full", "cloud", "observability"]
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/logistica_db
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: donatrack
+      SPRING_RABBITMQ_PASSWORD: donatrack_password
+      DONACIONES_SERVICE_URL: http://donaciones-service:8082
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      donaciones-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  incentivos-service:
+    build:
+      context: ../incentivos-service
+      dockerfile: Dockerfile
+    container_name: donatrack-incentivos-service
+    restart: unless-stopped
+    profiles: ["full", "cloud", "observability"]
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/incentivos_db
+      SPRING_DATASOURCE_USERNAME: donatrack
+      SPRING_DATASOURCE_PASSWORD: donatrack_password
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: donatrack
+      SPRING_RABBITMQ_PASSWORD: donatrack_password
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/insignias
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  notificaciones-service:
+    build:
+      context: ../notificaciones-service
+      dockerfile: Dockerfile
+    container_name: donatrack-notificaciones-service
+    restart: unless-stopped
+    profiles: ["full", "cloud", "observability"]
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notificaciones_db
+      SPRING_DATASOURCE_USERNAME: donatrack
+      SPRING_DATASOURCE_PASSWORD: donatrack_password
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: donatrack
+      SPRING_RABBITMQ_PASSWORD: donatrack_password
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  api-gateway:
+    build:
+      context: ../api-gateway
+      dockerfile: Dockerfile
+    container_name: donatrack-api-gateway
+    restart: unless-stopped
+    profiles: ["full", "cloud", "observability"]
+    ports:
+      - "8080:8080"
+    environment:
+      DONACIONES_SERVICE_URL: http://donaciones-service:8082
+      LOGISTICA_SERVICE_URL: http://logistica-service:8083
+      INCENTIVOS_SERVICE_URL: http://incentivos-service:8084
+      NOTIFICACIONES_SERVICE_URL: http://notificaciones-service:8085
+    depends_on:
+      - donaciones-service
+      - logistica-service
+      - incentivos-service
+      - notificaciones-service
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend-service:
+    build:
+      context: ../frontend-service
+      dockerfile: Dockerfile
+    container_name: donatrack-frontend-service
+    restart: unless-stopped
+    profiles: ["full", "cloud", "observability"]
+    ports:
+      - "8086:8086"
+    environment:
+      API_GATEWAY_URL: http://api-gateway:8080
+      KEYCLOAK_URL: http://keycloak:8081
+      MAILPIT_URL: http://mailpit:8025
+    depends_on:
+      - api-gateway
+      - keycloak
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8086/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres_data:
   mongo_data:
   rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+  n8n_data:

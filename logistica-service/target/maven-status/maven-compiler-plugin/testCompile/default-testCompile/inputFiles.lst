@@ -1,2 +1,6 @@
 /home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/test/java/com/donatrack/logistica/controller/RutaControllerTest.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/test/java/com/donatrack/logistica/service/EntregaServiceTest.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/test/java/com/donatrack/logistica/service/FlotaServiceTest.java
 /home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/test/java/com/donatrack/logistica/service/LogisticaBatchRutaTest.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/test/java/com/donatrack/logistica/service/PlanificacionRutasServiceTest.java
+/home/jhon/Documentos/Github/TP-DDSI/logistica-service/src/test/java/com/donatrack/logistica/service/TelemetriaServiceTest.java

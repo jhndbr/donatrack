@@ -1,0 +1,424 @@
+@startuml
+!define table(x) entity x << (T,#DCE8FA) >>
+!define collection(x) entity x << (C,#D5F5E3) >>
+!define embedded(x) entity x << (E,#FCF3CF) >>
+!define primary_key(x) <b><color:#B8860B><&key></color> x</b>
+!define foreign_key(x) <color:#555555><&link-intact></color> x
+!define column(x) <color:#222222><&media-record></color> x
+
+skinparam monochrome false
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+title Diagrama de Entidad-Relación (DER) Físico Políglota por Microservicio — DonaTrack (DDSI 2026)
+
+' ========================================================================================
+' 1. ESQUEMA RELACIONAL: donaciones_db (PostgreSQL 16 — donaciones-service)
+' ========================================================================================
+package "1. donaciones_db (PostgreSQL 16 — donaciones-service)" #EEF4FF {
+
+    table(personas_donantes) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(fecha_registro): TIMESTAMP NOT NULL
+        column(ultima_actividad): TIMESTAMP NOT NULL
+        column(ultima_alerta_inactividad): TIMESTAMP NULL
+        column(activo): BOOLEAN NOT NULL DEFAULT TRUE
+        column(fecha_baja): TIMESTAMP NULL
+        column(motivo_baja): VARCHAR(500) NULL
+    }
+
+    table(personas_humanas) {
+        primary_key(id): BIGINT <<PK, FK>>
+        --
+        column(nombre): VARCHAR(255) NOT NULL
+        column(apellido): VARCHAR(255) NOT NULL
+        column(edad): INTEGER NULL
+        column(tipo_documento): VARCHAR(30) DEFAULT 'DNI'
+        column(nro_documento): VARCHAR(50) NOT NULL <<UQ>>
+        column(genero): VARCHAR(50) NULL
+        column(direccion): VARCHAR(255) NULL
+        column(latitud): DOUBLE PRECISION NULL
+        column(longitud): DOUBLE PRECISION NULL
+    }
+
+    table(personas_juridicas) {
+        primary_key(id): BIGINT <<PK, FK>>
+        --
+        column(razon_social): VARCHAR(255) NOT NULL
+        column(cuit): VARCHAR(30) NOT NULL <<UQ>>
+        column(tipo): VARCHAR(100) NULL
+        column(rubro): VARCHAR(150) NULL
+        column(direccion): VARCHAR(255) NULL
+        column(latitud): DOUBLE PRECISION NULL
+        column(longitud): DOUBLE PRECISION NULL
+    }
+
+    table(representantes_juridica) {
+        foreign_key(persona_juridica_id): BIGINT <<FK>>
+        column(nombre_representante): VARCHAR(255) NOT NULL
+    }
+
+    table(medios_contacto) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        foreign_key(donante_id): BIGINT <<FK>>
+        column(tipo): VARCHAR(30) NOT NULL <<IDX>>
+        column(valor): VARCHAR(255) NOT NULL <<IDX>>
+        column(es_predeterminado): BOOLEAN NOT NULL
+    }
+
+    table(entidades_beneficiarias) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(razon_social): VARCHAR(255) NOT NULL
+        column(direccion): VARCHAR(255) NOT NULL
+        column(latitud): DOUBLE PRECISION NULL
+        column(longitud): DOUBLE PRECISION NULL
+        column(telefono): VARCHAR(100) NULL
+        column(donaciones_recibidas_trimestre): INTEGER NOT NULL DEFAULT 0
+        column(activo): BOOLEAN NOT NULL DEFAULT TRUE
+        column(fecha_baja): TIMESTAMP NULL
+        column(motivo_baja): VARCHAR(500) NULL
+    }
+
+    table(emails_representantes_beneficiaria) {
+        foreign_key(entidad_id): BIGINT <<FK>>
+        column(email): VARCHAR(255) NOT NULL
+    }
+
+    table(necesidades_materiales) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        foreign_key(entidad_id): BIGINT NOT NULL <<FK>>
+        column(subcategoria): VARCHAR(150) NOT NULL
+        column(descripcion): VARCHAR(1000) NOT NULL
+        column(tipo_necesidad): VARCHAR(30) NOT NULL
+        column(cantidad_solicitada): DOUBLE PRECISION NOT NULL
+        column(cantidad_cubierta): DOUBLE PRECISION NOT NULL DEFAULT 0.0
+        column(unidad_medida): VARCHAR(50) NOT NULL
+        column(periodo): VARCHAR(50) NULL
+        column(activa): BOOLEAN NOT NULL DEFAULT TRUE
+        column(fecha_cierre): TIMESTAMP NULL
+        column(motivo_cierre): VARCHAR(500) NULL
+    }
+
+    table(donaciones) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(version): BIGINT NOT NULL DEFAULT 0
+        foreign_key(donante_id): BIGINT NOT NULL <<FK>>
+        foreign_key(entidad_asignada_id): BIGINT NULL <<FK>>
+        foreign_key(necesidad_asignada_id): BIGINT NULL <<FK>>
+        column(subcategoria): VARCHAR(150) NOT NULL
+        column(cantidad): DOUBLE PRECISION NOT NULL
+        column(unidad_medida): VARCHAR(50) NOT NULL
+        column(es_usado): BOOLEAN NOT NULL
+        column(fecha_vencimiento): DATE NULL
+        column(fecha_recepcion): TIMESTAMP NOT NULL
+        column(fecha_actualizacion_estado): TIMESTAMP NOT NULL
+        column(estado): VARCHAR(40) NOT NULL
+        column(justificacion_falla): VARCHAR(1000) NULL
+    }
+
+    table(bienes_donados) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        foreign_key(donacion_id): BIGINT NOT NULL <<FK>>
+        column(descripcion): VARCHAR(255) NOT NULL
+        column(categoria): VARCHAR(100) NOT NULL
+        column(subcategoria): VARCHAR(150) NOT NULL
+        column(cantidad): DOUBLE PRECISION NOT NULL
+        column(unidad_medida): VARCHAR(50) NOT NULL
+        column(es_usado): BOOLEAN NOT NULL
+        column(fecha_vencimiento): DATE NULL
+        column(foto_url): VARCHAR(500) NULL
+    }
+
+    table(historial_estados_donacion) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        foreign_key(donacion_id): BIGINT NOT NULL <<FK>>
+        column(fecha_hora): TIMESTAMP NOT NULL
+        column(estado_anterior): VARCHAR(40) NULL
+        column(nuevo_estado): VARCHAR(40) NOT NULL
+        column(usuario_responsable): VARCHAR(150) NULL
+        column(justificacion): VARCHAR(1000) NULL
+    }
+
+    table(configuracion_matchmaking) {
+        primary_key(id): BIGINT <<PK>>
+        --
+        column(a1): DOUBLE PRECISION NOT NULL DEFAULT 0.50
+        column(a2): DOUBLE PRECISION NOT NULL DEFAULT 0.30
+        column(a3): DOUBLE PRECISION NOT NULL DEFAULT 0.20
+        column(alpha): DOUBLE PRECISION NOT NULL DEFAULT 0.15
+        column(fecha_actualizacion): TIMESTAMP NOT NULL
+    }
+
+    table(outbox_events) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(aggregate_type): VARCHAR(100) NOT NULL
+        column(aggregate_id): VARCHAR(100) NOT NULL
+        column(event_type): VARCHAR(100) NOT NULL
+        column(routing_key): VARCHAR(100) NOT NULL
+        column(payload): TEXT NOT NULL
+        column(status): VARCHAR(30) NOT NULL <<IDX>>
+        column(created_at): TIMESTAMP NOT NULL <<IDX>>
+        column(published_at): TIMESTAMP NULL
+        column(retries): INTEGER NOT NULL DEFAULT 0
+    }
+
+    personas_donantes ||--o| personas_humanas : "JOINED (id)"
+    personas_donantes ||--o| personas_juridicas : "JOINED (id)"
+    personas_juridicas ||--o{ representantes_juridica : "persona_juridica_id"
+    personas_donantes ||--o{ medios_contacto : "donante_id"
+    personas_donantes ||--o{ donaciones : "donante_id"
+
+    entidades_beneficiarias ||--o{ emails_representantes_beneficiaria : "entidad_id"
+    entidades_beneficiarias ||--o{ necesidades_materiales : "entidad_id"
+    entidades_beneficiarias ||--o{ donaciones : "entidad_asignada_id"
+    necesidades_materiales ||--o{ donaciones : "necesidad_asignada_id"
+
+    donaciones ||--|{ bienes_donados : "donacion_id"
+    donaciones ||--|{ historial_estados_donacion : "donacion_id"
+}
+
+' ========================================================================================
+' 2. ESQUEMA RELACIONAL: incentivos_db (PostgreSQL 16 — incentivos-service)
+' ========================================================================================
+package "2. incentivos_db (PostgreSQL 16 — incentivos-service)" #FFF9E6 {
+
+    table(perfiles_donantes_incentivo) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(id_donante): BIGINT NOT NULL <<UQ>>
+        column(nombre): VARCHAR(255) NOT NULL
+        column(email): VARCHAR(255) NULL
+        column(canal_preferido): VARCHAR(30) DEFAULT 'EMAIL'
+        column(contacto_preferido): VARCHAR(255) NULL
+        column(categoria): VARCHAR(40) NOT NULL
+        column(total_donaciones): INTEGER NOT NULL DEFAULT 0
+        column(total_bienes_donados): DOUBLE PRECISION NOT NULL DEFAULT 0.0
+        column(organizaciones_ayudadas): INTEGER NOT NULL DEFAULT 0
+        column(racha_meses_consecutivos): INTEGER NOT NULL DEFAULT 0
+        column(ultima_donacion_fecha): DATE NULL
+    }
+
+    table(perfil_subcategorias_donadas) {
+        foreign_key(perfil_id): BIGINT <<FK>>
+        column(subcategoria): VARCHAR(150) NOT NULL
+    }
+
+    table(perfil_organizaciones_ayudadas) {
+        foreign_key(perfil_id): BIGINT <<FK>>
+        column(organizacion_id): BIGINT NOT NULL
+    }
+
+    table(misiones) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(nombre): VARCHAR(255) NOT NULL
+        column(descripcion): VARCHAR(500) NOT NULL
+        column(tipo_mision): VARCHAR(40) NOT NULL
+        column(categoria_requerida): VARCHAR(40) NOT NULL
+        column(objetivo): DOUBLE PRECISION NOT NULL
+        column(orden_secuencia): INTEGER NOT NULL
+        column(nombre_insignia): VARCHAR(150) NOT NULL
+    }
+
+    table(progresos_mision) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(id_donante): BIGINT NOT NULL
+        foreign_key(mision_id): BIGINT NOT NULL <<FK>>
+        column(progreso_actual): DOUBLE PRECISION NOT NULL DEFAULT 0.0
+        column(completada): BOOLEAN NOT NULL DEFAULT FALSE
+        column(fecha_completada): TIMESTAMP NULL
+    }
+
+    table(insignias) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        foreign_key(perfil_donante_id): BIGINT NOT NULL <<FK>>
+        column(nombre): VARCHAR(150) NOT NULL
+        column(descripcion): VARCHAR(500) NOT NULL
+        column(imagen_url): VARCHAR(500) NULL
+        column(fecha_obtencion): TIMESTAMP NOT NULL
+        column(es_publica): BOOLEAN NOT NULL DEFAULT TRUE
+    }
+
+    table(rankings_mensuales) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(anio): INTEGER NOT NULL
+        column(mes): INTEGER NOT NULL
+        column(posicion): INTEGER NOT NULL
+        column(id_donante): BIGINT NOT NULL
+        column(nombre_donante): VARCHAR(255) NOT NULL
+        column(misiones_completadas_mes): INTEGER NOT NULL
+        column(fecha_calculo): TIMESTAMP NOT NULL
+    }
+
+    table(registros_eventos_procesados) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(clave_evento): VARCHAR(150) NOT NULL <<UQ, IDX>>
+        column(tipo_evento): VARCHAR(80) NOT NULL
+        column(fecha_procesamiento): TIMESTAMP NOT NULL
+    }
+
+    perfiles_donantes_incentivo ||--o{ perfil_subcategorias_donadas : "perfil_id"
+    perfiles_donantes_incentivo ||--o{ perfil_organizaciones_ayudadas : "perfil_id"
+    perfiles_donantes_incentivo ||--o{ insignias : "perfil_donante_id"
+    misiones ||--o{ progresos_mision : "mision_id"
+    perfiles_donantes_incentivo ..o{ progresos_mision : "id_donante (lógico)"
+    perfiles_donantes_incentivo ..o{ rankings_mensuales : "id_donante (lógico)"
+}
+
+' ========================================================================================
+' 3. ESQUEMA RELACIONAL: notificaciones_db (PostgreSQL 16 — notificaciones-service)
+' ========================================================================================
+package "3. notificaciones_db (PostgreSQL 16 — notificaciones-service)" #F9EBEA {
+
+    table(auditorias_notificaciones) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(clave_evento): VARCHAR(150) NULL
+        column(destinatario): VARCHAR(150) NOT NULL
+        column(canal): VARCHAR(30) NOT NULL
+        column(asunto): VARCHAR(250) NOT NULL
+        column(mensaje): TEXT NULL
+        column(estado): VARCHAR(30) NOT NULL
+        column(error_detalle): TEXT NULL
+        column(intentos): INTEGER NOT NULL DEFAULT 1
+        column(timestamp): TIMESTAMP NOT NULL
+    }
+
+    table(registros_eventos_notificaciones) {
+        primary_key(id): BIGSERIAL <<PK>>
+        --
+        column(clave_evento): VARCHAR(150) NOT NULL <<UQ>>
+        column(tipo_evento): VARCHAR(80) NOT NULL
+        column(fecha_procesado): TIMESTAMP NOT NULL
+    }
+
+    registros_eventos_notificaciones ..o{ auditorias_notificaciones : "clave_evento"
+}
+
+' ========================================================================================
+' 4. ESQUEMA DOCUMENTAL NOSQL: logistica_db (MongoDB 7.0 — logistica-service)
+' ========================================================================================
+package "4. logistica_db (MongoDB 7.0 Documental — logistica-service)" #E8F8F5 {
+
+    collection(camiones) {
+        primary_key(_id): ObjectId <<PK>>
+        --
+        column(patente): String <<UQ, IDX>>
+        column(marcaModelo): String
+        column(capacidadVolumenM3): Double
+        column(alturaM): Double
+        column(capacidadPesoKg): Double
+        column(activo): Boolean
+        column(fechaAlta): ISODate
+        column(fechaBaja): ISODate
+        column(motivoBaja): String
+        column(ubicacionActual): CoordenadaGPS <<Embedded>>
+    }
+
+    embedded(CoordenadaGPS) {
+        column(latitud): Double
+        column(longitud): Double
+        column(velocidadKmH): Double
+        column(timestamp): ISODate
+        column(direccionAproximada): String
+    }
+
+    collection(rutas) {
+        primary_key(_id): ObjectId <<PK>>
+        --
+        column(loteId): String <<IDX>>
+        column(idCamion): String
+        column(patenteCamion): String
+        column(fechaPlanificada): LocalDate
+        column(estado): String
+        column(distanciaKmTotal): Double
+        column(tiempoEstimadoMinutos): Integer
+        column(fechaCreacion): ISODate
+        column(fechaInicio): ISODate
+        column(fechaFin): ISODate
+        column(motivoCancelacion): String
+        column(paradas): List<Parada> <<Embedded Array>>
+    }
+
+    embedded(Parada) {
+        column(orden): Integer
+        column(tipo): String
+        column(idEntidadBeneficiaria): Long
+        column(nombreEntidad): String
+        column(direccion): String
+        column(latitud): Double
+        column(longitud): Double
+        column(idDonacion): Long
+        column(completada): Boolean
+        column(fechaLlegadaEstimada): ISODate
+        column(fechaLlegadaReal): ISODate
+    }
+
+    collection(entregas) {
+        primary_key(_id): ObjectId <<PK>>
+        --
+        column(idRuta): String <<IDX>>
+        column(idDonacion): Long <<IDX>>
+        column(idEntidadBeneficiaria): Long
+        column(nombreEntidad): String
+        column(emailEntidad): String
+        column(idDonante): Long
+        column(emailDonante): String
+        column(canalPreferidoDonante): String
+        column(contactoPreferidoDonante): String
+        column(patenteCamion): String
+        column(estado): String
+        column(receptorNombre): String
+        column(receptorDni): String
+        column(firmaDigitalUrl): String
+        column(fotosConfirmacionUrls): List<String>
+        column(motivoFalla): String
+        column(replanificable): Boolean
+        column(fechaCreacion): ISODate
+        column(fechaActualizacion): ISODate
+    }
+
+    collection(donaciones_pendientes_lote) {
+        primary_key(_id): ObjectId <<PK>>
+        --
+        column(loteId): String <<IDX>>
+        column(idDonacion): Long <<IDX>>
+        column(motivoNoAsignacion): String
+        column(fechaRegistro): ISODate
+        column(procesado): Boolean
+    }
+
+    collection(telemetria_gps) {
+        primary_key(_id): ObjectId <<PK>>
+        --
+        column(idCamion): String <<IDX>>
+        column(patente): String
+        column(latitud): Double
+        column(longitud): Double
+        column(velocidadKmH): Double
+        column(timestamp): ISODate <<IDX>>
+        column(direccionAproximada): String
+    }
+
+    camiones *-- CoordenadaGPS : "ubicacionActual"
+    rutas *-- "1..*" Parada : "paradas[]"
+    camiones ||..o{ rutas : "idCamion"
+    rutas ||..o{ entregas : "idRuta"
+    camiones ||..o{ telemetria_gps : "idCamion"
+}
+
+@enduml

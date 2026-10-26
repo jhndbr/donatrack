@@ -18,6 +18,12 @@ public class PersonaJuridica extends PersonaDonante {
 
     private String rubro;
 
+    private String direccion;
+
+    private Double latitud;
+
+    private Double longitud;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "representantes_juridica", joinColumns = @JoinColumn(name = "persona_juridica_id"))
     @Column(name = "nombre_representante")
@@ -69,6 +75,15 @@ public class PersonaJuridica extends PersonaDonante {
 
     public String getRubro() { return rubro; }
     public void setRubro(String rubro) { this.rubro = rubro; }
+
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+
+    public Double getLatitud() { return latitud; }
+    public void setLatitud(Double latitud) { this.latitud = latitud; }
+
+    public Double getLongitud() { return longitud; }
+    public void setLongitud(Double longitud) { this.longitud = longitud; }
 
     public List<String> getRepresentantes() { return representantes; }
     public void setRepresentantes(List<String> representantes) { this.representantes = representantes; }

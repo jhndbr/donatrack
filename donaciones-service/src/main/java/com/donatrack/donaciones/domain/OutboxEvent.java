@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "outbox_events")
+@Table(name = "outbox_events", indexes = {
+    @Index(name = "idx_outbox_status_created", columnList = "status, created_at")
+})
 public class OutboxEvent {
 
     public enum OutboxStatus {

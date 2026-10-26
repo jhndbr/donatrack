@@ -21,8 +21,29 @@
     <div class="row">
         <div class="col-lg-8 mx-auto">
             <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
-                <form action="/donante/donar" method="post">
+                <form action="/donante/donar" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="donanteId" th:value="${donanteId}">
+
+                    <!-- Destino de la Donación (Específico vs Matchmaking Automático) -->
+                    <div class="mb-4 p-3 bg-light rounded-4 border">
+                        <label class="form-label fw-bold text-dark d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-route text-primary"></i>
+                            Destino de la Donación
+                        </label>
+                        <select name="entidadId" id="entidadIdSelect" class="form-select bg-white">
+                            <option value="">✨ Distribución Automática por Matchmaking (Recomendado)</option>
+                            <option th:each="ent : ${entidades}"
+                                    th:value="${ent['id'] != null ? ent['id'] : ent['idEntidad']}"
+                                    th:text="${(ent['razonSocial'] != null ? ent['razonSocial'] : ent['nombre']) + (ent['direccion'] != null ? ' — ' + ent['direccion'] : '')}"
+                                    th:selected="${entidadIdPreseleccionada != null && (entidadIdPreseleccionada == ent['id'] || entidadIdPreseleccionada == ent['idEntidad'])}">
+                                Comedor Los Chicos Felices
+                            </option>
+                        </select>
+                        <div class="form-text mt-2 small text-muted">
+                            <i class="fa-solid fa-circle-info me-1"></i>
+                            Si seleccionas una entidad específica, tu donación se asignará directamente a dicha sede. Si eliges asignación automática, ingresará al depósito y nuestro algoritmo de Matchmaking la asignará a la comunidad con mayor urgencia y compatibilidad.
+                        </div>
+                    </div>
 
                     <!-- Categoría y Subcategoría -->
                     <div class="row g-3 mb-3">
@@ -78,26 +99,47 @@
                         </div>
                     </div>
 
-                    <!-- Foto URL y Presets -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Foto de los Bienes o Comprobante Inicial <small class="text-muted">(Opcional)</small></label>
-                        <input type="url" name="fotoUrl" id="fotoUrlInput" class="form-control"
-                               placeholder="https://images.unsplash.com/photo-..."
-                               value="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=500&q=80">
-                        <div class="mt-2 d-flex flex-wrap gap-2">
-                            <small class="text-muted me-1">Ejemplos rápidos:</small>
-                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
-                                    onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=500&q=80'">
-                                <i class="fa-solid fa-bowl-rice me-1"></i>Alimentos
-                            </button>
-                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
-                                    onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=500&q=80'">
-                                <i class="fa-solid fa-shirt me-1"></i>Vestimenta
-                            </button>
-                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
-                                    onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=500&q=80'">
-                                <i class="fa-solid fa-chair me-1"></i>Mobiliario
-                            </button>
+                    <!-- Subida de Imagen desde la PC y/o URL -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-camera text-primary me-1"></i> Foto de los Bienes o Comprobante</span>
+                            <span class="badge bg-light text-muted border fw-normal">Sube desde tu PC</span>
+                        </label>
+
+                        <div class="p-3 border rounded-3 bg-light">
+                            <input type="file" name="fotoFile" id="fotoFileInput" class="form-control mb-2"
+                                   accept="image/*" onchange="previsualizarImagen(this)">
+                            <div class="small text-muted mb-2">Formatos permitidos: JPG, PNG, WEBP, GIF. Máximo 10MB.</div>
+
+                            <!-- Caja de Previsualización Local -->
+                            <div id="previewContainer" class="d-none text-center p-3 bg-white rounded-3 border shadow-sm my-2">
+                                <img id="imgPreview" src="" alt="Previsualización" class="img-fluid rounded-3 shadow-sm mb-2" style="max-height: 220px; object-fit: contain;">
+                                <div class="small fw-semibold text-success"><i class="fa-solid fa-circle-check me-1"></i>Imagen cargada lista para subir al servidor</div>
+                            </div>
+
+                            <!-- Opción alternativa por URL existente -->
+                            <details class="mt-2">
+                                <summary class="small text-muted cursor-pointer user-select-none"><i class="fa-solid fa-link me-1"></i>O ingresar enlace URL web externo</summary>
+                                <div class="mt-2">
+                                    <input type="url" name="fotoUrl" id="fotoUrlInput" class="form-control form-control-sm"
+                                           placeholder="https://images.unsplash.com/photo-...">
+                                    <div class="mt-2 d-flex flex-wrap gap-2">
+                                        <small class="text-muted me-1">Ejemplos rápidos:</small>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
+                                                onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=500&q=80'">
+                                            <i class="fa-solid fa-bowl-rice me-1"></i>Alimentos
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
+                                                onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=500&q=80'">
+                                            <i class="fa-solid fa-shirt me-1"></i>Vestimenta
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
+                                                onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=500&q=80'">
+                                            <i class="fa-solid fa-chair me-1"></i>Mobiliario
+                                        </button>
+                                    </div>
+                                </div>
+                            </details>
                         </div>
                     </div>
 
@@ -117,6 +159,45 @@
             </div>
         </div>
     </div>
+
+    <script>
+        var subcategoriasPorCategoria = {
+            'Alimentos': ['arroz', 'fideos secos', 'leche en polvo', 'legumbres', 'aceite vegetal', 'harina de trigo'],
+            'Vestimenta': ['camperas', 'frazadas', 'zapatillas', 'pantalones', 'abrigos de invierno'],
+            'Mobiliario': ['mesas', 'sillas', 'estanterías', 'colchones', 'camas'],
+            'Insumos': ['gasas y vendas', 'alcohol en gel', 'barbijos', 'desinfectante', 'pañales'],
+            'Escolar': ['cuadernos', 'lápices y bolígrafos', 'mochilas', 'guardapolvos', 'cartucheras']
+        };
+
+        function actualizarSubcategorias() {
+            var catSelect = document.getElementById('categoriaSelect');
+            var subInput = document.getElementById('subcategoriaInput');
+            if (catSelect && subInput) {
+                var sugerencias = subcategoriasPorCategoria[catSelect.value];
+                if (sugerencias && sugerencias.length > 0) {
+                    subInput.placeholder = "Sugerencias: " + sugerencias.join(", ");
+                    if (!subInput.value || subInput.value.trim() === '') {
+                        subInput.value = sugerencias[0];
+                    }
+                }
+            }
+        }
+
+        function previsualizarImagen(input) {
+            var previewContainer = document.getElementById('previewContainer');
+            var imgPreview = document.getElementById('imgPreview');
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    imgPreview.src = e.target.result;
+                    previewContainer.classList.remove('d-none');
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                previewContainer.classList.add('d-none');
+            }
+        }
+    </script>
 </div>
 </body>
 </html>

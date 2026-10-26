@@ -56,4 +56,29 @@ public class DonacionStateTest {
         // No se puede confirmar entrega directamente desde EN_DEPOSITO
         assertThrows(IllegalStateException.class, donacion::confirmarEntrega);
     }
+
+    @Test
+    void testMarcarVencidaRevierteCoberturaYRechazaDobleVencimiento() {
+        Donacion donacion = new Donacion();
+        donacion.setSubcategoria("Lácteos");
+        donacion.setCantidad(20.0);
+
+        EntidadBeneficiaria entidad = new EntidadBeneficiaria("Comedor Sol", "Calle 1", "111");
+        NecesidadMaterial necesidad = new NecesidadMaterial("Lácteos", "Leche", com.donatrack.common.enums.TipoNecesidad.EXTRAORDINARIA, 20.0, "L", null);
+        donacion.asignarA(entidad, necesidad);
+        assertEquals(20.0, necesidad.getCantidadCubierta());
+
+        // No se permite registrarEntregaFallida desde ASIGNACION_REALIZADA
+        assertThrows(IllegalStateException.class, () -> donacion.registrarEntregaFallida("Fallo antes de salir"));
+
+        // Al vencer, debe revertir cobertura y limpiar asignación
+        donacion.marcarVencida();
+        assertEquals(EstadoDonacion.VENCIDA, donacion.getEstado());
+        assertEquals(0.0, necesidad.getCantidadCubierta());
+        assertNull(donacion.getEntidadAsignada());
+        assertNull(donacion.getNecesidadAsignada());
+
+        // No se puede volver a marcar como VENCIDA si ya está VENCIDA
+        assertThrows(IllegalStateException.class, donacion::marcarVencida);
+    }
 }

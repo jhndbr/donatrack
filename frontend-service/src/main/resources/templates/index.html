@@ -9,8 +9,8 @@
     <div class="p-5 mb-4 bg-white rounded-4 shadow-sm border border-light-subtle">
         <div class="row align-items-center">
             <div class="col-lg-7">
-                <span class="badge bg-danger-subtle text-danger fw-bold mb-2 px-3 py-2 rounded-pill">
-                    <i class="fa-solid fa-heart me-1"></i> UTN Solidaria &bull; SAE UTN.BA
+                <span class="badge bg-primary-subtle text-primary fw-bold mb-2 px-3 py-2 rounded-pill">
+                    <i class="fa-solid fa-heart me-1"></i> Red Solidaria Comunitaria
                 </span>
                 <h1 class="display-5 fw-bold text-dark tracking-tight mb-3">Trazabilidad Total para tus Donaciones Solidarias</h1>
                 <p class="lead text-secondary mb-4">
@@ -28,6 +28,7 @@
             </div>
             <div class="col-lg-5 text-center d-none d-lg-block">
                 <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=600&q=80"
+                     onerror="this.onerror=null; this.src='/images/placeholder-entrega.svg';"
                      class="img-fluid rounded-4 shadow" alt="Voluntariado Solidario">
             </div>
         </div>
@@ -201,7 +202,7 @@
                             <span th:class="'badge badge-status status-' + ${don.estado}" th:text="${don.estado}">EN_DEPOSITO</span>
                         </td>
                         <td>
-                            <a th:href="@{/donante/tracking}" class="btn btn-sm btn-outline-secondary">
+                            <a href="/comprobantes" class="btn btn-sm btn-outline-secondary">
                                 <i class="fa-solid fa-route"></i> Ver Ruta
                             </a>
                         </td>
@@ -212,79 +213,86 @@
     </div>
 
     <!-- Leaflet Script for Home Map -->
-    <script>
+    <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
             var map = L.map('deliveredMap').setView([-34.6037, -58.3950], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
-            // Marcadores de donaciones entregadas con detalles completos y fotos
-            var puntos = [
-                {
-                    lat: -34.6037, lng: -58.3816,
-                    titulo: "Comedor Los Chicos Felices",
-                    direccion: "Av. Medrano 951, Almagro, CABA",
-                    desc: "Recepción de 50 kg de arroz y alimentos secos.",
-                    fecha: "10 de Octubre de 2026",
-                    camion: "Camión Mercedes-Benz (AE789XY)",
-                    foto: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=450&q=80",
-                    comprobante: "COMP-2026-001"
-                },
-                {
-                    lat: -34.5885, lng: -58.4201,
-                    titulo: "Hogar Sol Naciente",
-                    direccion: "Gorriti 3800, Palermo, CABA",
-                    desc: "Recepción de 25 litros de leche y nutrientes lácteos.",
-                    fecha: "09 de Octubre de 2026",
-                    camion: "Ford Cargo (AF123ZZ)",
-                    foto: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=450&q=80",
-                    comprobante: "COMP-2026-002"
-                },
-                {
-                    lat: -34.6180, lng: -58.3700,
-                    titulo: "Hospital Comunitario San Roque",
-                    direccion: "Paseo Colón 850, San Telmo, CABA",
-                    desc: "Recepción de 40 camperas y frazadas de abrigo.",
-                    fecha: "08 de Octubre de 2026",
-                    camion: "Furgón Utilitario (AC456MN)",
-                    foto: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=450&q=80",
-                    comprobante: "COMP-2026-003"
-                },
-                {
-                    lat: -34.6450, lng: -58.4480,
-                    titulo: "Merendero Esperanza y Futuro",
-                    direccion: "Av. Cruz 2500, Villa Soldati, CABA",
-                    desc: "Recepción de 30 kg de harina, legumbres y cereales.",
-                    fecha: "07 de Octubre de 2026",
-                    camion: "Camión Mercedes-Benz (AE789XY)",
-                    foto: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=450&q=80",
-                    comprobante: "COMP-2026-004"
-                }
-            ];
+            var puntos = /*[[${donacionesPublicasMapa}]]*/ [];
+            if (!puntos || puntos.length === 0) {
+                puntos = [
+                    {
+                        lat: -34.6037, lng: -58.3816,
+                        titulo: "Comedor Los Chicos Felices",
+                        direccion: "Av. Medrano 951, Almagro, CABA",
+                        desc: "Recepción de 50 kg de arroz y alimentos secos.",
+                        fecha: "10 de Octubre de 2026",
+                        camion: "Camión Mercedes-Benz (AE789XY)",
+                        foto: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=450&q=80"
+                    },
+                    {
+                        lat: -34.5885, lng: -58.4201,
+                        titulo: "Hogar Sol Naciente",
+                        direccion: "Gorriti 3800, Palermo, CABA",
+                        desc: "Recepción de 25 litros de leche y nutrientes lácteos.",
+                        fecha: "09 de Octubre de 2026",
+                        camion: "Ford Cargo (AF123ZZ)",
+                        foto: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=450&q=80"
+                    },
+                    {
+                        lat: -34.6180, lng: -58.3700,
+                        titulo: "Hospital Comunitario San Roque",
+                        direccion: "Paseo Colón 850, San Telmo, CABA",
+                        desc: "Recepción de 40 camperas y frazadas de abrigo.",
+                        fecha: "08 de Octubre de 2026",
+                        camion: "Furgón Utilitario (AC456MN)",
+                        foto: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=450&q=80"
+                    },
+                    {
+                        lat: -34.6450, lng: -58.4480,
+                        titulo: "Merendero Esperanza y Futuro",
+                        direccion: "Av. Cruz 2500, Villa Soldati, CABA",
+                        desc: "Recepción de 30 kg de harina, legumbres y cereales.",
+                        fecha: "07 de Octubre de 2026",
+                        camion: "Camión Mercedes-Benz (AE789XY)",
+                        foto: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=450&q=80"
+                    }
+                ];
+            }
 
             puntos.forEach(function(p) {
+                var lat = p.latitud || p.lat || -34.6037;
+                var lng = p.longitud || p.lng || -58.3816;
+                var titulo = p.nombreEntidad || p.titulo || "Entidad Beneficiaria";
+                var direccion = p.direccion || "CABA";
+                var desc = p.descripcion || p.desc || (p.subcategoria ? (p.cantidad + " " + (p.unidadMedida || "") + " de " + p.subcategoria) : "Donación entregada");
+                var fecha = p.fechaEntrega || p.fecha || "Reciente";
+                var camion = p.patenteCamion || p.camion || "Camión de Reparto";
+                var foto = p.fotoUrl || p.foto || "/images/placeholder-entrega.svg";
+
                 var popupHtml = `
                     <div style="min-width: 240px; max-width: 280px; font-family: sans-serif;">
-                        <img src="${p.foto}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" alt="${p.titulo}">
-                        <h6 style="font-weight: bold; margin-bottom: 4px; color: #1e3a8a;">${p.titulo}</h6>
+                        <img src="${foto}" onerror="this.onerror=null; this.src='/images/placeholder-entrega.svg';" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" alt="${titulo}">
+                        <h6 style="font-weight: bold; margin-bottom: 4px; color: #1e3a8a;">${titulo}</h6>
                         <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 6px;">
-                            <i class="fa-solid fa-location-dot"></i> ${p.direccion}
+                            <i class="fa-solid fa-location-dot"></i> ${direccion}
                         </div>
-                        <p style="font-size: 0.8rem; color: #334155; margin-bottom: 8px;">${p.desc}</p>
+                        <p style="font-size: 0.8rem; color: #334155; margin-bottom: 8px;">${desc}</p>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <span style="background-color: #dcfce7; color: #166534; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">
                                 <i class="fa-solid fa-circle-check"></i> ENTREGADA
                             </span>
-                            <span style="font-size: 0.72rem; color: #64748b;">${p.fecha}</span>
+                            <span style="font-size: 0.72rem; color: #64748b;">${fecha}</span>
                         </div>
                         <div style="font-size: 0.72rem; color: #475569; border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; align-items: center;">
-                            <span><i class="fa-solid fa-truck"></i> ${p.camion}</span>
+                            <span><i class="fa-solid fa-truck"></i> ${camion}</span>
                             <a href="/comprobantes" style="font-weight: 600; color: #0d9488; text-decoration: none;">Ver Foto &rarr;</a>
                         </div>
                     </div>
                 `;
-                L.marker([p.lat, p.lng]).addTo(map).bindPopup(popupHtml);
+                L.marker([lat, lng]).addTo(map).bindPopup(popupHtml);
             });
         });
     </script>

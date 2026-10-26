@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title>Panel de Chofer - Recorrido y Entregas - DonaTrack</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-truck-steering text-primary me-2"></i>Hoja de Ruta del Chofer</h2>
+            <p class="text-secondary mb-0">Gestión de recorridos en vivo, paradas y confirmación física de entregas.</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-primary-subtle text-primary py-2 px-3 fw-semibold">
+                <i class="fa-solid fa-user-tie me-1"></i>
+                <span th:text="${userSession != null ? userSession.nombreCompleto : 'Chofer Flota'}">Chofer</span>
+            </span>
+            <a href="/logout" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>Salir</a>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>
+        <span th:text="${mensajeExito}">Operación exitosa</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+        <span th:text="${mensajeError}">Ocurrió un error</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Selector de Rutas si hay múltiples -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small text-muted mb-1"><i class="fa-solid fa-route me-1"></i>Seleccionar Hoja de Ruta:</label>
+                <select class="form-select select-ruta" onchange="if(this.value) window.location.href='/chofer?rutaId=' + this.value;">
+                    <option value="" th:if="${#lists.isEmpty(rutas)}">Sin rutas planificadas</option>
+                    <option th:each="r : ${rutas}" 
+                            th:value="${r['id']}" 
+                            th:text="'Ruta #' + ${r['id']} + ' (' + (${r['patenteCamion'] != null} ? ${r['patenteCamion']} : 'Sin camión') + ') - ' + ${r['estado']}"
+                            th:selected="${rutaActiva != null and rutaActiva['id'] == r['id']}">
+                        Ruta #1 (AE789XY) - PLANIFICADA
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-8 text-md-end" th:if="${rutaActiva != null}">
+                <div class="d-inline-flex gap-2">
+                    <!-- Botón Iniciar Ruta (CU-40) -->
+                    <form th:if="${rutaActiva['estado'] == 'PLANIFICADA'}" th:action="@{'/chofer/rutas/' + ${rutaActiva['id']} + '/iniciar'}" method="post">
+                        <button type="submit" class="btn btn-success fw-semibold shadow-sm">
+                            <i class="fa-solid fa-play me-2"></i>Iniciar Recorrido
+                        </button>
+                    </form>
+
+                    <!-- Botón Finalizar Ruta -->
+                    <form th:if="${rutaActiva['estado'] == 'EN_CURSO'}" th:action="@{'/chofer/rutas/' + ${rutaActiva['id']} + '/finalizar'}" method="post">
+                        <button type="submit" class="btn btn-danger fw-semibold shadow-sm" onclick="return confirm('¿Confirma que desea finalizar el recorrido completo?');">
+                            <i class="fa-solid fa-flag-checkered me-2"></i>Finalizar Recorrido
+                        </button>
+                    </form>
+
+                    <span class="badge py-2 px-3 rounded-pill"
+                          th:classappend="${rutaActiva['estado'] == 'PLANIFICADA' ? 'bg-secondary' : (rutaActiva['estado'] == 'EN_CURSO' ? 'bg-primary' : 'bg-success')}"
+                          th:text="'Estado: ' + ${rutaActiva['estado']}">
+                        Estado: EN_CURSO
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Si no hay ninguna ruta -->
+    <div th:if="${rutaActiva == null}" class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
+        <i class="fa-solid fa-clipboard-check text-muted fs-1 mb-3"></i>
+        <h4 class="fw-bold text-dark">No hay hojas de ruta disponibles</h4>
+        <p class="text-secondary">Las rutas son generadas tras la corrida nocturna de optimización logística.</p>
+    </div>
+
+    <!-- Detalle de la Ruta Activa -->
+    <div th:if="${rutaActiva != null}">
+        <div class="row g-4 mb-4">
+            <!-- Tarjeta Resumen -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Datos de la Unidad y Recorrido</h5>
+                    <ul class="list-unstyled mb-0">
+                        <li class="py-2 border-bottom d-flex justify-content-between">
+                            <span class="text-muted">Hoja de Ruta ID:</span>
+                            <strong class="font-monospace" th:text="${rutaActiva['id']}">RUTA-101</strong>
+                        </li>
+                        <li class="py-2 border-bottom d-flex justify-content-between">
+                            <span class="text-muted">Camión Asignado:</span>
+                            <span class="badge bg-dark" th:text="${rutaActiva['patenteCamion'] != null ? rutaActiva['patenteCamion'] : 'AE789XY'}">AE789XY</span>
+                        </li>
+                        <li class="py-2 border-bottom d-flex justify-content-between">
+                            <span class="text-muted">Total de Paradas / Entregas:</span>
+                            <strong th:text="${!#lists.isEmpty(paradas) ? #lists.size(paradas) : #lists.size(entregas)}">3</strong>
+                        </li>
+                        <li class="py-2 d-flex justify-content-between">
+                            <span class="text-muted">Distancia Estimada:</span>
+                            <span th:text="${rutaActiva['distanciaKmTotal'] != null ? rutaActiva['distanciaKmTotal'] + ' km' : 'Calculada por VRP'}">18.5 km</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Panel de Telemetría GPS en Vivo (Simulación / Envío) -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <h5 class="fw-bold text-dark mb-2"><i class="fa-solid fa-satellite-dish text-success me-2"></i>Transmisión de Posición GPS</h5>
+                    <p class="text-muted small mb-3">Envía las coordenadas de posicionamiento del camión para que los comedores sigan la entrega en el mapa.</p>
+                    
+                    <form action="/chofer/telemetria" method="post" class="row g-2">
+                        <input type="hidden" name="idCamion" th:value="${rutaActiva['idCamion'] != null ? rutaActiva['idCamion'] : 'CAM-01'}">
+                        <input type="hidden" name="patente" th:value="${rutaActiva['patenteCamion'] != null ? rutaActiva['patenteCamion'] : 'AE789XY'}">
+                        <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
+                        
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Latitud</label>
+                            <input type="number" step="0.0001" name="latitud" class="form-control form-control-sm" value="-34.6037" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Longitud</label>
+                            <input type="number" step="0.0001" name="longitud" class="form-control form-control-sm" value="-58.3816" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Velocidad (km/h)</label>
+                            <input type="number" step="1" name="velocidad" class="form-control form-control-sm" value="42" required>
+                        </div>
+                        <div class="col-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-success btn-sm w-100 fw-semibold">
+                                <i class="fa-solid fa-location-arrow me-1"></i>Reportar GPS
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Paradas de la Ruta -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list-ol text-primary me-2"></i>Secuencia de Paradas de Entrega</h5>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 70px;">Orden</th>
+                            <th>Entidad Beneficiaria Destino</th>
+                            <th>Dirección</th>
+                            <th>Donación ID</th>
+                            <th>Estado Entrega</th>
+                            <th class="text-end">Acción de Chofer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Si hay lista de paradas en paradas -->
+                        <tr th:if="${!#lists.isEmpty(paradas)}" th:each="p : ${paradas}">
+                            <td>
+                                <span class="badge bg-secondary-subtle text-dark fs-6" th:text="${p['orden']}">1</span>
+                            </td>
+                            <td>
+                                <strong class="text-primary" th:text="${p['nombreEntidad'] != null ? p['nombreEntidad'] : 'Entidad Comunitaria'}">Comedor San José</strong>
+                            </td>
+                            <td>
+                                <i class="fa-solid fa-location-dot text-muted me-1"></i>
+                                <span th:text="${p['direccion']}">Av. Corrientes 4500, CABA</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace" th:text="'DON-' + ${p['idDonacion']}">DON-1</span>
+                            </td>
+                            <td>
+                                <span th:if="${p['completada'] == true}" class="badge bg-success-subtle text-success"><i class="fa-solid fa-check me-1"></i>ENTREGADA</span>
+                                <span th:if="${p['completada'] != true}" class="badge bg-warning-subtle text-warning"><i class="fa-solid fa-clock me-1"></i>PENDIENTE</span>
+                            </td>
+                            <td class="text-end">
+                                <div th:if="${p['completada'] != true}" class="d-inline-flex gap-1">
+                                    <!-- Modal Trigger Confirmar -->
+                                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" th:data-bs-target="'#modalConfirmar-' + ${p['orden']}">
+                                        <i class="fa-solid fa-camera me-1"></i>Confirmar
+                                    </button>
+                                    
+                                    <!-- Modal Trigger Fallida -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" th:data-bs-target="'#modalFallida-' + ${p['orden']}">
+                                        <i class="fa-solid fa-ban me-1"></i>Fallida
+                                    </button>
+                                </div>
+                                <span th:if="${p['completada'] == true}" class="text-success small fw-semibold"><i class="fa-solid fa-circle-check me-1"></i>Completada</span>
+
+                                <!-- Modal Confirmar -->
+                                <div class="modal fade" th:id="'modalConfirmar-' + ${p['orden']}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content rounded-4 border-0 shadow">
+                                            <form th:action="@{'/chofer/entregas/' + ${p['idDonacion']} + '/confirmar'}" method="post">
+                                                <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-circle-check text-success me-2"></i>Confirmar Recepción Física</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p class="small text-muted mb-3">Ingrese la constancia o fotografía física del remito firmado en sede comunitaria (CU-43).</p>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold small">URL de Fotografía / Constancia Remito</label>
+                                                        <input type="url" name="fotoUrl" class="form-control" placeholder="https://ejemplo.com/fotos/remito123.jpg" value="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=400&q=80" required>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-success btn-sm fw-semibold"><i class="fa-solid fa-check me-1"></i>Registrar Entrega</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal Fallida -->
+                                <div class="modal fade" th:id="'modalFallida-' + ${p['orden']}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content rounded-4 border-0 shadow">
+                                            <form th:action="@{'/chofer/entregas/' + ${p['idDonacion']} + '/fallida'}" method="post">
+                                                <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Registrar Entrega No Recibida</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold small">Motivo Justificado (Obligatorio CU-44)</label>
+                                                        <select name="motivo" class="form-select">
+                                                            <option value="Sede cerrada / Sin receptor presente" selected>Sede cerrada / Sin receptor presente</option>
+                                                            <option value="Rechazado por vencimiento de perecedero">Rechazado por vencimiento de perecedero</option>
+                                                            <option value="Dirección inaccesible para camión">Dirección inaccesible para camión</option>
+                                                            <option value="Capacidad de almacenamiento colmada en sede">Capacidad de almacenamiento colmada en sede</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="replanificable" id="checkReplan" value="true" checked>
+                                                        <label class="form-check-label small" for="checkReplan">
+                                                            Permitir replanificación automática para la siguiente jornada
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-danger btn-sm fw-semibold"><i class="fa-solid fa-ban me-1"></i>Registrar Falla</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Fallback si las paradas están en 'entregas' -->
+                        <tr th:if="${#lists.isEmpty(paradas) and !#lists.isEmpty(entregas)}" th:each="ent, iter : ${entregas}">
+                            <td>
+                                <span class="badge bg-secondary-subtle text-dark fs-6" th:text="${iter.count}">1</span>
+                            </td>
+                            <td>
+                                <strong class="text-primary" th:text="${ent['nombreEntidad'] != null ? ent['nombreEntidad'] : 'Entidad Beneficiaria'}">Entidad</strong>
+                            </td>
+                            <td>
+                                <span class="text-muted small">Entrega física programada</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace" th:text="'DON-' + ${ent['idDonacion']}">DON-1</span>
+                            </td>
+                            <td>
+                                <span class="badge" 
+                                      th:classappend="${ent['estado'] == 'ENTREGADA' ? 'bg-success-subtle text-success' : (ent['estado'] == 'NO_RECIBIDA' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning')}"
+                                      th:text="${ent['estado']}">PENDIENTE</span>
+                            </td>
+                            <td class="text-end">
+                                <div th:if="${ent['estado'] != 'ENTREGADA' and ent['estado'] != 'NO_RECIBIDA'}" class="d-inline-flex gap-1">
+                                    <form th:action="@{'/chofer/entregas/' + ${ent['id']} + '/confirmar'}" method="post" class="d-inline">
+                                        <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fa-solid fa-check me-1"></i>Confirmar
+                                        </button>
+                                    </form>
+                                    <form th:action="@{'/chofer/entregas/' + ${ent['id']} + '/fallida'}" method="post" class="d-inline">
+                                        <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
+                                        <input type="hidden" name="motivo" value="Sede cerrada">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fa-solid fa-ban me-1"></i>Fallida
+                                        </button>
+                                    </form>
+                                </div>
+                                <span th:if="${ent['estado'] == 'ENTREGADA'}" class="text-success small fw-semibold"><i class="fa-solid fa-circle-check me-1"></i>Entregada</span>
+                            </td>
+                        </tr>
+
+                        <!-- Si no hay paradas registradas aún -->
+                        <tr th:if="${#lists.isEmpty(paradas) and #lists.isEmpty(entregas)}">
+                            <td colspan="6" class="text-center py-4 text-muted">Esta ruta no posee paradas cargadas actualmente.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

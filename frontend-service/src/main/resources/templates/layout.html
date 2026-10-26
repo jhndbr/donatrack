@@ -12,60 +12,141 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         :root {
-            --dt-primary: #1e3a8a;
-            --dt-secondary: #0d9488;
-            --dt-accent: #f59e0b;
-            --dt-bg: #f8fafc;
-            --dt-card: #ffffff;
+            /* Identidad visual Donatrack */
+            --color-primary-light: #D1F4F5;
+            --color-primary-dark: #003D3F;
+            --color-secondary: #009B9F;
+            --color-accent: #007A8E;
+
+            /* Aplicación */
+            --color-background: #F4FBFC;
+            --color-surface: #FFFFFF;
+            --color-text: #003D3F;
+            --color-text-muted: #007A8E;
+            --color-border: #009B9F;
+
+            /* Interacciones */
+            --color-button-primary: #009B9F;
+            --color-button-hover: #007A8E;
+            --color-navbar: #003D3F;
+            --color-footer: #003D3F;
         }
+
         body {
-            background-color: var(--dt-bg);
+            background-color: var(--color-background);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: #334155;
+            color: var(--color-text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        .navbar-brand {
+
+        /* Navbar Corporativa DonaTrack */
+        .navbar-custom {
+            background-color: var(--color-navbar);
+        }
+        .navbar-custom .navbar-brand {
+            color: #FFFFFF !important;
             font-weight: 700;
-            color: var(--dt-primary) !important;
             letter-spacing: -0.5px;
         }
+        .navbar-custom .nav-link {
+            color: rgba(255, 255, 255, 0.88) !important;
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 0.5rem 0.85rem;
+            border-radius: 0.375rem;
+        }
+        .navbar-custom .nav-link:hover {
+            color: #FFFFFF !important;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .navbar-custom .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .navbar-custom .navbar-toggler-icon {
+            filter: invert(1);
+        }
+
+        /* Botones Sólidos y Profesionales (Sin resplandores ni animaciones innecesarias) */
         .btn-dt-primary {
-            background-color: var(--dt-primary);
-            color: white;
-            border: none;
+            background-color: var(--color-button-primary);
+            color: #FFFFFF;
+            border: 1px solid var(--color-button-primary);
+            font-weight: 500;
         }
-        .btn-dt-primary:hover {
-            background-color: #172554;
-            color: white;
+        .btn-dt-primary:hover, .btn-dt-primary:focus {
+            background-color: var(--color-button-hover);
+            border-color: var(--color-button-hover);
+            color: #FFFFFF;
         }
+
         .btn-dt-secondary {
-            background-color: var(--dt-secondary);
-            color: white;
-            border: none;
+            background-color: var(--color-accent);
+            color: #FFFFFF;
+            border: 1px solid var(--color-accent);
+            font-weight: 500;
         }
-        .btn-dt-secondary:hover {
-            background-color: #0f766e;
-            color: white;
+        .btn-dt-secondary:hover, .btn-dt-secondary:focus {
+            background-color: var(--color-primary-dark);
+            border-color: var(--color-primary-dark);
+            color: #FFFFFF;
         }
+
+        .btn-dt-outline {
+            background-color: transparent;
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            font-weight: 500;
+        }
+        .btn-dt-outline:hover {
+            background-color: var(--color-primary-light);
+            color: var(--color-primary-dark);
+            border-color: var(--color-border);
+        }
+
+        /* Estados de Donación */
         .badge-status {
             font-weight: 600;
             padding: 0.35em 0.65em;
             border-radius: 0.375rem;
         }
-        .status-EN_DEPOSITO { background-color: #e2e8f0; color: #475569; }
-        .status-ASIGNACION_REALIZADA { background-color: #fef3c7; color: #92400e; }
-        .status-LISTA_PARA_ENTREGAR { background-color: #e0e7ff; color: #3730a3; }
-        .status-EN_TRASLADO { background-color: #dbeafe; color: #1e40af; }
-        .status-ENTREGADA { background-color: #dcfce7; color: #166534; }
-        .status-ENTREGA_FALLIDA { background-color: #fee2e2; color: #991b1b; }
-        .status-VENCIDA { background-color: #f1f5f9; color: #64748b; }
+        .status-EN_DEPOSITO { background-color: #E2E8F0; color: #334155; }
+        .status-ASIGNACION_REALIZADA { background-color: #FEF3C7; color: #92400E; }
+        .status-LISTA_PARA_ENTREGAR { background-color: #E0E7FF; color: #3730A3; }
+        .status-EN_TRASLADO { background-color: #DBEAFE; color: #1E40AF; }
+        .status-ENTREGADA { background-color: #DCFCE7; color: #166534; }
+        .status-ENTREGA_FALLIDA { background-color: #FEE2E2; color: #991B1B; }
+        .status-VENCIDA { background-color: #F1F5F9; color: #64748B; }
+
+        /* Paginación */
+        .page-item.active .page-link {
+            background-color: var(--color-button-primary);
+            border-color: var(--color-button-primary);
+            color: #FFFFFF;
+        }
+        .page-link {
+            color: var(--color-primary-dark);
+        }
+        .page-link:hover {
+            color: var(--color-button-hover);
+            background-color: var(--color-primary-light);
+        }
+
+        /* Footer */
         footer {
             margin-top: auto;
-            background-color: #0f172a;
-            color: #94a3b8;
+            background-color: var(--color-footer);
+            color: #CBD5E1;
         }
+        footer a {
+            color: var(--color-primary-light) !important;
+        }
+        footer a:hover {
+            color: #FFFFFF !important;
+            text-decoration: underline !important;
+        }
+
         .map-container {
             height: 400px;
             width: 100%;
@@ -76,47 +157,61 @@
 </head>
 <body>
     <!-- Navbar Header -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-custom shadow-sm sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                <i class="fa-solid fa-hand-holding-heart text-danger fs-4"></i>
+                <i class="fa-solid fa-hand-holding-heart text-white fs-4"></i>
                 <span>DonaTrack</span>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-8">UTN.BA</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navMenu">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
                     <li class="nav-item"><a class="nav-link" href="/"><i class="fa-solid fa-house me-1"></i> Inicio</a></li>
                     <li class="nav-item"><a class="nav-link" href="/comprobantes"><i class="fa-solid fa-images me-1"></i> Donaciones Entregadas</a></li>
                     
-                    <!-- Enlaces visibles según rol y sesión -->
-                    <li class="nav-item" th:if="${session.userSession != null and (session.userSession.isDonante() or session.userSession.isAdmin())}">
+                    <!-- Enlaces visibles estrictamente según rol -->
+                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isDonante()}">
                         <a class="nav-link" href="/donante"><i class="fa-solid fa-user me-1"></i> Mi Portal Donante</a>
                     </li>
-                    <li class="nav-item" th:if="${session.userSession != null and (session.userSession.isBeneficiaria() or session.userSession.isAdmin())}">
+                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isDonante()}">
+                        <a class="nav-link" href="/donante/notificaciones"><i class="fa-solid fa-bell me-1"></i> Mis Notificaciones</a>
+                    </li>
+                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isBeneficiaria()}">
                         <a class="nav-link" href="/beneficiaria"><i class="fa-solid fa-building me-1"></i> Mi Portal Entidad</a>
                     </li>
+                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isBeneficiaria()}">
+                        <a class="nav-link" href="/beneficiaria/notificaciones"><i class="fa-solid fa-bell me-1"></i> Notificaciones</a>
+                    </li>
+                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isChofer()}">
+                        <a class="nav-link text-warning fw-semibold" href="/chofer"><i class="fa-solid fa-truck-steering me-1"></i> Mi Ruta Chofer</a>
+                    </li>
                     <li class="nav-item" th:if="${session.userSession != null and session.userSession.isAdmin()}">
-                        <a class="nav-link text-primary fw-semibold" href="/admin"><i class="fa-solid fa-shield-halved me-1"></i> Panel Administrador</a>
+                        <a class="nav-link text-warning fw-semibold" href="/admin"><i class="fa-solid fa-shield-halved me-1"></i> Panel Administrador</a>
+                    </li>
+                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isAdmin()}">
+                        <a class="nav-link" href="/admin/notificaciones"><i class="fa-solid fa-bell me-1"></i> Auditoría Notificaciones</a>
+                    </li>
+                    <li class="nav-item" th:if="${session.userSession != null}">
+                        <a class="nav-link text-info" href="/buzon" title="Buzón de Notificaciones por Correo Integrado"><i class="fa-solid fa-envelope me-1"></i> Buzón Correos</a>
                     </li>
                 </ul>
                 
                 <!-- Botones si NO está autenticado -->
                 <div class="d-flex gap-2" th:if="${session.userSession == null}">
-                    <a href="/login" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Ingresar</a>
+                    <a href="/login" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Ingresar</a>
                     <a href="/registro" class="btn btn-dt-primary btn-sm"><i class="fa-solid fa-user-plus me-1"></i> Registrarse</a>
                 </div>
 
                 <!-- Usuario y Logout si ESTÁ autenticado -->
                 <div class="d-flex align-items-center gap-3" th:if="${session.userSession != null}">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"
-                              th:text="${session.userSession.role == 'ROLE_ADMIN' ? 'ADMIN' : (session.userSession.role == 'ROLE_DONANTE' ? 'DONANTE' : 'ENTIDAD')}">ROL</span>
-                        <span class="fw-semibold small text-dark" th:text="${session.userSession.nombreCompleto}">Usuario</span>
+                        <span class="badge bg-light text-dark px-2 py-1"
+                              th:text="${session.userSession.role == 'ROLE_ADMIN' ? 'ADMIN' : (session.userSession.role == 'ROLE_DONANTE' ? 'DONANTE' : (session.userSession.role == 'ROLE_CHOFER' ? 'CHOFER' : 'ENTIDAD'))}">ROL</span>
+                        <span class="fw-semibold small text-white" th:text="${session.userSession.nombreCompleto}">Usuario</span>
                     </div>
-                    <a href="/logout" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Salir</a>
+                    <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Salir</a>
                 </div>
             </div>
         </div>
@@ -134,16 +229,17 @@
         <div class="container">
             <div class="row gy-3">
                 <div class="col-md-6">
-                    <h5 class="text-white fw-bold mb-2"><i class="fa-solid fa-hand-holding-heart text-danger me-2"></i>DonaTrack</h5>
-                    <p class="small mb-1">Iniciativa en conjunto con UTN Solidaria (SAE - UTN.BA) para la gestión y trazabilidad transparente de donaciones materiales.</p>
-                    <p class="small text-muted mb-0">Cátedra de Diseño de Sistemas de Información (DDSI) 2026.</p>
+                    <h5 class="text-white fw-bold mb-2"><i class="fa-solid fa-hand-holding-heart text-white me-2"></i>DonaTrack</h5>
+                    <p class="small mb-1 text-light">Plataforma integral para la gestión comunitaria, logística y trazabilidad transparente de donaciones materiales.</p>
+                    <p class="small text-white-50 mb-0">Conectando la solidaridad con comedores, hogares y centros de asistencia social.</p>
                 </div>
                 <div class="col-md-3">
                     <h6 class="text-white fw-semibold mb-2">Enlaces Útiles</h6>
                     <ul class="list-unstyled small">
-                        <li><a href="/comprobantes" class="text-decoration-none text-secondary">Fotos de Entregas</a></li>
-                        <li><a href="/privacidad" class="text-decoration-none text-secondary">Términos y Privacidad</a></li>
-                        <li><a href="/admin/rankings" class="text-decoration-none text-secondary">Ranking Solidario</a></li>
+                        <li><a href="/comprobantes" class="text-decoration-none">Fotos de Entregas</a></li>
+                        <li><a href="/privacidad" class="text-decoration-none">Términos y Privacidad</a></li>
+                        <li><a href="/admin/rankings" class="text-decoration-none">Ranking Solidario</a></li>
+                        <li><a th:if="${session.userSession != null}" href="/buzon" class="text-decoration-none"><i class="fa-solid fa-envelope me-1"></i> Mi Buzón de Correos</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
@@ -154,8 +250,8 @@
                 </div>
             </div>
             <hr class="border-secondary my-3">
-            <div class="text-center small text-muted">
-                &copy; 2026 DonaTrack - Facultad Regional Buenos Aires (UTN). Todos los derechos reservados.
+            <div class="text-center small text-white-50">
+                &copy; 2026 DonaTrack. Todos los derechos reservados.
             </div>
         </div>
     </footer>

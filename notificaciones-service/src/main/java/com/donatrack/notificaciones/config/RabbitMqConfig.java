@@ -24,6 +24,9 @@ public class RabbitMqConfig {
     @Value("${donatrack.rabbitmq.queues.donante-inactivo:q.notificaciones.donante-inactivo}")
     private String qDonanteInactivo;
 
+    @Value("${donatrack.rabbitmq.queues.donante-registrado:q.notificaciones.donante-registrado}")
+    private String qDonanteRegistrado;
+
     @Value("${donatrack.rabbitmq.queues.ruta-iniciada:q.notificaciones.ruta-iniciada}")
     private String qRutaIniciada;
 
@@ -44,8 +47,9 @@ public class RabbitMqConfig {
     public static final String DLQ_ROUTING_KEY = "notificaciones.dlq";
 
     @Bean
-    public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+    public MessageConverter jsonMessageConverter(com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+        objectMapper.findAndRegisterModules();
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 
     @Bean
@@ -76,7 +80,10 @@ public class RabbitMqConfig {
     }
 
     private Queue crearCola(String nombreCola) {
-        return new Queue(nombreCola, true);
+        return QueueBuilder.durable(nombreCola)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .withArgument("x-dead-letter-routing-key", DLQ_ROUTING_KEY)
+                .build();
     }
 
     // --- Colas de Notificaciones ---
@@ -89,6 +96,11 @@ public class RabbitMqConfig {
     @Bean
     public Queue donanteInactivoQueue() {
         return crearCola(qDonanteInactivo);
+    }
+
+    @Bean
+    public Queue donanteRegistradoQueue() {
+        return crearCola(qDonanteRegistrado);
     }
 
     @Bean
@@ -126,6 +138,11 @@ public class RabbitMqConfig {
     @Bean
     public Binding bindDonanteInactivo(Queue donanteInactivoQueue, TopicExchange eventsExchange) {
         return BindingBuilder.bind(donanteInactivoQueue).to(eventsExchange).with("donante.inactivo");
+    }
+
+    @Bean
+    public Binding bindDonanteRegistrado(Queue donanteRegistradoQueue, TopicExchange eventsExchange) {
+        return BindingBuilder.bind(donanteRegistradoQueue).to(eventsExchange).with("donante.registrado");
     }
 
     @Bean

@@ -44,6 +44,12 @@ public class DonacionesSchedulerTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    @Mock
+    private com.donatrack.donaciones.service.DonacionService donacionService;
+
+    @Mock
+    private com.donatrack.donaciones.repository.EntidadBeneficiariaRepository entidadRepository;
+
     @InjectMocks
     private DonacionesScheduler donacionesScheduler;
 

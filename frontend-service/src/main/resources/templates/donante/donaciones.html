@@ -31,7 +31,8 @@
     <!-- Barra de Filtros -->
     <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
         <form action="/donante/donaciones" method="get" class="row g-2 align-items-center">
-            <div class="col-md-5">
+            <input type="hidden" name="donanteId" th:value="${donanteId}">
+            <div class="col-md-4">
                 <label class="form-label small fw-semibold text-muted">Filtrar por Estado</label>
                 <select name="estado" class="form-select">
                     <option value="">Todos los Estados</option>
@@ -44,7 +45,19 @@
                     <option value="VENCIDA" th:selected="${estadoSeleccionado == 'VENCIDA'}">Vencida</option>
                 </select>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted">Filtrar por Categoría</label>
+                <select name="categoria" class="form-select">
+                    <option value="">Todas las Categorías</option>
+                    <option value="Alimentos" th:selected="${categoriaSeleccionada == 'Alimentos'}">Alimentos</option>
+                    <option value="Vestimenta" th:selected="${categoriaSeleccionada == 'Vestimenta'}">Vestimenta</option>
+                    <option value="Mobiliario" th:selected="${categoriaSeleccionada == 'Mobiliario'}">Mobiliario</option>
+                    <option value="Salud" th:selected="${categoriaSeleccionada == 'Salud'}">Salud</option>
+                    <option value="Educación" th:selected="${categoriaSeleccionada == 'Educación'}">Educación</option>
+                    <option value="Higiene" th:selected="${categoriaSeleccionada == 'Higiene'}">Higiene</option>
+                </select>
+            </div>
+            <div class="col-md-3">
                 <label class="form-label small fw-semibold text-muted">Filtrar por Subcategoría</label>
                 <input type="text" name="subcategoria" class="form-control" placeholder="Ej. arroz, fideos, abrigo..." th:value="${subcategoriaSeleccionada}">
             </div>
@@ -60,7 +73,8 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>ID</th>
+                        <th>Código Envío</th>
+                        <th>Foto</th>
                         <th>Subcategoría</th>
                         <th>Cantidad</th>
                         <th>Fecha Recepción</th>
@@ -71,32 +85,188 @@
                 </thead>
                 <tbody>
                     <tr th:if="${#lists.isEmpty(donaciones)}">
-                        <td colspan="7" class="text-center py-5 text-muted">No se encontraron donaciones con los filtros seleccionados.</td>
+                        <td colspan="8" class="text-center py-5 text-muted">No se encontraron donaciones con los filtros seleccionados.</td>
                     </tr>
                     <tr th:each="d : ${donaciones}">
-                        <td class="fw-bold" th:text="'#' + ${d.id}">#1</td>
+                        <!-- Código de Seguimiento Profesional (sin exponer ID secuencial frío) -->
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1"
+                                  th:text="${d.id != null ? 'DON-' + #numbers.formatInteger(d.id, 4) : 'DON-0000'}">DON-0019</span>
+                        </td>
+                        <!-- Foto del Bien / Miniatura con Modal -->
+                        <td>
+                            <th:block th:with="urlFoto=${(d['bienes'] != null && !d['bienes'].isEmpty() && d['bienes'][0]['fotoUrl'] != null) ? d['bienes'][0]['fotoUrl'] : d['fotoUrl']}">
+                                <div th:if="${urlFoto != null}">
+                                    <img th:src="${urlFoto}"
+                                         onerror="this.onerror=null; this.src='/images/placeholder-entrega.svg';"
+                                         th:data-foto="${urlFoto}"
+                                         th:data-subcat="${d.subcategoria}"
+                                         alt="Foto bien"
+                                         class="rounded-3 border shadow-sm cursor-pointer"
+                                         style="width: 44px; height: 44px; object-fit: cover;"
+                                         onclick="verFotoModal(this.getAttribute('data-foto'), this.getAttribute('data-subcat'))"
+                                         title="Ver foto del recurso">
+                                </div>
+                                <div th:if="${urlFoto == null}" class="text-muted small ps-2">
+                                    <i class="fa-regular fa-image text-secondary fs-5" title="Sin foto adjunta"></i>
+                                </div>
+                            </th:block>
+                        </td>
                         <td>
                             <span class="badge bg-light text-dark border fw-semibold" th:text="${d.subcategoria}">Alimentos</span>
                         </td>
                         <td th:text="${d.cantidad} + ' ' + ${d.unidadMedida}">10 kg</td>
                         <td class="small text-muted" th:text="${d.fechaRecepcion != null ? #strings.substring(d.fechaRecepcion, 0, 10) : 'Hoy'}">2026-10-10</td>
                         <td>
-                            <span th:if="${d.entidadAsignada != null}" class="text-primary fw-semibold" th:text="${d.entidadAsignada.razonSocial}">Comedor Sol</span>
-                            <span th:if="${d.entidadAsignada == null}" class="text-muted small">Pendiente de Matchmaking</span>
+                            <span th:if="${d['entidadAsignada'] != null}" class="text-primary fw-semibold" th:text="${d['entidadAsignada']['razonSocial']}">Comedor Sol</span>
+                            <span th:if="${d['entidadAsignada'] == null}" class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                <i class="fa-solid fa-hourglass-half me-1"></i>Pendiente Matchmaking
+                            </span>
                         </td>
                         <td>
                             <span th:class="'badge badge-status status-' + ${d.estado}" th:text="${d.estado}">EN_DEPOSITO</span>
                         </td>
                         <td>
-                            <a href="/donante/tracking" class="btn btn-sm btn-outline-primary">
-                                <i class="fa-solid fa-location-arrow me-1"></i>Seguimiento
-                            </a>
+                            <div class="d-flex gap-1">
+                                <a th:href="@{/donante/tracking(donacionId=${d.id})}" class="btn btn-sm btn-outline-primary" title="Seguimiento GPS Satelital">
+                                    <i class="fa-solid fa-location-arrow"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        th:data-id="${d.id}"
+                                        onclick="cargarHistorial(this.getAttribute('data-id'))"
+                                        title="Historial y Auditoría">
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
+        <!-- Paginación -->
+        <div th:if="${totalPaginas > 1}" class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top gap-2">
+            <small class="text-muted">
+                Mostrando página <b th:text="${paginaActual + 1}">1</b> de <b th:text="${totalPaginas}">1</b> (<span th:text="${totalElementos}">0</span> donaciones en total)
+            </small>
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination pagination-sm mb-0">
+                    <li th:class="'page-item ' + (${paginaActual == 0} ? 'disabled' : '')">
+                        <a class="page-link" th:href="@{/donante/donaciones(page=${paginaActual - 1}, size=${size}, estado=${estadoSeleccionado}, categoria=${categoriaSeleccionada}, subcategoria=${subcategoriaSeleccionada})}">
+                            <i class="fa-solid fa-chevron-left me-1"></i>Anterior
+                        </a>
+                    </li>
+                    <li th:each="i : ${#numbers.sequence(0, totalPaginas - 1)}"
+                        th:class="'page-item ' + (${i == paginaActual} ? 'active' : '')">
+                        <a class="page-link"
+                           th:href="@{/donante/donaciones(page=${i}, size=${size}, estado=${estadoSeleccionado}, categoria=${categoriaSeleccionada}, subcategoria=${subcategoriaSeleccionada})}"
+                           th:text="${i + 1}">1</a>
+                    </li>
+                    <li th:class="'page-item ' + (${paginaActual + 1 >= totalPaginas} ? 'disabled' : '')">
+                        <a class="page-link" th:href="@{/donante/donaciones(page=${paginaActual + 1}, size=${size}, estado=${estadoSeleccionado}, categoria=${categoriaSeleccionada}, subcategoria=${subcategoriaSeleccionada})}">
+                            Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
     </div>
+
+    <!-- Modal Visualizador de Foto en Tamaño Completo -->
+    <div class="modal fade" id="fotoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <div class="modal-header border-bottom bg-light">
+                    <h5 class="modal-title fw-bold text-dark" id="fotoModalTitulo">
+                        <i class="fa-solid fa-image text-primary me-2"></i>Foto de la Donación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3 text-center bg-dark">
+                    <img id="fotoModalImg" src="" alt="Foto Donación" onerror="this.onerror=null; this.src='/images/placeholder-entrega.svg';" class="img-fluid rounded-3 shadow" style="max-height: 480px; object-fit: contain;">
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Historial de Auditoría -->
+    <div class="modal fade" id="historialModal" tabindex="-1" aria-labelledby="historialModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-bottom bg-light">
+                    <h5 class="modal-title fw-bold text-dark" id="historialModalLabel">
+                        <i class="fa-solid fa-timeline text-primary me-2"></i>Historial de Estados y Auditoría
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="historialLoading" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted small mt-2">Cargando eventos de auditoría...</p>
+                    </div>
+                    <ul class="list-group list-group-flush" id="historialLista" style="display: none;">
+                    </ul>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function verFotoModal(url, subcategoria) {
+            document.getElementById('fotoModalImg').src = url;
+            document.getElementById('fotoModalTitulo').innerHTML = '<i class="fa-solid fa-image text-primary me-2"></i>Foto: ' + subcategoria;
+            var modal = new bootstrap.Modal(document.getElementById('fotoModal'));
+            modal.show();
+        }
+
+        function cargarHistorial(donacionId) {
+            var modal = new bootstrap.Modal(document.getElementById('historialModal'));
+            document.getElementById('historialLoading').style.display = 'block';
+            document.getElementById('historialLista').style.display = 'none';
+            document.getElementById('historialLista').innerHTML = '';
+            modal.show();
+
+            fetch('/donante/donaciones/' + donacionId + '/historial')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('historialLoading').style.display = 'none';
+                    var lista = document.getElementById('historialLista');
+                    lista.style.display = 'block';
+
+                    if (!data || data.length === 0) {
+                        lista.innerHTML = '<li class="list-group-item text-muted text-center">No hay registros de transición aún.</li>';
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        var fecha = item.fechaHora ? item.fechaHora.replace('T', ' ').substring(0, 19) : 'Fecha no disponible';
+                        var li = document.createElement('li');
+                        li.className = 'list-group-item px-0 py-2 border-bottom';
+                        li.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge badge-status status-${item.estadoNuevo}">${item.estadoNuevo}</span>
+                                <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>${fecha}</small>
+                            </div>
+                            <div class="small text-dark fw-semibold">${item.motivo || 'Transición registrada'}</div>
+                            <div class="small text-muted">Operador / Usuario: ${item.usuario || 'SISTEMA'}</div>
+                        `;
+                        lista.appendChild(li);
+                    });
+                })
+                .catch(err => {
+                    document.getElementById('historialLoading').style.display = 'none';
+                    var lista = document.getElementById('historialLista');
+                    lista.style.display = 'block';
+                    lista.innerHTML = '<li class="list-group-item text-danger text-center">Error al recuperar historial.</li>';
+                });
+        }
+    </script>
 </div>
 </body>
 </html>

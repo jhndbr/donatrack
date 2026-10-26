@@ -20,6 +20,30 @@ echo "=========================================================="
 echo " Iniciando Microservicios DonaTrack"
 echo "=========================================================="
 
+# 0. Verificar existencia de JARs compilados
+JARS=(
+    "donaciones-service/target/donaciones-service-1.0.0-SNAPSHOT.jar"
+    "logistica-service/target/logistica-service-1.0.0-SNAPSHOT.jar"
+    "incentivos-service/target/incentivos-service-1.0.0-SNAPSHOT.jar"
+    "notificaciones-service/target/notificaciones-service-1.0.0-SNAPSHOT.jar"
+    "api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar"
+    "frontend-service/target/frontend-service-1.0.0-SNAPSHOT.jar"
+)
+
+FALTAN_JARS=0
+for jar in "${JARS[@]}"; do
+    if [ ! -f "$jar" ]; then
+        echo "Falta compilar: $jar"
+        FALTAN_JARS=1
+    fi
+done
+
+if [ "$FALTAN_JARS" -eq 1 ]; then
+    echo ""
+    echo "Compilando los microservicios faltantes con ./mvnw package -DskipTests..."
+    ./mvnw package -DskipTests
+fi
+
 JAVA_OPTS="-Xms64m -Xmx256m"
 
 # 1. donaciones-service (:8082)
@@ -59,11 +83,15 @@ PID_FRONTEND=$!
 echo "$PID_FRONTEND frontend-service" >> "$PID_FILE"
 
 echo ""
-echo "Esperando que los microservicios completen su arranque..."
+echo "Esperando que los 6 microservicios completen su arranque..."
 READY=0
-for i in {1..30}; do
+for i in {1..45}; do
     if curl -s http://localhost:8080/actuator/health > /dev/null 2>&1 && \
-       curl -s http://localhost:8082/api/v1/donaciones/saludo > /dev/null 2>&1; then
+       curl -s http://localhost:8082/api/v1/donaciones/saludo > /dev/null 2>&1 && \
+       curl -s http://localhost:8083/actuator/health > /dev/null 2>&1 && \
+       curl -s http://localhost:8084/api/v1/incentivos/rankings/mensual > /dev/null 2>&1 && \
+       curl -s http://localhost:8085/api/v1/notificaciones/estadisticas > /dev/null 2>&1 && \
+       curl -s http://localhost:8086/ > /dev/null 2>&1; then
         READY=1
         break
     fi
@@ -75,13 +103,32 @@ echo ""
 if [ "$READY" -eq 1 ]; then
     echo "¡Todos los microservicios respondieron exitosamente!"
 else
-    echo "Aviso: Algunos servicios aún están inicializando o tardando más de lo esperado."
+    echo "Aviso: Algunos servicios aún están inicializando o tardando más de lo esperado. Verifique logs/."
 fi
 
 echo ""
 echo "Microservicios en ejecución (logs disponibles en carpeta logs/):"
 ps aux | grep java | grep SNAPSHOT | awk '{print $2, $12}' || true
 
+echo ""
+echo "=========================================================="
+echo " Enlaces de Acceso y Portales de DonaTrack:"
+echo " - Portal Web Principal:  http://localhost:8086"
+echo "   * Cuentas Demo Disponibles:"
+echo "     - Donante Particular: juan.donante@example.com / donante123"
+echo "     - Empresa Donante:    rse@molinos.com.ar / empresa123"
+echo "     - Entidad / Comedor:  esperanza@comedor.org / comedor123"
+echo "     - Administrador:      admin / admin123"
+echo "     - Chofer Flota:       chofer / chofer123"
+echo " - API Gateway:           http://localhost:8080"
+echo " - Donaciones Service:    http://localhost:8082"
+echo " - GraphQL / GraphiQL:    http://localhost:8082/graphiql"
+echo " - Logística Service:     http://localhost:8083"
+echo " - Incentivos Service:    http://localhost:8084"
+echo " - Notificaciones:        http://localhost:8085"
+echo " - Mailpit (Buzón Correo):http://localhost:8025"
+echo " - RabbitMQ UI:           http://localhost:15672 (donatrack/donatrack_password)"
+echo " - Keycloak Admin:        http://localhost:8081 (admin/admin)"
 echo ""
 echo "Para verificar el estado completo ejecute: ./scripts/test-e2e.sh"
 echo "Para detener todos los servicios ejecute:   ./scripts/services-down.sh"

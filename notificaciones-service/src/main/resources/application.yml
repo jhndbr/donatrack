@@ -5,6 +5,19 @@ spring:
   application:
     name: notificaciones-service
 
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/notificaciones_db}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.postgresql.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:donatrack}
+    password: ${SPRING_DATASOURCE_PASSWORD:donatrack_password}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}
     port: ${SPRING_RABBITMQ_PORT:5672}
@@ -24,11 +37,14 @@ spring:
             enable: false
 
 donatrack:
+  notificaciones:
+    admin-email: ${DONATRACK_ADMIN_EMAIL:admin@donatrack.org}
   rabbitmq:
     exchange: "donatrack.events.exchange"
     queues:
       donacion-asignada: "q.notificaciones.donacion-asignada"
       donante-inactivo: "q.notificaciones.donante-inactivo"
+      donante-registrado: "q.notificaciones.donante-registrado"
       ruta-iniciada: "q.notificaciones.ruta-iniciada"
       entrega-confirmada: "q.notificaciones.entrega-confirmada"
       entrega-fallida: "q.notificaciones.entrega-fallida"

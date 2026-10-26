@@ -1,0 +1,37 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: notificaciones-service-test
+  datasource:
+    url: jdbc:h2:mem:notificaciones_test_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ''
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  mail:
+    host: localhost
+    port: 1025
+    protocol: smtp
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+donatrack:
+  notificaciones:
+    admin-email: admin@donatrack.org
+  rabbitmq:
+    exchange: "donatrack.events.exchange"
+    queues:
+      donacion-asignada: "q.notificaciones.donacion-asignada"
+      donante-inactivo: "q.notificaciones.donante-inactivo"
+      donante-registrado: "q.notificaciones.donante-registrado"
+      ruta-iniciada: "q.notificaciones.ruta-iniciada"
+      entrega-confirmada: "q.notificaciones.entrega-confirmada"
+      entrega-fallida: "q.notificaciones.entrega-fallida"
+      mision-cumplida: "q.notificaciones.mision-cumplida"
+      categoria-ascendida: "q.notificaciones.categoria-ascendida"

@@ -13,7 +13,7 @@
             <h2 class="fw-bold text-dark mb-0">Confirmación de Recepción con Fotografías</h2>
             <p class="text-secondary">Sube las fotos y confirma la recepción física para cerrar la trazabilidad, notificar al donante y emitir el comprobante.</p>
         </div>
-        <a href="/beneficiaria" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver al Panel</a>
+        <a th:href="@{/beneficiaria(entidadId=${entidadId})}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver al Panel</a>
     </div>
 
     <!-- Alertas -->
@@ -29,51 +29,99 @@
     <div class="row">
         <div class="col-lg-8 mx-auto">
             <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
-                <form action="/beneficiaria/confirmar" method="post">
+                
+                <!-- Selector de Entidad para Administradores -->
+                <div th:if="${session.userSession != null and session.userSession.isAdmin()}" class="alert alert-light border rounded-3 mb-4 p-3">
+                    <label class="form-label fw-bold text-dark mb-1"><i class="fa-solid fa-building me-1"></i> Entidad Beneficiaria a Gestionar (Modo Administrador)</label>
+                    <select class="form-select form-select-sm" onchange="window.location.href='/beneficiaria/confirmar?entidadId=' + this.value">
+                        <option th:each="ent : ${entidades}"
+                                th:value="${ent.id}"
+                                th:selected="${ent.id == entidadId}"
+                                th:text="${ent.razonSocial + ' (ID #' + ent.id + ')'}">Comedor Los Chicos Felices</option>
+                    </select>
+                </div>
+
+                <form action="/beneficiaria/confirmar" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="entidadId" th:value="${entidadId}">
                     
                     <!-- Selección de Donación Asignada -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Donación Asignada a Confirmar <span class="text-danger">*</span></label>
-                        <select name="donacionId" class="form-select" id="donacionSelect" required>
+                        <div th:if="${#lists.isEmpty(donacionesConfirmables)}" class="alert alert-info py-3 px-3 mb-3 rounded-3 border-0 shadow-sm">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fa-solid fa-circle-info text-primary fs-5 me-2"></i>
+                                <strong class="text-dark">No hay donaciones pendientes de recepción para esta entidad en este momento.</strong>
+                            </div>
+                            <p class="text-muted small mb-2">
+                                Cuando un donante aporte un bien con destino a tu sede o el motor de Matchmaking asigne recursos a tus necesidades publicadas, aparecerán aquí para que confirmes su recepción con fotografía.
+                            </p>
+                            <div class="d-flex gap-2">
+                                <a href="/beneficiaria/necesidades" class="btn btn-sm btn-dt-primary"><i class="fa-solid fa-plus me-1"></i>Registrar Necesidad de Recursos</a>
+                                <a href="/beneficiaria" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-house me-1"></i>Volver a Mi Portal</a>
+                            </div>
+                        </div>
+
+                        <select name="donacionId" class="form-select" id="donacionSelect" required th:disabled="${#lists.isEmpty(donacionesConfirmables)}">
                             <option value="">-- Seleccione una donación asignada --</option>
                             <option th:each="d : ${donacionesConfirmables}"
                                     th:value="${d.id}"
                                     th:selected="${donacionIdSeleccionada != null and donacionIdSeleccionada == d.id}"
-                                    th:text="'Donación #' + ${d.id} + ' - ' + ${d.subcategoria} + ' (' + ${d.cantidad} + ' ' + ${d.unidadMedida} + ') [' + ${d.estado} + ']'">
-                                Donación #1 - Alimentos
+                                    th:text="'DON-' + ${#numbers.formatInteger(d.id, 4)} + ' - ' + ${d.subcategoria} + ' (' + ${d.cantidad} + ' ' + ${d.unidadMedida} + ') [' + ${d.estado} + ']'">
+                                DON-0001 - Alimentos
                             </option>
                         </select>
-                        <small class="text-muted">Muestra las donaciones que fueron asignadas por el algoritmo a tu entidad.</small>
+                        <small class="text-muted">Muestra exclusivamente las donaciones asignadas a la entidad receptora actual.</small>
                     </div>
 
                     <!-- Código de Lote de Entrega (Opcional si se seleccionó la donación) -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Código de Lote Logístico <small class="text-muted">(Opcional si seleccionó arriba)</small></label>
+                        <label class="form-label fw-semibold">Código de Lote Logístico <small class="text-muted">(Opcional)</small></label>
                         <input type="text" name="idEntrega" class="form-control" placeholder="Ej. LOTE-01 / ENTREGA-01">
                     </div>
 
-                    <!-- Foto URL y Presets -->
+                    <!-- Fotografía de Comprobante (Archivo Local o URL) -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">URL de Fotografía de la Recepción (Comprobante Visual) <span class="text-danger">*</span></label>
-                        <input type="url" name="fotoUrl" id="fotoUrlInput" class="form-control"
-                               placeholder="https://images.unsplash.com/photo-..."
-                               value="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=600&q=80" required>
-                        <small class="text-muted d-block mb-2">Debe ser una imagen pública del momento de la descarga o recepción.</small>
+                        <label class="form-label fw-semibold d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-camera text-primary me-1"></i> Fotografía de la Recepción (Comprobante Visual) <span class="text-danger">*</span></span>
+                            <span class="badge bg-light text-muted border fw-normal">Sube desde tu PC</span>
+                        </label>
+                        
+                        <!-- Subida de archivo desde la PC con previsualización interactiva -->
+                        <div class="p-3 border rounded-3 bg-light">
+                            <input type="file" name="fotoFile" id="fotoFileInput" class="form-control mb-2" accept="image/*"
+                                   onchange="previsualizarFotoRecepcion(this)">
+                            <div class="small text-muted mb-2">Puedes subir una foto directamente desde tu dispositivo (.jpg, .png, .webp hasta 25MB).</div>
 
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="small text-muted align-self-center">Fotografías de prueba:</span>
-                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
-                                    onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=600&q=80'">
-                                <i class="fa-solid fa-camera me-1"></i>Descarga en Comedor
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
-                                    onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=600&q=80'">
-                                <i class="fa-solid fa-camera me-1"></i>Recepción en Hogar
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
-                                    onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=600&q=80'">
-                                <i class="fa-solid fa-camera me-1"></i>Insumos Sanitarios
-                            </button>
+                            <!-- Caja de Previsualización Local -->
+                            <div id="previewFotoContainer" class="d-none text-center p-3 bg-white rounded-3 border shadow-sm my-2">
+                                <img id="imgFotoPreview" src="" alt="Previsualización de Recepción" class="img-fluid rounded-3 shadow-sm mb-2" style="max-height: 220px; object-fit: contain;">
+                                <div class="small fw-semibold text-success"><i class="fa-solid fa-circle-check me-1"></i><span id="fotoNombreLabel">Fotografía lista para subir al servidor</span></div>
+                            </div>
+
+                            <!-- Opción alternativa por URL existente -->
+                            <details class="mt-2">
+                                <summary class="small text-muted cursor-pointer user-select-none"><i class="fa-solid fa-link me-1"></i>O especificar enlace URL web externo</summary>
+                                <div class="mt-2">
+                                    <input type="url" name="fotoUrl" id="fotoUrlInput" class="form-control form-control-sm"
+                                           placeholder="https://images.unsplash.com/photo-...">
+
+                                    <div class="d-flex flex-wrap gap-2 mt-2">
+                                        <span class="small text-muted align-self-center">Fotografías de prueba:</span>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
+                                                onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=600&q=80'">
+                                            <i class="fa-solid fa-camera me-1"></i>Descarga en Comedor
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
+                                                onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=600&q=80'">
+                                            <i class="fa-solid fa-camera me-1"></i>Recepción en Hogar
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;"
+                                                onclick="document.getElementById('fotoUrlInput').value='https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=600&q=80'">
+                                            <i class="fa-solid fa-camera me-1"></i>Insumos Sanitarios
+                                        </button>
+                                    </div>
+                                </div>
+                            </details>
                         </div>
                     </div>
 
@@ -85,14 +133,76 @@
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg py-2 fw-semibold shadow-sm">
+                        <button type="submit" class="btn btn-dt-primary btn-lg py-2 fw-semibold shadow-sm"
+                                th:disabled="${#lists.isEmpty(donacionesConfirmables)}">
                             <i class="fa-solid fa-circle-check me-2"></i>Confirmar Recepción y Emitir Comprobante Público
                         </button>
                     </div>
                 </form>
+
+                <!-- Reportar Incidencia / Entrega Fallida (CU-44) -->
+                <div class="mt-4 pt-3 border-top">
+                    <a class="text-danger text-decoration-none fw-semibold small d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#incidenciaFallida" role="button">
+                        <span><i class="fa-solid fa-triangle-exclamation me-1"></i> ¿Problemas con la entrega? Reportar entrega fallida o rechazada</span>
+                        <i class="fa-solid fa-chevron-down small"></i>
+                    </a>
+                    <div class="collapse mt-3" id="incidenciaFallida">
+                        <div class="p-3 bg-danger-subtle rounded-3 border border-danger-subtle">
+                            <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-file-circle-exclamation me-1"></i>Registro Formal de Incidencia / Rechazo (CU-44)</h6>
+                            <form action="/beneficiaria/fallida" method="post">
+                                <input type="hidden" name="entidadId" th:value="${entidadId}">
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Donación a Rechazar / Reportar <span class="text-danger">*</span></label>
+                                    <select name="donacionId" class="form-select form-select-sm" th:if="${!#lists.isEmpty(donacionesConfirmables)}">
+                                        <option value="">-- Seleccionar donación asignada --</option>
+                                        <option th:each="d : ${donacionesConfirmables}"
+                                                th:value="${d.id}"
+                                                th:text="'DON-' + ${#numbers.formatInteger(d.id, 4)} + ' - ' + ${d.subcategoria} + ' (' + ${d.cantidad} + ' ' + ${d.unidadMedida} + ')'">DON-0001</option>
+                                    </select>
+                                    <input type="number" name="donacionId" class="form-control form-control-sm" placeholder="ID de donación (Ej. 1)" th:if="${#lists.isEmpty(donacionesConfirmables)}">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Código de Lote o Entrega Logística <small class="text-muted">(Opcional)</small></label>
+                                    <input type="text" name="idEntrega" class="form-control form-control-sm" placeholder="Ej. LOTE-01 / ENTREGA-01">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Motivo del Rechazo / Incidencia <span class="text-danger">*</span></label>
+                                    <textarea name="motivo" class="form-control form-control-sm" rows="2" placeholder="Mercadería en mal estado, falta de espacio en sede o rechazo justificado" required></textarea>
+                                </div>
+                                <div class="mb-3 form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" name="replanificable" id="replanificableCheck" checked>
+                                    <label class="form-check-label small" for="replanificableCheck">Notificar a administración para reingreso a depósito (CU-45)</label>
+                                </div>
+                                <button type="submit" class="btn btn-danger btn-sm w-100">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Registrar Incidencia / Rechazar Entrega
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+        function previsualizarFotoRecepcion(input) {
+            var preview = document.getElementById('previewFotoContainer');
+            var img = document.getElementById('imgFotoPreview');
+            var label = document.getElementById('fotoNombreLabel');
+            if (input.files && input.files[0]) {
+                var file = input.files[0];
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    label.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+                    preview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.classList.add('d-none');
+            }
+        }
+    </script>
 </div>
 </body>
 </html>

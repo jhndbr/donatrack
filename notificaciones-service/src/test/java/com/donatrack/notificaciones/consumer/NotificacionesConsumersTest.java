@@ -1,7 +1,7 @@
 package com.donatrack.notificaciones.consumer;
 
 import com.donatrack.common.events.*;
-import com.donatrack.notificaciones.sender.EmailNotificationSender;
+import com.donatrack.notificaciones.service.NotificacionesService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,15 +11,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class NotificacionesConsumersTest {
 
     @Mock
-    private EmailNotificationSender emailSender;
+    private NotificacionesService notificacionesService;
 
     private ObjectMapper objectMapper;
     private DonacionNotificacionesConsumer donacionConsumer;
@@ -29,13 +27,13 @@ public class NotificacionesConsumersTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        donacionConsumer = new DonacionNotificacionesConsumer(emailSender, objectMapper);
-        logisticaConsumer = new LogisticaNotificacionesConsumer(emailSender);
-        incentivosConsumer = new IncentivosNotificacionesConsumer(emailSender);
+        donacionConsumer = new DonacionNotificacionesConsumer(notificacionesService, objectMapper);
+        logisticaConsumer = new LogisticaNotificacionesConsumer(notificacionesService, objectMapper);
+        incentivosConsumer = new IncentivosNotificacionesConsumer(notificacionesService, objectMapper);
     }
 
     @Test
-    void testDonacionAsignadaNotificaADonanteYEntidad() {
+    void testDonacionAsignadaDelegaEnNotificacionesService() {
         DonacionAsignadaEvent evento = new DonacionAsignadaEvent(
                 1L, "Lácteos", 50.0, "litros",
                 10L, "Comedor Los Chicos", "comedor@mail.com",
@@ -44,23 +42,35 @@ public class NotificacionesConsumersTest {
 
         donacionConsumer.recibirDonacionAsignada(evento);
 
-        verify(emailSender, times(1)).enviar(eq("donante@mail.com"), anyString(), contains("María Gómez"));
-        verify(emailSender, times(1)).enviar(eq("comedor@mail.com"), anyString(), contains("Comedor Los Chicos"));
+        verify(notificacionesService, times(1)).notificarDonacionAsignada(any(DonacionAsignadaEvent.class));
     }
 
     @Test
-    void testDonanteInactivoNotificaADonante() {
+    void testDonanteInactivoDelegaEnNotificacionesService() {
         DonanteInactivoEvent evento = new DonanteInactivoEvent(
                 20L, "María Gómez", "donante@mail.com", 25L
         );
 
         donacionConsumer.recibirDonanteInactivo(evento);
 
-        verify(emailSender, times(1)).enviar(eq("donante@mail.com"), anyString(), contains("25 días"));
+        verify(notificacionesService, times(1)).notificarDonanteInactivo(any(DonanteInactivoEvent.class));
     }
 
     @Test
-    void testRutaIniciadaNotificaDestinatarios() {
+    void testDonanteRegistradoDelegaEnNotificacionesService() {
+        DonanteRegistradoEvent evento = new DonanteRegistradoEvent(
+                20L, "María Gómez", "donante@mail.com",
+                com.donatrack.common.enums.CanalNotificacion.EMAIL, "donante@mail.com",
+                "mgomez", "temp123", "REGISTRO_WEB"
+        );
+
+        donacionConsumer.recibirDonanteRegistrado(evento);
+
+        verify(notificacionesService, times(1)).notificarBienvenidaDonante(any(DonanteRegistradoEvent.class));
+    }
+
+    @Test
+    void testRutaIniciadaDelegaEnNotificacionesService() {
         RutaIniciadaEvent evento = new RutaIniciadaEvent(
                 "RUTA-01", "AE789XY", List.of(1L),
                 List.of("donante@mail.com", "entidad@mail.com"),
@@ -69,12 +79,11 @@ public class NotificacionesConsumersTest {
 
         logisticaConsumer.recibirRutaIniciada(evento);
 
-        verify(emailSender, times(1)).enviar(eq("donante@mail.com"), anyString(), contains("AE789XY"));
-        verify(emailSender, times(1)).enviar(eq("entidad@mail.com"), anyString(), contains("AE789XY"));
+        verify(notificacionesService, times(1)).notificarRutaIniciada(any(RutaIniciadaEvent.class));
     }
 
     @Test
-    void testEntregaConfirmadaNotificaConComprobante() {
+    void testEntregaConfirmadaDelegaEnNotificacionesService() {
         EntregaConfirmadaEvent evento = new EntregaConfirmadaEvent(
                 "ENT-01", 100L, 10L, "AE789XY",
                 "https://donatrack.org/comprobantes/ENT-01",
@@ -83,12 +92,11 @@ public class NotificacionesConsumersTest {
 
         logisticaConsumer.recibirEntregaConfirmada(evento);
 
-        verify(emailSender, times(1)).enviar(eq("donante@mail.com"), anyString(), contains("https://donatrack.org/comprobantes/ENT-01"));
-        verify(emailSender, times(1)).enviar(eq("entidad@mail.com"), anyString(), contains("https://donatrack.org/comprobantes/ENT-01"));
+        verify(notificacionesService, times(1)).notificarEntregaConfirmada(any(EntregaConfirmadaEvent.class));
     }
 
     @Test
-    void testEntregaFallidaNotificaConMotivo() {
+    void testEntregaFallidaDelegaEnNotificacionesService() {
         EntregaFallidaEvent evento = new EntregaFallidaEvent(
                 "ENT-01", 100L, 10L, "Camino inundado", true,
                 "donante@mail.com", "entidad@mail.com"
@@ -96,12 +104,11 @@ public class NotificacionesConsumersTest {
 
         logisticaConsumer.recibirEntregaFallida(evento);
 
-        verify(emailSender, times(1)).enviar(eq("donante@mail.com"), anyString(), contains("Camino inundado"));
-        verify(emailSender, times(1)).enviar(eq("entidad@mail.com"), anyString(), contains("Camino inundado"));
+        verify(notificacionesService, times(1)).notificarEntregaFallida(any(EntregaFallidaEvent.class));
     }
 
     @Test
-    void testMisionCumplidaNotificaInsignia() {
+    void testMisionCumplidaDelegaEnNotificacionesService() {
         MisionCumplidaEvent evento = new MisionCumplidaEvent(
                 42L, "Lucía Benítez", "lucia@mail.com", "RACHA",
                 "Insignia Inicial", "Primera donación", "COLABORADOR"
@@ -109,17 +116,17 @@ public class NotificacionesConsumersTest {
 
         incentivosConsumer.recibirMisionCumplida(evento);
 
-        verify(emailSender, times(1)).enviar(eq("lucia@mail.com"), anyString(), contains("Insignia Inicial"));
+        verify(notificacionesService, times(1)).notificarMisionCumplida(any(MisionCumplidaEvent.class));
     }
 
     @Test
-    void testCategoriaAscendidaNotificaNuevoNivel() {
+    void testCategoriaAscendidaDelegaEnNotificacionesService() {
         CategoriaAscendidaEvent evento = new CategoriaAscendidaEvent(
                 42L, "Lucía Benítez", "lucia@mail.com", "COLABORADOR", "SOSTENEDOR"
         );
 
         incentivosConsumer.recibirCategoriaAscendida(evento);
 
-        verify(emailSender, times(1)).enviar(eq("lucia@mail.com"), anyString(), contains("SOSTENEDOR"));
+        verify(notificacionesService, times(1)).notificarCategoriaAscendida(any(CategoriaAscendidaEvent.class));
     }
 }

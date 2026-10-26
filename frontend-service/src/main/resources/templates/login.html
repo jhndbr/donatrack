@@ -38,7 +38,7 @@
                         <label class="form-label fw-semibold small">Usuario o Correo Electrónico</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
-                            <input type="text" name="username" class="form-control border-start-0" placeholder="admin o juan@donante.org" required autofocus>
+                            <input type="text" id="loginUsername" name="username" class="form-control border-start-0" placeholder="admin o juan.donante@example.com" required autofocus>
                         </div>
                     </div>
 
@@ -46,7 +46,7 @@
                         <label class="form-label fw-semibold small">Contraseña</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-key text-muted"></i></span>
-                            <input type="password" name="password" class="form-control border-start-0" placeholder="••••••••" required>
+                            <input type="password" id="loginPassword" name="password" class="form-control border-start-0" placeholder="••••••••" required>
                         </div>
                     </div>
 
@@ -61,19 +61,41 @@
                     </div>
                 </form>
 
-                <!-- Tarjeta Colapsable de Guía de Acceso Rápido -->
+                <!-- Tarjeta Colapsable de Guía de Acceso Rápido con Auto-Completado -->
                 <div class="mt-4 pt-3 border-top">
                     <a class="small text-muted text-decoration-none d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#credencialesDemo" role="button">
-                        <span><i class="fa-solid fa-circle-question me-1"></i> Credenciales de Acceso Demo</span>
+                        <span><i class="fa-solid fa-wand-magic-sparkles me-1 text-primary"></i> Acceso Rápido con Cuentas Demo</span>
                         <i class="fa-solid fa-chevron-down small"></i>
                     </a>
-                    <div class="collapse mt-2" id="credencialesDemo">
-                        <div class="p-2 bg-light rounded-3 small">
-                            <ul class="list-unstyled mb-0" style="font-size: 0.82rem;">
-                                <li class="mb-1"><strong>Admin:</strong> <code>admin</code> / <code>admin123</code></li>
-                                <li class="mb-1"><strong>Donante:</strong> <code>juan.donante@example.com</code> / <code>donante123</code></li>
-                                <li><strong>Entidad:</strong> <code>esperanza@comedor.org</code> / <code>comedor123</code></li>
-                            </ul>
+                    <div class="collapse mt-2 show" id="credencialesDemo">
+                        <div class="p-2 bg-light rounded-3 small border">
+                            <div class="d-flex flex-column gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary text-start d-flex justify-content-between align-items-center py-1 px-2"
+                                        onclick="usarCredencialDemo('juan.donante@example.com', 'donante123')">
+                                    <span><i class="fa-solid fa-user-heart me-1"></i> Donante Particular</span>
+                                    <code class="small text-muted">juan.donante@example.com</code>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info text-start d-flex justify-content-between align-items-center py-1 px-2"
+                                        onclick="usarCredencialDemo('rse@molinos.com.ar', 'empresa123')">
+                                    <span><i class="fa-solid fa-building me-1"></i> Empresa Donante</span>
+                                    <code class="small text-muted">rse@molinos.com.ar</code>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success text-start d-flex justify-content-between align-items-center py-1 px-2"
+                                        onclick="usarCredencialDemo('esperanza@comedor.org', 'comedor123')">
+                                    <span><i class="fa-solid fa-hands-holding-child me-1"></i> Entidad / Comedor</span>
+                                    <code class="small text-muted">esperanza@comedor.org</code>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-dark text-start d-flex justify-content-between align-items-center py-1 px-2"
+                                        onclick="usarCredencialDemo('admin', 'admin123')">
+                                    <span><i class="fa-solid fa-shield-halved me-1"></i> Administrador Central</span>
+                                    <code class="small text-muted">admin</code>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex justify-content-between align-items-center py-1 px-2"
+                                        onclick="usarCredencialDemo('chofer', 'chofer123')">
+                                    <span><i class="fa-solid fa-truck-fast me-1"></i> Chofer Logístico</span>
+                                    <code class="small text-muted">chofer</code>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -81,5 +103,22 @@
         </div>
     </div>
 </div>
+
+<script>
+function usarCredencialDemo(usuario, pass) {
+    const uInput = document.getElementById('loginUsername');
+    const pInput = document.getElementById('loginPassword');
+    if (uInput && pInput) {
+        uInput.value = usuario;
+        pInput.value = pass;
+        uInput.classList.add('is-valid');
+        pInput.classList.add('is-valid');
+        setTimeout(() => {
+            uInput.classList.remove('is-valid');
+            pInput.classList.remove('is-valid');
+        }, 1200);
+    }
+}
+</script>
 </body>
 </html>

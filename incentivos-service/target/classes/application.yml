@@ -28,6 +28,10 @@ donatrack:
     routing-key:
       mision-cumplida: "mision.cumplida"
       categoria-ascendida: "categoria.ascendida"
+    queues:
+      incentivos-donaciones: "q.incentivos.donaciones"
+      incentivos-entregas: "q.incentivos.entregas"
+      incentivos-donaciones-registradas: "q.incentivos.donaciones-registradas"
 
   integraciones:
     n8n-webhook-url: ${N8N_WEBHOOK_URL:http://localhost:5678/webhook/insignias}

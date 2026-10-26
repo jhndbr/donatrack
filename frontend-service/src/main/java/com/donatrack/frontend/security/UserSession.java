@@ -10,6 +10,7 @@ public class UserSession implements Serializable {
     private String role; // "ROLE_ADMIN", "ROLE_DONANTE", "ROLE_BENEFICIARIA"
     private Long entidadId;
     private Long donanteId;
+    private String accessToken;
 
     public UserSession() {}
 
@@ -32,6 +33,10 @@ public class UserSession implements Serializable {
         return "ROLE_BENEFICIARIA".equals(role);
     }
 
+    public boolean isChofer() {
+        return "ROLE_CHOFER".equals(role);
+    }
+
     public String getUsername() {
         return username;
     }
@@ -41,6 +46,10 @@ public class UserSession implements Serializable {
     }
 
     public String getNombreCompleto() {
+        return nombreCompleto;
+    }
+
+    public String getNombre() {
         return nombreCompleto;
     }
 
@@ -78,5 +87,13 @@ public class UserSession implements Serializable {
 
     public void setDonanteId(Long donanteId) {
         this.donanteId = donanteId;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 }

@@ -20,7 +20,8 @@
         </div>
         <div class="col-md-4" th:each="ent : ${entregadas}">
             <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
-                <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=500&q=80"
+                <img th:src="${!#lists.isEmpty(ent['bienes']) and ent['bienes'][0]['fotoUrl'] != null and !#strings.isEmpty(ent['bienes'][0]['fotoUrl']) ? ent['bienes'][0]['fotoUrl'] : (ent['fotoUrl'] != null and !#strings.isEmpty(ent['fotoUrl']) ? ent['fotoUrl'] : '/images/placeholder-entrega.svg')}"
+                     onerror="this.onerror=null; this.src='/images/placeholder-entrega.svg';"
                      class="card-img-top" style="height: 220px; object-fit: cover;" alt="Entrega Confirmada">
                 <div class="card-body">
                     <span class="badge bg-success-subtle text-success mb-2">
@@ -31,15 +32,21 @@
                         Recepción de <strong class="text-dark" th:text="${ent.cantidad} + ' ' + ${ent.unidadMedida}">50 kg</strong> de <span th:text="${ent.subcategoria}">Alimentos</span>.
                     </p>
                 </div>
-                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between">
+                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between align-items-center">
                     <span><i class="fa-solid fa-calendar-day me-1"></i>Octubre 2026</span>
-                    <span class="text-primary fw-semibold" th:text="'Comprobante #DON-' + ${ent.id}">#DON-1</span>
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 fw-semibold"
+                            type="button"
+                            th:data-id="'DON-' + ${ent.id}"
+                            th:data-entidad="${ent['entidadAsignada'] != null ? ent['entidadAsignada']['razonSocial'] : 'Entidad Receptora'}"
+                            onclick="abrirModalComprobante(this.getAttribute('data-id'), this.getAttribute('data-entidad'))">
+                        <span th:text="'#DON-' + ${ent.id}">#DON-1</span> <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size:0.75rem;"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Casos Testigo Institucionales de UTN Solidaria -->
+    <!-- Casos Testigo Institucionales Certificados -->
     <div class="row g-4">
         <div class="col-12" th:if="${!#lists.isEmpty(entregadas)}">
             <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-certificate text-warning me-2"></i>Evidencias Institucionales Certificadas</h5>
@@ -47,15 +54,20 @@
         <div class="col-md-4">
             <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
                 <img src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=500&q=80"
+                     onerror="this.onerror=null; this.src='/images/placeholder-entrega.svg';"
                      class="card-img-top" style="height: 220px; object-fit: cover;" alt="Entrega Alimentos">
                 <div class="card-body">
                     <span class="badge bg-success-subtle text-success mb-2"><i class="fa-solid fa-check-circle me-1"></i>Entrega Confirmada</span>
                     <h5 class="card-title fw-bold">Comedor Los Chicos Felices</h5>
                     <p class="card-text text-muted small">Recepción de 50 kg de arroz y pastas secas por el camión Mercedes-Benz AE789XY.</p>
                 </div>
-                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between">
+                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between align-items-center">
                     <span><i class="fa-solid fa-calendar-day me-1"></i>10 de Octubre 2026</span>
-                    <span class="text-primary fw-semibold">Comprobante #ENT-01</span>
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 fw-semibold"
+                            type="button"
+                            onclick="abrirModalComprobante('ENT-01', 'Comedor Los Chicos Felices')">
+                        #ENT-01 <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size:0.75rem;"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -63,15 +75,20 @@
         <div class="col-md-4">
             <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
                 <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=500&q=80"
+                     onerror="this.onerror=null; this.src='/images/placeholder-entrega.svg';"
                      class="card-img-top" style="height: 220px; object-fit: cover;" alt="Entrega Indumentaria">
                 <div class="card-body">
                     <span class="badge bg-success-subtle text-success mb-2"><i class="fa-solid fa-check-circle me-1"></i>Entrega Confirmada</span>
                     <h5 class="card-title fw-bold">Hogar Niños Esperanza</h5>
                     <p class="card-text text-muted small">Recepción de 25 litros de leche y nutrientes por el camión Ford Cargo AF123ZZ.</p>
                 </div>
-                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between">
+                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between align-items-center">
                     <span><i class="fa-solid fa-calendar-day me-1"></i>09 de Octubre 2026</span>
-                    <span class="text-primary fw-semibold">Comprobante #ENT-02</span>
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 fw-semibold"
+                            type="button"
+                            onclick="abrirModalComprobante('ENT-02', 'Hogar Niños Esperanza')">
+                        #ENT-02 <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size:0.75rem;"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -79,19 +96,75 @@
         <div class="col-md-4">
             <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
                 <img src="https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?auto=format&fit=crop&w=500&q=80"
+                     onerror="this.onerror=null; this.src='/images/placeholder-entrega.svg';"
                      class="card-img-top" style="height: 220px; object-fit: cover;" alt="Entrega Insumos">
                 <div class="card-body">
                     <span class="badge bg-success-subtle text-success mb-2"><i class="fa-solid fa-check-circle me-1"></i>Entrega Confirmada</span>
                     <h5 class="card-title fw-bold">Hospital Comunitario San Roque</h5>
                     <p class="card-text text-muted small">Recepción de 40 camperas y frazadas de invierno por el furgón AC456MN.</p>
                 </div>
-                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between">
+                <div class="card-footer bg-white border-0 text-muted small d-flex justify-content-between align-items-center">
                     <span><i class="fa-solid fa-calendar-day me-1"></i>08 de Octubre 2026</span>
-                    <span class="text-primary fw-semibold">Comprobante #ENT-03</span>
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 fw-semibold"
+                            type="button"
+                            onclick="abrirModalComprobante('ENT-03', 'Hospital Comunitario San Roque')">
+                        #ENT-03 <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size:0.75rem;"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal Comprobante Formal Digital -->
+    <div class="modal fade" id="comprobanteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-bottom bg-light">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="fa-solid fa-file-invoice text-success me-2"></i>Comprobante Digital de Entrega
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="comprobanteModalBody">
+                    <div class="border rounded-3 p-3 bg-light">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">ID Lote / Entrega:</span>
+                            <strong class="text-dark" id="modalEntregaId">ENT-01</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">Estado de Entrega:</span>
+                            <span class="badge bg-success">ENTREGADA</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">Entidad Receptora:</span>
+                            <strong class="text-dark" id="modalEntidadNombre">Comedor Asociado</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Certificación:</span>
+                            <span class="text-success fw-semibold"><i class="fa-solid fa-shield-check me-1"></i>Firma Digital Verificada</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">
+                        <i class="fa-solid fa-print me-1"></i>Imprimir / Guardar PDF
+                    </button>
+                </div>
+            </div>
+    </div>
+
+    <script>
+        function abrirModalComprobante(id, entidad) {
+            document.getElementById('modalEntregaId').textContent = id;
+            document.getElementById('modalEntidadNombre').textContent = entidad;
+            var modalEl = document.getElementById('comprobanteModal');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        }
+    </script>
 </div>
 </body>
 </html>

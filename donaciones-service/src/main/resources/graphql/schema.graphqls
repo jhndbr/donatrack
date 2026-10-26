@@ -1,0 +1,17 @@
+type Query {
+    donaciones(estado: String, subcategoria: String): [DonacionDto!]!
+    donacionPorId(id: ID!): DonacionDto
+    saludo: String!
+}
+
+type DonacionDto {
+    id: ID!
+    subcategoria: String!
+    cantidad: Float!
+    unidadMedida: String!
+    esUsado: Boolean!
+    fechaVencimiento: String
+    estado: String!
+    nombreDonante: String
+    entidadAsignada: String
+}

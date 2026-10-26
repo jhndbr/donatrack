@@ -73,16 +73,105 @@
     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-5">
         <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-award text-warning me-2"></i>Vitrina de Insignias Obtenidas</h4>
         <div class="d-flex flex-wrap gap-3" th:if="${!#lists.isEmpty(insignias)}">
-            <div th:each="ins : ${insignias}" class="card border border-warning-subtle rounded-3 p-3 text-center bg-light" style="width: 180px;">
+            <div th:each="ins : ${insignias}" class="card border border-warning-subtle rounded-3 p-3 text-center bg-light" style="width: 210px;">
                 <i class="fa-solid fa-shield-halved text-warning fs-1 mb-2"></i>
                 <div class="fw-bold small text-dark" th:text="${ins.nombre}">Insignia</div>
-                <small class="text-muted" th:text="${ins.descripcion}">Descripción</small>
+                <small class="text-muted d-block mb-2" th:text="${ins.descripcion}">Descripción</small>
+                
+                <div class="border-top pt-2 mt-auto">
+                    <form th:action="@{'/donante/insignias/' + ${ins.id} + '/visibilidad'}" method="post" class="d-flex justify-content-between align-items-center">
+                        <input type="hidden" name="visible" th:value="${ins.esPublica == null || !ins.esPublica ? 'true' : 'false'}">
+                        <span class="badge" th:classappend="${ins.esPublica != null && ins.esPublica ? 'bg-success' : 'bg-secondary'}"
+                              th:text="${ins.esPublica != null && ins.esPublica ? 'Pública' : 'Privada'}">Pública</span>
+                        <button type="submit" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-repeat me-1"></i>Cambiar
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
         <div th:if="${#lists.isEmpty(insignias)}" class="text-muted small">
             Aún no has desbloqueado insignias. ¡Aporta a las misiones para que se difundan en redes y en tu perfil!
         </div>
     </div>
+
+    <!-- Sección de Analítica, Impacto y Evolución por Período (CORR-011) -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-5" th:if="${analitica != null}">
+        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-chart-line text-primary me-2"></i>Analítica de Impacto y Evolución Mensual</h4>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="p-3 rounded-3 bg-light border h-100 text-center">
+                    <div class="fs-3 fw-bold text-primary" th:text="${analitica['organizacionesAyudadas'] != null ? analitica['organizacionesAyudadas'] : 0}">0</div>
+                    <small class="text-muted fw-semibold">Organizaciones Ayudadas</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded-3 bg-light border h-100 text-center">
+                    <div class="fs-3 fw-bold text-warning" th:text="${analitica['posicionRanking'] != null and analitica['posicionRanking'] != 0 ? '#' + analitica['posicionRanking'] : 'En curso'}">#1</div>
+                    <small class="text-muted fw-semibold">Posición en Ranking Mensual</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded-3 bg-light border h-100 text-center">
+                    <div class="fs-5 fw-bold text-success">
+                        <span th:text="${analitica['misionesMesActual'] != null ? analitica['misionesMesActual'] : 0}">0</span>
+                        <small class="text-muted fw-normal">vs</small>
+                        <span class="text-secondary" th:text="${analitica['misionesMesAnterior'] != null ? analitica['misionesMesAnterior'] : 0}">0</span>
+                    </div>
+                    <small class="text-muted fw-semibold">Misiones Mes Actual vs. Anterior</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded-3 bg-light border h-100 text-center">
+                    <div class="fs-3 fw-bold text-dark" th:text="${metricas != null and metricas['totalDonaciones'] != null ? metricas['totalDonaciones'] : 0}">0</div>
+                    <small class="text-muted fw-semibold">Total Donaciones Históricas</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-3 border rounded-3 bg-light">
+            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-chart-column text-secondary me-1"></i>Evolución de Donaciones y Misiones por Período</h6>
+            <canvas id="evolucionMensualChart" height="90"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            var canvas = document.getElementById('evolucionMensualChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+            var analiticaData = /*[[${analitica}]]*/ {};
+            var evolucion = (analiticaData && analiticaData.evolucionMensual) ? analiticaData.evolucionMensual : [];
+            var labels = evolucion.length > 0 ? evolucion.map(function(e) { return e.periodo || e.mes || 'Mes'; }) : ['Ago', 'Sep', 'Oct'];
+            var donacionesData = evolucion.length > 0 ? evolucion.map(function(e) { return e.donaciones || e.cantidadDonaciones || 0; }) : [1, 2, (analiticaData.misionesMesActual || 1)];
+            var misionesData = evolucion.length > 0 ? evolucion.map(function(e) { return e.misiones || e.misionesCompletadas || 0; }) : [0, (analiticaData.misionesMesAnterior || 0), (analiticaData.misionesMesActual || 0)];
+
+            new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Donaciones Realizadas',
+                            data: donacionesData,
+                            backgroundColor: '#009B9F'
+                        },
+                        {
+                            label: 'Misiones Cumplidas',
+                            data: misionesData,
+                            backgroundColor: '#f59e0b'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        });
+    </script>
 </div>
 </body>
 </html>

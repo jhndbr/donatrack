@@ -3,67 +3,83 @@ package com.donatrack.notificaciones.consumer;
 import com.donatrack.common.events.EntregaConfirmadaEvent;
 import com.donatrack.common.events.EntregaFallidaEvent;
 import com.donatrack.common.events.RutaIniciadaEvent;
-import com.donatrack.notificaciones.sender.EmailNotificationSender;
+import com.donatrack.notificaciones.service.NotificacionesService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class LogisticaNotificacionesConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(LogisticaNotificacionesConsumer.class);
 
-    private final EmailNotificationSender emailSender;
+    private final NotificacionesService notificacionesService;
+    private final ObjectMapper objectMapper;
 
-    public LogisticaNotificacionesConsumer(EmailNotificationSender emailSender) {
-        this.emailSender = emailSender;
+    public LogisticaNotificacionesConsumer(NotificacionesService notificacionesService, ObjectMapper objectMapper) {
+        this.notificacionesService = notificacionesService;
+        this.objectMapper = objectMapper;
+        if (this.objectMapper != null) {
+            this.objectMapper.findAndRegisterModules();
+        }
     }
 
     @RabbitListener(queues = "${donatrack.rabbitmq.queues.ruta-iniciada:q.notificaciones.ruta-iniciada}")
-    public void recibirRutaIniciada(RutaIniciadaEvent evento) {
-        log.info("Consumidor AMQP: Procesando evento ruta.iniciada para camión {}", evento.getPatenteCamion());
-
-        String asunto = "¡El camión ha iniciado el reparto de tu donación!";
-        String cuerpo = String.format("El camión (Patente: %s) ha comenzado su recorrido.\nPuedes seguir el trayecto en tiempo real ingresando en: %s",
-                evento.getPatenteCamion(), evento.getLinkSeguimiento());
-
-        for (String email : evento.getEmailsNotificar()) {
-            if (email != null && !email.isEmpty()) {
-                emailSender.enviar(email, asunto, cuerpo);
-            }
+    public void recibirRutaIniciada(Object payload) {
+        try {
+            RutaIniciadaEvent evento = parsearEvento(payload, RutaIniciadaEvent.class);
+            log.info("Consumidor AMQP: Procesando ruta.iniciada para camión {}", evento.getPatenteCamion());
+            notificacionesService.notificarRutaIniciada(evento);
+        } catch (Exception e) {
+            log.error("Error al procesar mensaje de ruta iniciada: {}", e.getMessage(), e);
         }
     }
 
     @RabbitListener(queues = "${donatrack.rabbitmq.queues.entrega-confirmada:q.notificaciones.entrega-confirmada}")
-    public void recibirEntregaConfirmada(EntregaConfirmadaEvent evento) {
-        log.info("Consumidor AMQP: Procesando entrega confirmada para donación id={}", evento.getIdDonacion());
-
-        String asunto = "¡Donación entregada con éxito! Comprobante disponible";
-        String cuerpo = String.format("La donación id=%d fue entregada satisfactoriamente por el camión %s.\nPuedes ver el comprobante y fotos de recepción en: %s",
-                evento.getIdDonacion(), evento.getPatenteCamion(), evento.getComprobanteUrl());
-
-        if (evento.getEmailDonante() != null && !evento.getEmailDonante().isEmpty()) {
-            emailSender.enviar(evento.getEmailDonante(), asunto, cuerpo);
-        }
-        if (evento.getEmailEntidad() != null && !evento.getEmailEntidad().isEmpty()) {
-            emailSender.enviar(evento.getEmailEntidad(), asunto, cuerpo);
+    public void recibirEntregaConfirmada(Object payload) {
+        try {
+            EntregaConfirmadaEvent evento = parsearEvento(payload, EntregaConfirmadaEvent.class);
+            log.info("Consumidor AMQP: Procesando entrega.confirmada para entrega id={}", evento.getIdEntrega());
+            notificacionesService.notificarEntregaConfirmada(evento);
+        } catch (Exception e) {
+            log.error("Error al procesar mensaje de entrega confirmada: {}", e.getMessage(), e);
         }
     }
 
     @RabbitListener(queues = "${donatrack.rabbitmq.queues.entrega-fallida:q.notificaciones.entrega-fallida}")
-    public void recibirEntregaFallida(EntregaFallidaEvent evento) {
-        log.info("Consumidor AMQP: Procesando entrega no completada para donación id={}", evento.getIdDonacion());
-
-        String asunto = "Aviso sobre la entrega de tu donación";
-        String cuerpo = String.format("La entrega de la donación id=%d no pudo completarse.\nMotivo registrado: %s\nReplanificable: %s",
-                evento.getIdDonacion(), evento.getMotivoFalla(), evento.isReplanificable() ? "Sí" : "No");
-
-        if (evento.getEmailDonante() != null && !evento.getEmailDonante().isEmpty()) {
-            emailSender.enviar(evento.getEmailDonante(), asunto, cuerpo);
+    public void recibirEntregaFallida(Object payload) {
+        try {
+            EntregaFallidaEvent evento = parsearEvento(payload, EntregaFallidaEvent.class);
+            log.info("Consumidor AMQP: Procesando entrega.fallida para entrega id={}", evento.getIdEntrega());
+            notificacionesService.notificarEntregaFallida(evento);
+        } catch (Exception e) {
+            log.error("Error al procesar mensaje de entrega fallida: {}", e.getMessage(), e);
         }
-        if (evento.getEmailEntidad() != null && !evento.getEmailEntidad().isEmpty()) {
-            emailSender.enviar(evento.getEmailEntidad(), asunto, cuerpo);
+    }
+
+    private <T> T parsearEvento(Object payload, Class<T> clazz) throws Exception {
+        if (clazz.isInstance(payload)) {
+            return clazz.cast(payload);
         }
+        String json = null;
+        if (payload instanceof org.springframework.amqp.core.Message msg) {
+            json = new String(msg.getBody(), StandardCharsets.UTF_8);
+        } else if (payload instanceof String str) {
+            json = str;
+        } else if (payload instanceof byte[] bytes) {
+            json = new String(bytes, StandardCharsets.UTF_8);
+        }
+        if (json != null) {
+            String trimmed = json.trim();
+            if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+                json = objectMapper.readValue(trimmed, String.class);
+            }
+            return objectMapper.readValue(json, clazz);
+        }
+        return objectMapper.convertValue(payload, clazz);
     }
 }

@@ -39,6 +39,22 @@ public class DonacionControllerTest {
     @MockBean
     private DonacionRepository donacionRepository;
 
+    @MockBean
+    private com.donatrack.donaciones.service.FileStorageService fileStorageService;
+
+    @MockBean
+    private com.donatrack.donaciones.scheduler.DonacionesScheduler donacionesScheduler;
+
+    @Test
+    void testEjecutarMatchmakingBatchManual() throws Exception {
+        when(donacionesScheduler.procesarMatchmakingDonaciones()).thenReturn(3);
+
+        mockMvc.perform(post("/api/v1/donaciones/matchmaking/ejecutar-batch"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.donacionesAsignadas").value(3));
+    }
+
     @Test
     void testSaludoEntrega1() throws Exception {
         mockMvc.perform(get("/api/v1/donaciones/saludo"))
@@ -151,5 +167,29 @@ public class DonacionControllerTest {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("LISTA_PARA_ENTREGAR"));
+    }
+
+    @Test
+    void testSubirImagen() throws Exception {
+        org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                "archivo", "foto.jpg", "image/jpeg", "dummy-content".getBytes()
+        );
+        when(fileStorageService.guardarArchivo(any())).thenReturn("uuid_foto.jpg");
+
+        mockMvc.perform(multipart("/api/v1/donaciones/subir-imagen").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.url").value("/api/v1/donaciones/imagenes/uuid_foto.jpg"))
+                .andExpect(jsonPath("$.nombreArchivo").value("uuid_foto.jpg"));
+    }
+
+    @Test
+    void testServirImagen() throws Exception {
+        org.springframework.core.io.ByteArrayResource res = new org.springframework.core.io.ByteArrayResource("image-bytes".getBytes());
+        when(fileStorageService.cargarArchivoComoRecurso("uuid_foto.jpg")).thenReturn(res);
+        when(fileStorageService.determinarContentType("uuid_foto.jpg")).thenReturn("image/jpeg");
+
+        mockMvc.perform(get("/api/v1/donaciones/imagenes/uuid_foto.jpg"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/jpeg"));
     }
 }

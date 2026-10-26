@@ -62,6 +62,20 @@ public class EntregaController {
         return ResponseEntity.ok(entregaService.registrarEntregaFallidaPorDonacion(idDonacion, request));
     }
 
+    @PostMapping("/donacion/{idDonacion}/arribo")
+    public ResponseEntity<Entrega> registrarArriboPorDonacion(@PathVariable("idDonacion") Long idDonacion,
+                                                              @RequestBody(required = false) java.util.Map<String, Object> body) {
+        String obs = (body != null && body.get("observaciones") != null) ? String.valueOf(body.get("observaciones")) : null;
+        return ResponseEntity.ok(entregaService.registrarArriboSedePorDonacion(idDonacion, obs));
+    }
+
+    @PostMapping("/{id}/arribo")
+    public ResponseEntity<Entrega> registrarArribo(@PathVariable("id") String id,
+                                                   @RequestBody(required = false) java.util.Map<String, Object> body) {
+        String obs = (body != null && body.get("observaciones") != null) ? String.valueOf(body.get("observaciones")) : null;
+        return ResponseEntity.ok(entregaService.registrarArriboSede(id, obs));
+    }
+
     /**
      * Flujo administrativo de replanificación si la carga regresó al depósito (CU-45).
      */

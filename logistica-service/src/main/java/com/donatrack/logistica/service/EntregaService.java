@@ -13,6 +13,8 @@ public interface EntregaService {
     Entrega registrarEntregaFallida(String idEntrega, EntregaFallidaRequestDto request);
     Entrega confirmarEntregaPorDonacion(Long idDonacion, ConfirmarEntregaRequestDto request);
     Entrega registrarEntregaFallidaPorDonacion(Long idDonacion, EntregaFallidaRequestDto request);
+    Entrega registrarArriboSede(String idEntrega, String observaciones);
+    Entrega registrarArriboSedePorDonacion(Long idDonacion, String observaciones);
     Entrega replanificarEntrega(String idEntrega, ReplanificarRequestDto request);
     ComprobanteEntregaDto obtenerComprobante(String idEntrega);
     List<Entrega> listarEntregasPorRuta(String idRuta);

@@ -18,6 +18,9 @@ public class RabbitMqConfig {
     @Value("${donatrack.rabbitmq.exchange:donatrack.events.exchange}")
     private String exchangeName;
 
+    @Value("${donatrack.rabbitmq.queues.donacion-registrada:q.notificaciones.donacion-registrada}")
+    private String qDonacionRegistrada;
+
     @Value("${donatrack.rabbitmq.queues.donacion-asignada:q.notificaciones.donacion-asignada}")
     private String qDonacionAsignada;
 
@@ -89,6 +92,11 @@ public class RabbitMqConfig {
     // --- Colas de Notificaciones ---
 
     @Bean
+    public Queue donacionRegistradaQueue() {
+        return crearCola(qDonacionRegistrada);
+    }
+
+    @Bean
     public Queue donacionAsignadaQueue() {
         return crearCola(qDonacionAsignada);
     }
@@ -129,6 +137,11 @@ public class RabbitMqConfig {
     }
 
     // --- Bindings con el Exchange Central ---
+
+    @Bean
+    public Binding bindDonacionRegistrada(Queue donacionRegistradaQueue, TopicExchange eventsExchange) {
+        return BindingBuilder.bind(donacionRegistradaQueue).to(eventsExchange).with("donacion.registrada");
+    }
 
     @Bean
     public Binding bindDonacionAsignada(Queue donacionAsignadaQueue, TopicExchange eventsExchange) {

@@ -27,12 +27,66 @@ public class EntregaServiceImpl implements EntregaService {
     private final DonacionesServiceClient donacionesServiceClient;
     private final LogisticaEventPublisher eventPublisher;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.donatrack.logistica.repository.RutaRepository rutaRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private TelemetriaService telemetriaService;
+
     public EntregaServiceImpl(EntregaRepository entregaRepository,
                               DonacionesServiceClient donacionesServiceClient,
                               LogisticaEventPublisher eventPublisher) {
         this.entregaRepository = entregaRepository;
         this.donacionesServiceClient = donacionesServiceClient;
         this.eventPublisher = eventPublisher;
+    }
+
+    /**
+     * Sincroniza el estado de la Parada correspondiente dentro del documento Ruta en MongoDB
+     * para garantizar consistencia 100% entre la Hoja de Ruta del Chofer y el Portal de Entidad Beneficiaria.
+     */
+    private void sincronizarParadaEnRuta(Entrega entrega, String nuevoEstadoParada, String motivoOObservacion) {
+        if (rutaRepository == null || entrega == null || entrega.getIdRuta() == null) {
+            return;
+        }
+        try {
+            rutaRepository.findById(entrega.getIdRuta()).ifPresent(ruta -> {
+                if (ruta.getParadas() != null && entrega.getIdDonacion() != null) {
+                    boolean modificado = false;
+                    for (com.donatrack.logistica.domain.Parada p : ruta.getParadas()) {
+                        if (entrega.getIdDonacion().equals(p.getIdDonacion())) {
+                            if ("ENTREGADA".equals(nuevoEstadoParada)) {
+                                p.marcarCompletada();
+                            } else if ("EN_PUERTA_SEDE".equals(nuevoEstadoParada)) {
+                                p.marcarArriboSede(motivoOObservacion);
+                                // Actualizar posición GPS del camión a la coordenada de la sede de la entidad
+                                if (telemetriaService != null && p.getLatitud() != 0.0 && p.getLongitud() != 0.0) {
+                                    try {
+                                        telemetriaService.registrarTelemetria(new com.donatrack.logistica.dto.TelemetriaRequestDto(
+                                                ruta.getIdCamion(), ruta.getPatenteCamion(),
+                                                p.getLatitud(), p.getLongitud(), 0.0,
+                                                java.time.LocalDateTime.now(), ruta.getId()
+                                        ));
+                                    } catch (Exception ignored) {}
+                                }
+                            } else if ("FALLIDA".equals(nuevoEstadoParada)) {
+                                p.marcarFallida(motivoOObservacion);
+                            } else if ("PENDIENTE".equals(nuevoEstadoParada)) {
+                                p.setCompletada(false);
+                                p.setEstadoParada("PENDIENTE");
+                                p.setMotivoFalla(null);
+                            }
+                            modificado = true;
+                        }
+                    }
+                    if (modificado) {
+                        rutaRepository.save(ruta);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            log.warn("No se pudo sincronizar la parada en la ruta {}: {}", entrega.getIdRuta(), e.getMessage());
+        }
     }
 
     private void enriquecerEmailsSiFaltan(Entrega entrega) {
@@ -94,6 +148,24 @@ public class EntregaServiceImpl implements EntregaService {
     }
 
     @Override
+    public Entrega registrarArriboSedePorDonacion(Long idDonacion, String observaciones) {
+        Entrega entrega = entregaRepository.findByIdDonacion(idDonacion)
+                .orElseThrow(() -> new ResourceNotFoundException("Entrega no encontrada para donación: " + idDonacion));
+        return registrarArriboSede(entrega.getId(), observaciones);
+    }
+
+    @Override
+    public Entrega registrarArriboSede(String idEntrega, String observaciones) {
+        Entrega entrega = obtenerPorId(idEntrega);
+        enriquecerEmailsSiFaltan(entrega);
+        entrega.registrarArriboSede(observaciones);
+        Entrega guardada = entregaRepository.save(entrega);
+        sincronizarParadaEnRuta(guardada, "EN_PUERTA_SEDE", observaciones);
+        log.info("Arribo en puerta de sede registrado por chofer para entrega {} (donación {})", idEntrega, entrega.getIdDonacion());
+        return guardada;
+    }
+
+    @Override
     public Entrega confirmarEntrega(String idEntrega, ConfirmarEntregaRequestDto request) {
         Entrega entrega = obtenerPorId(idEntrega);
         enriquecerEmailsSiFaltan(entrega);
@@ -106,6 +178,7 @@ public class EntregaServiceImpl implements EntregaService {
                 request.firmaDigitalUrl()
         );
         Entrega guardada = entregaRepository.save(entrega);
+        sincronizarParadaEnRuta(guardada, "ENTREGADA", null);
 
         // Sincronizar en donaciones-service a ENTREGADA con fotos (Entrega 3 & 4)
         if (entrega.getIdDonacion() != null) {
@@ -148,6 +221,7 @@ public class EntregaServiceImpl implements EntregaService {
         // Validación estricta y registro en dominio (CU-44)
         entrega.registrarNoRecibida(request.motivo(), request.replanificable());
         Entrega guardada = entregaRepository.save(entrega);
+        sincronizarParadaEnRuta(guardada, "FALLIDA", request.motivo());
 
         // Sincronizar en donaciones-service a ENTREGA_FALLIDA
         if (entrega.getIdDonacion() != null) {
@@ -190,6 +264,7 @@ public class EntregaServiceImpl implements EntregaService {
 
         entrega.replanificar(request.motivo());
         Entrega guardada = entregaRepository.save(entrega);
+        sincronizarParadaEnRuta(guardada, "PENDIENTE", null);
 
         // Reingresar donación a EN_DEPOSITO en donaciones-service para que el matchmaking o logística la reasigne
         if (entrega.getIdDonacion() != null) {

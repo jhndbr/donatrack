@@ -38,7 +38,11 @@ public class NotificacionesController {
             @RequestParam(value = "estado", required = false) EstadoNotificacion estado) {
 
         if (destinatario != null && !destinatario.isBlank()) {
-            return ResponseEntity.ok(auditoriaRepo.findByDestinatarioOrderByTimestampDesc(destinatario));
+            List<AuditoriaNotificacion> list = auditoriaRepo.findByDestinatarioOrderByTimestampDesc(destinatario);
+            if (list == null || list.isEmpty()) {
+                list = auditoriaRepo.findByDestinatarioIgnoreCaseOrderByTimestampDesc(destinatario.trim());
+            }
+            return ResponseEntity.ok(list);
         }
         if (canal != null) {
             return ResponseEntity.ok(auditoriaRepo.findByCanalOrderByTimestampDesc(canal));
@@ -47,6 +51,66 @@ public class NotificacionesController {
             return ResponseEntity.ok(auditoriaRepo.findByEstadoOrderByTimestampDesc(estado));
         }
         return ResponseEntity.ok(auditoriaRepo.findTop50ByOrderByTimestampDesc());
+    }
+
+    /**
+     * Consulta la cantidad de notificaciones no leídas para mostrar el indicador numérico (badge rojo) en la barra de navegación.
+     */
+    @GetMapping("/no-leidas/count")
+    public ResponseEntity<Map<String, Object>> obtenerConteoNoLeidas(
+            @RequestParam(value = "destinatario", required = false) String destinatario) {
+        long count;
+        if (destinatario != null && !destinatario.isBlank()) {
+            count = auditoriaRepo.countByDestinatarioIgnoreCaseAndLeidaFalse(destinatario.trim());
+        } else {
+            count = auditoriaRepo.countByLeidaFalse();
+        }
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("destinatario", destinatario != null ? destinatario : "ALL");
+        resp.put("noLeidas", count);
+        return ResponseEntity.ok(resp);
+    }
+
+    /**
+     * Marca una notificación individual como leída.
+     */
+    @PostMapping("/{id}/leer")
+    public ResponseEntity<Map<String, Object>> marcarComoLeida(@PathVariable("id") Long id) {
+        return auditoriaRepo.findById(id)
+                .map(notif -> {
+                    notif.marcarComoLeida();
+                    auditoriaRepo.save(notif);
+                    Map<String, Object> resp = new LinkedHashMap<>();
+                    resp.put("id", notif.getId());
+                    resp.put("leida", notif.isLeida());
+                    resp.put("fechaLectura", notif.getFechaLectura());
+                    return ResponseEntity.ok(resp);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Marca todas las notificaciones de un destinatario (o todas las del sistema si no se envía destinatario) como leídas.
+     */
+    @PostMapping("/leer-todas")
+    public ResponseEntity<Map<String, Object>> marcarTodasComoLeidas(
+            @RequestParam(value = "destinatario", required = false) String destinatario) {
+        List<AuditoriaNotificacion> pendientes;
+        if (destinatario != null && !destinatario.isBlank()) {
+            pendientes = auditoriaRepo.findByDestinatarioIgnoreCaseAndLeidaFalse(destinatario.trim());
+        } else {
+            pendientes = auditoriaRepo.findByLeidaFalse();
+        }
+        if (pendientes != null && !pendientes.isEmpty()) {
+            for (AuditoriaNotificacion n : pendientes) {
+                n.marcarComoLeida();
+            }
+            auditoriaRepo.saveAll(pendientes);
+        }
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("marcadas", pendientes != null ? pendientes.size() : 0);
+        resp.put("destinatario", destinatario != null ? destinatario : "ALL");
+        return ResponseEntity.ok(resp);
     }
 
     /**
@@ -59,6 +123,7 @@ public class NotificacionesController {
         stats.put("enviados", auditoriaRepo.countByEstado(EstadoNotificacion.ENVIADO));
         stats.put("fallidos", auditoriaRepo.countByEstado(EstadoNotificacion.FALLIDO));
         stats.put("duplicadosIgnorados", auditoriaRepo.countByEstado(EstadoNotificacion.DUPLICADO_IGNORADO));
+        stats.put("noLeidas", auditoriaRepo.countByLeidaFalse());
 
         Map<String, Long> porCanal = new LinkedHashMap<>();
         for (CanalNotificacion c : CanalNotificacion.values()) {

@@ -1,5 +1,6 @@
 package com.donatrack.donaciones.service;
 
+import com.donatrack.common.enums.PeriodoNecesidad;
 import com.donatrack.common.enums.TipoNecesidad;
 import com.donatrack.donaciones.domain.EntidadBeneficiaria;
 import com.donatrack.donaciones.domain.NecesidadMaterial;
@@ -99,11 +100,23 @@ public class EntidadBeneficiariaService {
         if (necesidad.getSubcategoria() == null || necesidad.getSubcategoria().isBlank()) {
             throw new IllegalArgumentException("La subcategoría es la unidad mínima y es obligatoria (CU-26)");
         }
+        necesidad.setSubcategoria(necesidad.getSubcategoria().trim());
+
         if (necesidad.getCantidadSolicitada() <= 0) {
             throw new IllegalArgumentException("La cantidad solicitada debe ser mayor a cero (CU-26)");
         }
-        if (necesidad.getTipo() == TipoNecesidad.RECURRENTE && (necesidad.getPeriodo() == null || necesidad.getPeriodo().isBlank())) {
-            throw new IllegalArgumentException("Para necesidades de tipo RECURRENTE es obligatorio especificar el período (ej. SEMANAL, MENSUAL) (CU-26)");
+        if (necesidad.getTipo() == null) {
+            necesidad.setTipo(TipoNecesidad.EXTRAORDINARIA);
+        }
+        if (necesidad.getTipo() == TipoNecesidad.RECURRENTE) {
+            if (necesidad.getPeriodo() == null || necesidad.getPeriodo().isBlank()) {
+                throw new IllegalArgumentException("Para necesidades de tipo RECURRENTE es obligatorio especificar el período (ej. SEMANAL, MENSUAL) (CU-26)");
+            }
+            PeriodoNecesidad periodoEnum = PeriodoNecesidad.fromString(necesidad.getPeriodo());
+            necesidad.setPeriodo(periodoEnum.name());
+        } else {
+            // Para EXTRAORDINARIA el período no aplica y debe quedar nulo
+            necesidad.setPeriodo(null);
         }
 
         necesidad.setEntidadBeneficiaria(entidad);
@@ -111,13 +124,32 @@ public class EntidadBeneficiariaService {
     }
 
     /**
-     * Modificación de necesidad material (CU-27).
-     * Invariante: La nueva cantidad solicitada no puede ser inferior a la cantidad cubierta acumulada.
+     * Modificación de necesidad material (CU-27) - Firma simplificada compatible con tests previos.
      */
     @Transactional
     public NecesidadMaterial modificarNecesidad(Long necesidadId, Double nuevaCantidad, String nuevaDescripcion) {
+        return modificarNecesidad(necesidadId, null, nuevaDescripcion, null, nuevaCantidad, null, null);
+    }
+
+    /**
+     * Modificación integral de necesidad material (CU-27).
+     * Invariante: La nueva cantidad solicitada no puede ser inferior a la cantidad cubierta acumulada,
+     * y si el tipo es RECURRENTE debe tener una periodicidad válida del enum PeriodoNecesidad.
+     */
+    @Transactional
+    public NecesidadMaterial modificarNecesidad(Long necesidadId,
+                                                String nuevaSubcategoria,
+                                                String nuevaDescripcion,
+                                                TipoNecesidad nuevoTipo,
+                                                Double nuevaCantidad,
+                                                String nuevaUnidadMedida,
+                                                String nuevoPeriodo) {
         NecesidadMaterial necesidad = necesidadRepository.findById(necesidadId)
                 .orElseThrow(() -> new IllegalArgumentException("Necesidad material no encontrada: " + necesidadId));
+
+        if (nuevaSubcategoria != null && !nuevaSubcategoria.isBlank()) {
+            necesidad.setSubcategoria(nuevaSubcategoria.trim());
+        }
 
         if (nuevaCantidad != null) {
             if (nuevaCantidad <= 0) {
@@ -131,7 +163,26 @@ public class EntidadBeneficiariaService {
         }
 
         if (nuevaDescripcion != null && !nuevaDescripcion.isBlank()) {
-            necesidad.setDescripcion(nuevaDescripcion);
+            necesidad.setDescripcion(nuevaDescripcion.trim());
+        }
+
+        if (nuevaUnidadMedida != null && !nuevaUnidadMedida.isBlank()) {
+            necesidad.setUnidadMedida(nuevaUnidadMedida.trim());
+        }
+
+        if (nuevoTipo != null) {
+            necesidad.setTipo(nuevoTipo);
+        }
+
+        if (necesidad.getTipo() == TipoNecesidad.EXTRAORDINARIA) {
+            necesidad.setPeriodo(null);
+        } else if (necesidad.getTipo() == TipoNecesidad.RECURRENTE) {
+            if (nuevoPeriodo != null && !nuevoPeriodo.isBlank()) {
+                necesidad.setPeriodo(PeriodoNecesidad.fromString(nuevoPeriodo).name());
+            }
+            if (necesidad.getPeriodo() == null || necesidad.getPeriodo().isBlank()) {
+                throw new IllegalArgumentException("Para necesidades de tipo RECURRENTE es obligatorio especificar un período válido (CU-27)");
+            }
         }
 
         return necesidadRepository.save(necesidad);

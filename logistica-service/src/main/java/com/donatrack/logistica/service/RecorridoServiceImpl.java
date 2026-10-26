@@ -43,6 +43,9 @@ public class RecorridoServiceImpl implements RecorridoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Ruta no encontrada: " + idRuta));
 
         ruta.iniciarRuta();
+        if (ruta.getParadas() != null) {
+            ruta.getParadas().forEach(com.donatrack.logistica.domain.Parada::marcarEnTraslado);
+        }
         Ruta guardada = rutaRepository.save(ruta);
 
         List<Entrega> entregas = entregaRepository.findByIdRuta(idRuta);

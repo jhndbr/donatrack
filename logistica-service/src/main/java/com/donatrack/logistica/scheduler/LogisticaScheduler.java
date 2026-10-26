@@ -22,10 +22,10 @@ public class LogisticaScheduler {
     }
 
     /**
-     * Cronjob: Ejecución en horarios de baja carga para generar los planes de rutas
-     * de los camiones durante la siguiente jornada operativa, integrándose con el optimizador externo en lotes <= 100.
+     * Cronjob: Ejecución periódica (cada 5 minutos en modo demo / 01:00 AM en producción) para generar los planes de rutas
+     * de los camiones sobre las donaciones en estado ASIGNACION_REALIZADA, integrándose con el optimizador externo en lotes <= 100.
      */
-    @Scheduled(cron = "${donatrack.cron.planificacion-rutas:0 0 1 * * ?}")
+    @Scheduled(cron = "${donatrack.cron.planificacion-rutas:0 */5 * * * *}")
     public void dispararPlanificacionRutasNocturna() {
         log.info("Iniciando tarea programada nocturna de planificación de rutas en lotes <= {} (CU-37)...", maxLote);
         try {

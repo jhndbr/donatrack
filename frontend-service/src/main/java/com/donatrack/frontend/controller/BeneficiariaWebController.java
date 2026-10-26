@@ -1,5 +1,6 @@
 package com.donatrack.frontend.controller;
 
+import com.donatrack.common.enums.PeriodoNecesidad;
 import com.donatrack.frontend.security.AuthInterceptor;
 import com.donatrack.frontend.security.UserSession;
 import com.donatrack.frontend.service.ApiClientService;
@@ -100,12 +101,44 @@ public class BeneficiariaWebController {
         List<Map<String, Object>> notificaciones = (!emailEntidad.isBlank())
                 ? apiClient.listarNotificaciones(emailEntidad)
                 : Collections.emptyList();
+        List<Map<String, Object>> listaFinal = notificaciones != null ? notificaciones : Collections.emptyList();
+        long noLeidasEnLista = listaFinal.stream()
+                .filter(n -> !Boolean.TRUE.equals(n.get("leida")))
+                .count();
 
         model.addAttribute("entidadId", resolvedId);
         model.addAttribute("entidades", entidades);
-        model.addAttribute("notificaciones", notificaciones != null ? notificaciones : Collections.emptyList());
+        model.addAttribute("notificaciones", listaFinal);
         model.addAttribute("emailEntidad", emailEntidad);
+        model.addAttribute("notificacionesNoLeidasVista", noLeidasEnLista);
+        if (noLeidasEnLista > 0) {
+            model.addAttribute("notificacionesNoLeidasCount", noLeidasEnLista);
+        }
         return "beneficiaria/notificaciones";
+    }
+
+    @PostMapping("/notificaciones/{id}/leer")
+    public String marcarNotificacionLeida(@PathVariable("id") Long id,
+                                          @RequestParam(value = "entidadId", required = false) Long entidadId,
+                                          RedirectAttributes redirectAttrs) {
+        apiClient.marcarNotificacionLeida(id);
+        redirectAttrs.addFlashAttribute("mensajeExito", "Notificación marcada como leída.");
+        return "redirect:/beneficiaria/notificaciones" + (entidadId != null ? "?entidadId=" + entidadId : "");
+    }
+
+    @PostMapping("/notificaciones/leer-todas")
+    public String marcarTodasNotificacionesLeidas(@RequestParam(value = "destinatario", required = false) String destinatario,
+                                                  @RequestParam(value = "entidadId", required = false) Long entidadId,
+                                                  HttpSession session,
+                                                  RedirectAttributes redirectAttrs) {
+        String email = destinatario;
+        if ((email == null || email.isBlank()) && session != null) {
+            UserSession userSession = (UserSession) session.getAttribute(AuthInterceptor.SESSION_USER_KEY);
+            if (userSession != null) email = userSession.getEmail();
+        }
+        apiClient.marcarTodasNotificacionesLeidas(email);
+        redirectAttrs.addFlashAttribute("mensajeExito", "Todas las notificaciones de la entidad han sido marcadas como leídas.");
+        return "redirect:/beneficiaria/notificaciones" + (entidadId != null ? "?entidadId=" + entidadId : "");
     }
 
     @GetMapping("/necesidades")
@@ -131,10 +164,18 @@ public class BeneficiariaWebController {
             necesidades = (List<Map<String, Object>>) list;
         }
 
+        List<String> subcategoriasSugeridas = List.of(
+                "fideos", "arroz", "leche", "harina", "aceite", "azucar", "lentejas",
+                "polenta", "yerba", "puré de tomate", "frazadas", "camperas", "calzado",
+                "pañales", "lavandina", "jabon", "cuadernos", "utiles escolares", "colchones"
+        );
+
         model.addAttribute("entidadId", resolvedId);
         model.addAttribute("nombreEntidad", nombreEntidad);
         model.addAttribute("entidades", entidades);
         model.addAttribute("necesidades", necesidades != null ? necesidades : Collections.emptyList());
+        model.addAttribute("periodosPermitidos", PeriodoNecesidad.values());
+        model.addAttribute("subcategoriasSugeridas", subcategoriasSugeridas);
         return "beneficiaria/necesidades";
     }
 
@@ -146,29 +187,47 @@ public class BeneficiariaWebController {
                                      @RequestParam("cantidadSolicitada") double cantidadSolicitada,
                                      @RequestParam("unidadMedida") String unidadMedida,
                                      @RequestParam(value = "periodo", required = false) String periodo,
+                                     @RequestParam(value = "redirectTo", required = false) String redirectTo,
                                      HttpSession session,
                                      RedirectAttributes redirectAttrs) {
         Long resolvedId = resolveEntidadId(session, entidadId);
+        String targetRedirect = (redirectTo != null && !redirectTo.isBlank()) ? redirectTo : "/beneficiaria";
+
+        String periodoNormalizado = "";
+        if ("RECURRENTE".equalsIgnoreCase(tipo)) {
+            if (periodo == null || periodo.isBlank()) {
+                redirectAttrs.addFlashAttribute("mensajeError",
+                        "Para necesidades de tipo RECURRENTE es obligatorio seleccionar una periodicidad válida.");
+                return "redirect:/beneficiaria/necesidades";
+            }
+            try {
+                periodoNormalizado = PeriodoNecesidad.fromString(periodo).name();
+            } catch (IllegalArgumentException e) {
+                redirectAttrs.addFlashAttribute("mensajeError", e.getMessage());
+                return "redirect:/beneficiaria/necesidades";
+            }
+        }
 
         Map<String, Object> body = Map.of(
-                "subcategoria", subcategoria,
-                "descripcion", descripcion,
+                "subcategoria", subcategoria != null ? subcategoria.trim() : "",
+                "descripcion", descripcion != null ? descripcion.trim() : "",
                 "tipo", tipo,
                 "cantidadSolicitada", cantidadSolicitada,
                 "unidadMedida", unidadMedida,
-                "periodo", periodo != null ? periodo : ""
+                "periodo", periodoNormalizado
         );
 
         boolean ok = apiClient.crearNecesidad(resolvedId, body);
         if (ok) {
             redirectAttrs.addFlashAttribute("mensajeExito",
                     "¡Necesidad material de " + cantidadSolicitada + " " + unidadMedida + " de " + subcategoria +
-                            " (" + tipo + ") registrada correctamente! Ha sido ingresada para el algoritmo de Matchmaking.");
+                            " (" + tipo + (periodoNormalizado.isEmpty() ? "" : " - " + periodoNormalizado) +
+                            ") registrada correctamente! Ha sido ingresada para el algoritmo de Matchmaking.");
         } else {
-            redirectAttrs.addFlashAttribute("mensajeError", "No se pudo registrar la necesidad. Intente nuevamente.");
+            redirectAttrs.addFlashAttribute("mensajeError", "No se pudo registrar la necesidad. Verifique que la entidad se encuentre activa y los datos sean válidos.");
         }
 
-        return "redirect:/beneficiaria";
+        return "redirect:" + targetRedirect;
     }
 
     @PostMapping("/necesidades/{id}/editar")
@@ -183,19 +242,38 @@ public class BeneficiariaWebController {
                                   HttpSession session,
                                   RedirectAttributes redirectAttrs) {
         Long resolvedId = resolveEntidadId(session, entidadId);
+
+        String periodoNormalizado = "";
+        if ("RECURRENTE".equalsIgnoreCase(tipo)) {
+            if (periodo == null || periodo.isBlank()) {
+                redirectAttrs.addFlashAttribute("mensajeError",
+                        "No se pudo actualizar la necesidad #" + id + ": Para tipo RECURRENTE debe elegir una periodicidad del menú.");
+                return "redirect:/beneficiaria/necesidades";
+            }
+            try {
+                periodoNormalizado = PeriodoNecesidad.fromString(periodo).name();
+            } catch (IllegalArgumentException e) {
+                redirectAttrs.addFlashAttribute("mensajeError", e.getMessage());
+                return "redirect:/beneficiaria/necesidades";
+            }
+        }
+
         Map<String, Object> body = new java.util.HashMap<>();
-        if (subcategoria != null && !subcategoria.isBlank()) body.put("subcategoria", subcategoria);
-        if (descripcion != null && !descripcion.isBlank()) body.put("descripcion", descripcion);
+        if (subcategoria != null && !subcategoria.isBlank()) body.put("subcategoria", subcategoria.trim());
+        if (descripcion != null && !descripcion.isBlank()) body.put("descripcion", descripcion.trim());
         body.put("tipo", tipo);
         body.put("cantidadSolicitada", cantidadSolicitada);
         body.put("unidadMedida", unidadMedida);
-        body.put("periodo", periodo != null ? periodo : "");
+        body.put("periodo", periodoNormalizado);
 
         boolean ok = apiClient.actualizarNecesidad(id, body) || apiClient.actualizarNecesidad(resolvedId, id, body);
         if (ok) {
-            redirectAttrs.addFlashAttribute("mensajeExito", "Necesidad #" + id + " actualizada correctamente.");
+            redirectAttrs.addFlashAttribute("mensajeExito",
+                    "Necesidad #" + id + " actualizada correctamente (" + cantidadSolicitada + " " + unidadMedida +
+                            (subcategoria != null && !subcategoria.isBlank() ? " de " + subcategoria : "") + ").");
         } else {
-            redirectAttrs.addFlashAttribute("mensajeError", "No se pudo actualizar la necesidad #" + id + ".");
+            redirectAttrs.addFlashAttribute("mensajeError",
+                    "No se pudo actualizar la necesidad #" + id + ". Recuerde que la nueva cantidad solicitada no puede ser menor a la cantidad ya cubierta por donaciones.");
         }
         return "redirect:/beneficiaria/necesidades";
     }
@@ -203,12 +281,18 @@ public class BeneficiariaWebController {
     @PostMapping("/necesidades/{id}/eliminar")
     public String eliminarNecesidad(@PathVariable("id") Long id,
                                     @RequestParam(value = "entidadId", required = false) Long entidadId,
+                                    @RequestParam(value = "motivo", required = false) String motivo,
                                     HttpSession session,
                                     RedirectAttributes redirectAttrs) {
         Long resolvedId = resolveEntidadId(session, entidadId);
-        boolean ok = apiClient.eliminarNecesidad(id) || apiClient.eliminarNecesidad(resolvedId, id);
+        boolean ok;
+        if (motivo != null && !motivo.isBlank()) {
+            ok = apiClient.eliminarNecesidad(resolvedId, id, motivo) || apiClient.eliminarNecesidad(id) || apiClient.eliminarNecesidad(resolvedId, id);
+        } else {
+            ok = apiClient.eliminarNecesidad(id) || apiClient.eliminarNecesidad(resolvedId, id);
+        }
         if (ok) {
-            redirectAttrs.addFlashAttribute("mensajeExito", "Necesidad #" + id + " eliminada / cerrada correctamente.");
+            redirectAttrs.addFlashAttribute("mensajeExito", "Necesidad #" + id + " eliminada / cerrada formalmente.");
         } else {
             redirectAttrs.addFlashAttribute("mensajeError", "No se pudo eliminar la necesidad #" + id + ".");
         }
@@ -238,12 +322,26 @@ public class BeneficiariaWebController {
                 .toList();
 
         List<Map<String, Object>> rutas = apiClient.listarRutas();
+        Map<Long, String> estadoParadaPorDonacion = new java.util.HashMap<>();
+        if (rutas != null) {
+            for (Map<String, Object> r : rutas) {
+                if (r.get("paradas") instanceof List<?> paradasList) {
+                    for (Object pObj : paradasList) {
+                        if (pObj instanceof Map<?, ?> pMap && pMap.get("idDonacion") instanceof Number donNum) {
+                            String estParada = pMap.get("estadoParada") != null ? String.valueOf(pMap.get("estadoParada")) : "PENDIENTE";
+                            estadoParadaPorDonacion.put(donNum.longValue(), estParada);
+                        }
+                    }
+                }
+            }
+        }
 
         model.addAttribute("entidadId", resolvedId);
         model.addAttribute("entidades", entidades);
         model.addAttribute("donacionesConfirmables", donacionesConfirmables);
         model.addAttribute("donacionIdSeleccionada", donacionId);
         model.addAttribute("rutas", rutas);
+        model.addAttribute("estadoParadaPorDonacion", estadoParadaPorDonacion);
 
         return "beneficiaria/confirmar";
     }
@@ -255,6 +353,8 @@ public class BeneficiariaWebController {
                                      @RequestParam(value = "fotoUrl", required = false) String fotoUrl,
                                      @RequestParam(value = "fotoFile", required = false) org.springframework.web.multipart.MultipartFile fotoFile,
                                      @RequestParam(value = "observaciones", required = false) String observaciones,
+                                     @RequestParam(value = "receptorNombre", required = false) String receptorNombre,
+                                     @RequestParam(value = "receptorDni", required = false) String receptorDni,
                                      HttpSession session,
                                      RedirectAttributes redirectAttrs) {
         Long resolvedId = resolveEntidadId(session, entidadId);
@@ -288,7 +388,12 @@ public class BeneficiariaWebController {
         boolean ok = false;
         if (donacionId != null) {
             if (idEntrega == null || idEntrega.isBlank()) {
-                ok = apiClient.confirmarEntregaPorDonacion(donacionId, urlImagenFinal, observaciones);
+                if ((receptorNombre != null && !receptorNombre.isBlank()) || (receptorDni != null && !receptorDni.isBlank())) {
+                    ok = apiClient.confirmarEntregaPorDonacion(donacionId, urlImagenFinal, observaciones, receptorNombre, receptorDni);
+                }
+                if (!ok) {
+                    ok = apiClient.confirmarEntregaPorDonacion(donacionId, urlImagenFinal, observaciones);
+                }
             }
             if (!ok) {
                 ok = apiClient.entregarDonacion(donacionId, urlImagenFinal);

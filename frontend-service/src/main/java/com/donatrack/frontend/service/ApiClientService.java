@@ -377,12 +377,19 @@ public class ApiClientService {
     }
 
     public boolean eliminarNecesidad(Long entidadId, Long necesidadId) {
+        return eliminarNecesidad(entidadId, necesidadId, null);
+    }
+
+    public boolean eliminarNecesidad(Long entidadId, Long necesidadId, String motivo) {
         try {
             HttpHeaders headers = buildAuthHeaders();
             HttpEntity<Void> entity = new HttpEntity<>(headers);
-            String url = (entidadId != null)
+            String baseUrl = (entidadId != null)
                     ? gatewayUrl + "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId
                     : gatewayUrl + "/api/v1/entidades/necesidades/" + necesidadId;
+            String url = (motivo != null && !motivo.isBlank())
+                    ? baseUrl + "?motivo=" + java.net.URLEncoder.encode(motivo.trim(), java.nio.charset.StandardCharsets.UTF_8)
+                    : baseUrl;
             restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class);
             return true;
         } catch (Exception e) {
@@ -693,6 +700,10 @@ public class ApiClientService {
     }
 
     public boolean confirmarEntregaPorDonacion(Long donacionId, String urlFoto, String comentario) {
+        return confirmarEntregaPorDonacion(donacionId, urlFoto, comentario, null, null);
+    }
+
+    public boolean confirmarEntregaPorDonacion(Long donacionId, String urlFoto, String comentario, String receptorNombre, String receptorDni) {
         try {
             HttpHeaders headers = buildAuthHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -705,11 +716,46 @@ public class ApiClientService {
                 body.put("comentario", comentario);
                 body.put("observaciones", comentario);
             }
+            if (receptorNombre != null && !receptorNombre.isBlank()) {
+                body.put("receptorNombre", receptorNombre.trim());
+            }
+            if (receptorDni != null && !receptorDni.isBlank()) {
+                body.put("receptorDni", receptorDni.trim());
+            }
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
             restTemplate.postForEntity(gatewayUrl + "/api/v1/logistica/entregas/donacion/" + donacionId + "/confirmar", entity, Map.class);
             return true;
         } catch (Exception e) {
             log.error("Error confirmando entrega por donacion {}: {}", donacionId, e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean registrarArriboSedePorDonacion(Long donacionId, String observaciones) {
+        try {
+            HttpHeaders headers = buildAuthHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            Map<String, Object> body = new HashMap<>();
+            if (observaciones != null && !observaciones.isBlank()) {
+                body.put("observaciones", observaciones.trim());
+            }
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            restTemplate.postForEntity(gatewayUrl + "/api/v1/logistica/entregas/donacion/" + donacionId + "/arribo", entity, Map.class);
+            return true;
+        } catch (Exception e) {
+            log.error("Error registrando arribo en puerta para donacion {}: {}", donacionId, e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean planificarRutasPendientesAhora() {
+        try {
+            HttpHeaders headers = buildAuthHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            restTemplate.postForEntity(gatewayUrl + "/api/v1/logistica/rutas/planificar-pendientes", entity, Map.class);
+            return true;
+        } catch (Exception e) {
+            log.error("Error ejecutando planificación bajo demanda: {}", e.getMessage());
             return false;
         }
     }
@@ -1000,6 +1046,53 @@ public class ApiClientService {
         } catch (Exception e) {
             log.warn("Fallo consultando historial de notificaciones: {}", e.getMessage());
             return Collections.emptyList();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public long obtenerConteoNotificacionesNoLeidas(String destinatario) {
+        try {
+            String url = gatewayUrl + "/api/v1/notificaciones/no-leidas/count" +
+                    (destinatario != null && !destinatario.isBlank()
+                            ? "?destinatario=" + java.net.URLEncoder.encode(destinatario.trim(), java.nio.charset.StandardCharsets.UTF_8)
+                            : "");
+            Map<String, Object> res = restTemplate.getForObject(url, Map.class);
+            if (res != null && res.get("noLeidas") instanceof Number num) {
+                return num.longValue();
+            }
+            return 0L;
+        } catch (Exception e) {
+            log.debug("Fallo consultando conteo de notificaciones no leídas: {}", e.getMessage());
+            return 0L;
+        }
+    }
+
+    public boolean marcarNotificacionLeida(Long id) {
+        if (id == null) return false;
+        try {
+            HttpHeaders headers = buildAuthHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            restTemplate.postForEntity(gatewayUrl + "/api/v1/notificaciones/" + id + "/leer", entity, Map.class);
+            return true;
+        } catch (Exception e) {
+            log.warn("Fallo marcando notificación {} como leída: {}", id, e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean marcarTodasNotificacionesLeidas(String destinatario) {
+        try {
+            HttpHeaders headers = buildAuthHeaders();
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            String url = gatewayUrl + "/api/v1/notificaciones/leer-todas" +
+                    (destinatario != null && !destinatario.isBlank()
+                            ? "?destinatario=" + java.net.URLEncoder.encode(destinatario.trim(), java.nio.charset.StandardCharsets.UTF_8)
+                            : "");
+            restTemplate.postForEntity(url, entity, Map.class);
+            return true;
+        } catch (Exception e) {
+            log.warn("Fallo marcando todas las notificaciones como leídas: {}", e.getMessage());
+            return false;
         }
     }
 

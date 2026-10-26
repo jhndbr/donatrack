@@ -54,6 +54,20 @@ public class RutaController {
     }
 
     /**
+     * Disparo bajo demanda de la planificación automática de rutas sobre todas las donaciones en ASIGNACION_REALIZADA (Modo Demo / Operativo).
+     */
+    @PostMapping("/planificar-pendientes")
+    public ResponseEntity<Map<String, Object>> planificarPendientesAhora() {
+        if (planificacionRutasService != null) {
+            planificacionRutasService.ejecutarPlanificacionNocturna();
+        }
+        return ResponseEntity.ok(Map.of(
+                "status", "EJECUTADO",
+                "totalRutas", rutaRepository.count()
+        ));
+    }
+
+    /**
      * Planificación de lotes de hasta 100 donaciones (CU-37).
      */
     @PostMapping("/planificar-lote")

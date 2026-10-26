@@ -1,5 +1,7 @@
 package com.donatrack.donaciones.controller;
 
+import com.donatrack.common.enums.PeriodoNecesidad;
+import com.donatrack.common.enums.TipoNecesidad;
 import com.donatrack.donaciones.domain.EntidadBeneficiaria;
 import com.donatrack.donaciones.domain.NecesidadMaterial;
 import com.donatrack.donaciones.repository.NecesidadMaterialRepository;
@@ -87,21 +89,46 @@ public class EntidadBeneficiariaController {
         return ResponseEntity.ok(entidadService.registrarNecesidad(entidadId, necesidad));
     }
 
-    @PutMapping("/necesidades/{necesidadId}")
+    @PutMapping({"/necesidades/{necesidadId}", "/{entidadId}/necesidades/{necesidadId}"})
     public ResponseEntity<NecesidadMaterial> modificarNecesidad(@PathVariable("necesidadId") Long necesidadId,
                                                                 @RequestBody Map<String, Object> body) {
-        Double nuevaCantidad = body.containsKey("cantidadSolicitada") ? ((Number) body.get("cantidadSolicitada")).doubleValue() : null;
-        String nuevaDescripcion = (String) body.get("descripcion");
-        return ResponseEntity.ok(entidadService.modificarNecesidad(necesidadId, nuevaCantidad, nuevaDescripcion));
+        Double nuevaCantidad = null;
+        if (body.get("cantidadSolicitada") instanceof Number num) {
+            nuevaCantidad = num.doubleValue();
+        } else if (body.get("cantidadSolicitada") instanceof String str && !str.isBlank()) {
+            nuevaCantidad = Double.parseDouble(str.trim());
+        }
+        String nuevaDescripcion = body.get("descripcion") != null ? String.valueOf(body.get("descripcion")) : null;
+        String nuevaSubcategoria = body.get("subcategoria") != null ? String.valueOf(body.get("subcategoria")) : null;
+        String nuevaUnidadMedida = body.get("unidadMedida") != null ? String.valueOf(body.get("unidadMedida")) : null;
+        String nuevoPeriodo = body.get("periodo") != null ? String.valueOf(body.get("periodo")) : null;
+        TipoNecesidad nuevoTipo = null;
+        if (body.get("tipo") != null && !String.valueOf(body.get("tipo")).isBlank()) {
+            try {
+                nuevoTipo = TipoNecesidad.valueOf(String.valueOf(body.get("tipo")).trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        if (nuevaSubcategoria == null && nuevaUnidadMedida == null && nuevoPeriodo == null && nuevoTipo == null) {
+            return ResponseEntity.ok(entidadService.modificarNecesidad(necesidadId, nuevaCantidad, nuevaDescripcion));
+        }
+        return ResponseEntity.ok(entidadService.modificarNecesidad(
+                necesidadId, nuevaSubcategoria, nuevaDescripcion, nuevoTipo, nuevaCantidad, nuevaUnidadMedida, nuevoPeriodo));
     }
 
     /**
      * Cancelación formal de necesidad con motivo de justificación (CU-29).
      */
-    @DeleteMapping("/necesidades/{necesidadId}")
+    @DeleteMapping({"/necesidades/{necesidadId}", "/{entidadId}/necesidades/{necesidadId}"})
     public ResponseEntity<NecesidadMaterial> cancelarNecesidad(@PathVariable("necesidadId") Long necesidadId,
                                                                @RequestParam(value = "motivo", required = false, defaultValue = "Cancelación administrativa") String motivo) {
         return ResponseEntity.ok(entidadService.cancelarNecesidad(necesidadId, motivo));
+    }
+
+    @GetMapping("/necesidades/periodos")
+    public ResponseEntity<PeriodoNecesidad[]> listarPeriodosPermitidos() {
+        return ResponseEntity.ok(PeriodoNecesidad.values());
     }
 
     @GetMapping("/necesidades/pendientes")

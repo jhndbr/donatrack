@@ -17,8 +17,13 @@ public class Parada {
     private double latitud;
     private double longitud;
     private Long idDonacion;
+    private String detalleDonacion;
+    private String estadoParada = "PENDIENTE";
+    private String motivoFalla;
+    private String observacionesChofer;
     private boolean completada = false;
     private LocalDateTime fechaLlegadaEstimada;
+    private LocalDateTime fechaArriboSede;
     private LocalDateTime fechaLlegadaReal;
 
     public Parada() {}
@@ -32,6 +37,7 @@ public class Parada {
         this.longitud = longitud;
         this.idDonacion = idDonacion;
         this.tipo = TipoParada.ENTREGA;
+        this.estadoParada = "PENDIENTE";
         this.completada = false;
     }
 
@@ -42,6 +48,28 @@ public class Parada {
 
     public void marcarCompletada() {
         this.completada = true;
+        this.estadoParada = "ENTREGADA";
+        this.fechaLlegadaReal = LocalDateTime.now();
+    }
+
+    public void marcarEnTraslado() {
+        if (!this.completada && !"ENTREGADA".equals(this.estadoParada) && !"FALLIDA".equals(this.estadoParada)) {
+            this.estadoParada = "EN_TRASLADO";
+        }
+    }
+
+    public void marcarArriboSede(String observaciones) {
+        this.estadoParada = "EN_PUERTA_SEDE";
+        this.fechaArriboSede = LocalDateTime.now();
+        if (observaciones != null && !observaciones.isBlank()) {
+            this.observacionesChofer = observaciones.trim();
+        }
+    }
+
+    public void marcarFallida(String motivo) {
+        this.completada = false;
+        this.estadoParada = "FALLIDA";
+        this.motivoFalla = motivo;
         this.fechaLlegadaReal = LocalDateTime.now();
     }
 
@@ -69,11 +97,26 @@ public class Parada {
     public Long getIdDonacion() { return idDonacion; }
     public void setIdDonacion(Long idDonacion) { this.idDonacion = idDonacion; }
 
+    public String getDetalleDonacion() { return detalleDonacion; }
+    public void setDetalleDonacion(String detalleDonacion) { this.detalleDonacion = detalleDonacion; }
+
+    public String getEstadoParada() { return estadoParada != null ? estadoParada : (completada ? "ENTREGADA" : "PENDIENTE"); }
+    public void setEstadoParada(String estadoParada) { this.estadoParada = estadoParada; }
+
+    public String getMotivoFalla() { return motivoFalla; }
+    public void setMotivoFalla(String motivoFalla) { this.motivoFalla = motivoFalla; }
+
+    public String getObservacionesChofer() { return observacionesChofer; }
+    public void setObservacionesChofer(String observacionesChofer) { this.observacionesChofer = observacionesChofer; }
+
     public boolean isCompletada() { return completada; }
     public void setCompletada(boolean completada) { this.completada = completada; }
 
     public LocalDateTime getFechaLlegadaEstimada() { return fechaLlegadaEstimada; }
     public void setFechaLlegadaEstimada(LocalDateTime fechaLlegadaEstimada) { this.fechaLlegadaEstimada = fechaLlegadaEstimada; }
+
+    public LocalDateTime getFechaArriboSede() { return fechaArriboSede; }
+    public void setFechaArriboSede(LocalDateTime fechaArriboSede) { this.fechaArriboSede = fechaArriboSede; }
 
     public LocalDateTime getFechaLlegadaReal() { return fechaLlegadaReal; }
     public void setFechaLlegadaReal(LocalDateTime fechaLlegadaReal) { this.fechaLlegadaReal = fechaLlegadaReal; }

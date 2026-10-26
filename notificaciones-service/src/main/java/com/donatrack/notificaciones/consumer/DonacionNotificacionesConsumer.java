@@ -1,6 +1,7 @@
 package com.donatrack.notificaciones.consumer;
 
 import com.donatrack.common.events.DonacionAsignadaEvent;
+import com.donatrack.common.events.DonacionRegistradaEvent;
 import com.donatrack.common.events.DonanteInactivoEvent;
 import com.donatrack.common.events.DonanteRegistradoEvent;
 import com.donatrack.notificaciones.service.NotificacionesService;
@@ -25,6 +26,17 @@ public class DonacionNotificacionesConsumer {
         this.objectMapper = objectMapper;
         if (this.objectMapper != null) {
             this.objectMapper.findAndRegisterModules();
+        }
+    }
+
+    @RabbitListener(queues = "${donatrack.rabbitmq.queues.donacion-registrada:q.notificaciones.donacion-registrada}")
+    public void recibirDonacionRegistrada(Object payload) {
+        try {
+            DonacionRegistradaEvent evento = parsearEvento(payload, DonacionRegistradaEvent.class);
+            log.info("Consumidor AMQP: Procesando donacion.registrada para donacion id={}", evento.getIdDonacion());
+            notificacionesService.notificarDonacionRegistrada(evento);
+        } catch (Exception e) {
+            log.error("Error al procesar mensaje de donacion registrada: {}", e.getMessage(), e);
         }
     }
 

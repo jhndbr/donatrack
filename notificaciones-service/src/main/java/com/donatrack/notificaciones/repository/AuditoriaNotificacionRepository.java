@@ -13,6 +13,12 @@ public interface AuditoriaNotificacionRepository extends JpaRepository<Auditoria
 
     List<AuditoriaNotificacion> findByDestinatarioOrderByTimestampDesc(String destinatario);
 
+    List<AuditoriaNotificacion> findByDestinatarioIgnoreCaseOrderByTimestampDesc(String destinatario);
+
+    List<AuditoriaNotificacion> findByDestinatarioIgnoreCaseAndLeidaFalse(String destinatario);
+
+    List<AuditoriaNotificacion> findByLeidaFalse();
+
     List<AuditoriaNotificacion> findByCanalOrderByTimestampDesc(CanalNotificacion canal);
 
     List<AuditoriaNotificacion> findByEstadoOrderByTimestampDesc(EstadoNotificacion estado);
@@ -22,4 +28,8 @@ public interface AuditoriaNotificacionRepository extends JpaRepository<Auditoria
     long countByEstado(EstadoNotificacion estado);
 
     long countByCanal(CanalNotificacion canal);
+
+    long countByDestinatarioIgnoreCaseAndLeidaFalse(String destinatario);
+
+    long countByLeidaFalse();
 }

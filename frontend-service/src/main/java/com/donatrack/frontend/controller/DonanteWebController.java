@@ -376,10 +376,42 @@ public class DonanteWebController {
         List<Map<String, Object>> notificaciones = (emailDonante != null && !emailDonante.isBlank())
                 ? apiClient.listarNotificaciones(emailDonante)
                 : Collections.emptyList();
+        List<Map<String, Object>> listaFinal = notificaciones != null ? notificaciones : Collections.emptyList();
+        long noLeidasEnLista = listaFinal.stream()
+                .filter(n -> !Boolean.TRUE.equals(n.get("leida")))
+                .count();
 
         model.addAttribute("donanteId", resolvedId);
         model.addAttribute("emailDonante", emailDonante);
-        model.addAttribute("notificaciones", notificaciones != null ? notificaciones : Collections.emptyList());
+        model.addAttribute("notificaciones", listaFinal);
+        model.addAttribute("notificacionesNoLeidasVista", noLeidasEnLista);
+        if (noLeidasEnLista > 0) {
+            model.addAttribute("notificacionesNoLeidasCount", noLeidasEnLista);
+        }
         return "donante/notificaciones";
+    }
+
+    @PostMapping("/notificaciones/{id}/leer")
+    public String marcarNotificacionLeida(@PathVariable("id") Long id,
+                                          @RequestParam(value = "donanteId", required = false) Long donanteId,
+                                          RedirectAttributes redirectAttrs) {
+        apiClient.marcarNotificacionLeida(id);
+        redirectAttrs.addFlashAttribute("mensajeExito", "Notificación marcada como leída.");
+        return "redirect:/donante/notificaciones" + (donanteId != null ? "?donanteId=" + donanteId : "");
+    }
+
+    @PostMapping("/notificaciones/leer-todas")
+    public String marcarTodasNotificacionesLeidas(@RequestParam(value = "destinatario", required = false) String destinatario,
+                                                  @RequestParam(value = "donanteId", required = false) Long donanteId,
+                                                  HttpSession session,
+                                                  RedirectAttributes redirectAttrs) {
+        String email = destinatario;
+        if ((email == null || email.isBlank()) && session != null) {
+            UserSession userSession = (UserSession) session.getAttribute(AuthInterceptor.SESSION_USER_KEY);
+            if (userSession != null) email = userSession.getEmail();
+        }
+        apiClient.marcarTodasNotificacionesLeidas(email);
+        redirectAttrs.addFlashAttribute("mensajeExito", "Todas tus notificaciones han sido marcadas como leídas.");
+        return "redirect:/donante/notificaciones" + (donanteId != null ? "?donanteId=" + donanteId : "");
     }
 }

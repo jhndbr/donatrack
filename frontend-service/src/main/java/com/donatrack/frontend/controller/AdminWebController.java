@@ -379,11 +379,36 @@ public class AdminWebController {
                                  @RequestParam(value = "destinatario", required = false) String destinatario) {
         Map<String, Object> estadisticas = apiClient.obtenerEstadisticasNotificaciones();
         List<Map<String, Object>> notificaciones = apiClient.listarNotificaciones(destinatario);
+        List<Map<String, Object>> listaFinal = notificaciones != null ? notificaciones : Collections.emptyList();
+        long noLeidasEnLista = listaFinal.stream()
+                .filter(n -> !Boolean.TRUE.equals(n.get("leida")))
+                .count();
 
         model.addAttribute("estadisticas", estadisticas);
-        model.addAttribute("notificaciones", notificaciones);
+        model.addAttribute("notificaciones", listaFinal);
         model.addAttribute("destinatarioFiltro", destinatario != null ? destinatario : "");
+        model.addAttribute("notificacionesNoLeidasVista", noLeidasEnLista);
+        if (noLeidasEnLista > 0) {
+            model.addAttribute("notificacionesNoLeidasCount", noLeidasEnLista);
+        }
         return "admin/notificaciones";
+    }
+
+    @PostMapping("/notificaciones/{id}/leer")
+    public String marcarNotificacionLeida(@PathVariable("id") Long id,
+                                          @RequestParam(value = "destinatario", required = false) String destinatario,
+                                          RedirectAttributes redirectAttrs) {
+        apiClient.marcarNotificacionLeida(id);
+        redirectAttrs.addFlashAttribute("mensajeExito", "Registro de notificación #" + id + " marcado como leído.");
+        return "redirect:/admin/notificaciones" + (destinatario != null && !destinatario.isBlank() ? "?destinatario=" + destinatario : "");
+    }
+
+    @PostMapping("/notificaciones/leer-todas")
+    public String marcarTodasNotificacionesLeidas(@RequestParam(value = "destinatario", required = false) String destinatario,
+                                                  RedirectAttributes redirectAttrs) {
+        apiClient.marcarTodasNotificacionesLeidas(destinatario);
+        redirectAttrs.addFlashAttribute("mensajeExito", "Todas las notificaciones seleccionadas han sido marcadas como leídas.");
+        return "redirect:/admin/notificaciones" + (destinatario != null && !destinatario.isBlank() ? "?destinatario=" + destinatario : "");
     }
 
     @PostMapping("/notificaciones/test")

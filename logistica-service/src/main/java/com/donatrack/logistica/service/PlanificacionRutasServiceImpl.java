@@ -127,14 +127,9 @@ public class PlanificacionRutasServiceImpl implements PlanificacionRutasService 
                     }
                 }
 
-                Ruta salvada = rutaRepository.save(ruta);
-                if (salvada == null) {
-                    salvada = ruta;
-                }
-                rutasGuardadas.add(salvada);
-
-                // Crear entregas asociadas a la ruta enriqueciendo emails desde donaciones-service
-                for (Parada p : salvada.getParadas()) {
+                // Enriquecer paradas y preparar entregas asociadas a la ruta desde donaciones-service antes de guardar la Ruta
+                List<Entrega> entregasParaGuardar = new ArrayList<>();
+                for (Parada p : ruta.getParadas()) {
                     Long idEntidad = p.getIdEntidadBeneficiaria();
                     String nombreEntidad = p.getNombreEntidad();
                     String emailEntidad = "";
@@ -146,6 +141,13 @@ public class PlanificacionRutasServiceImpl implements PlanificacionRutasService 
                     if (p.getIdDonacion() != null && donacionesServiceClient != null) {
                         Map<String, Object> detalle = donacionesServiceClient.obtenerDetalleDonacion(p.getIdDonacion());
                         if (detalle != null && !detalle.isEmpty()) {
+                            Object cantObj = detalle.get("cantidad");
+                            Object uniObj = detalle.get("unidadMedida");
+                            Object subObj = detalle.get("subcategoria");
+                            if (subObj != null) {
+                                p.setDetalleDonacion((cantObj != null ? cantObj : "") + " " + (uniObj != null ? uniObj : "unidades") + " de " + subObj);
+                            }
+
                             @SuppressWarnings("unchecked")
                             Map<String, Object> donanteMap = (Map<String, Object>) detalle.get("donante");
                             if (donanteMap != null) {
@@ -173,29 +175,51 @@ public class PlanificacionRutasServiceImpl implements PlanificacionRutasService 
                             if (entidadMap != null) {
                                 if (entidadMap.get("id") instanceof Number num) {
                                     idEntidad = num.longValue();
+                                    p.setIdEntidadBeneficiaria(idEntidad);
                                 }
                                 if (entidadMap.get("razonSocial") instanceof String rs && !rs.isBlank()) {
                                     nombreEntidad = rs;
+                                    p.setNombreEntidad(rs);
                                 }
                                 if (entidadMap.get("emailPrincipal") instanceof String em && !em.isBlank()) {
                                     emailEntidad = em;
+                                }
+                                if (entidadMap.get("direccion") instanceof String dir && !dir.isBlank()) {
+                                    p.setDireccion(dir);
+                                }
+                                if (entidadMap.get("latitud") instanceof Number latNum && latNum.doubleValue() != 0.0) {
+                                    p.setLatitud(latNum.doubleValue());
+                                }
+                                if (entidadMap.get("longitud") instanceof Number lonNum && lonNum.doubleValue() != 0.0) {
+                                    p.setLongitud(lonNum.doubleValue());
                                 }
                             }
                         }
                     }
 
                     Entrega entrega = new Entrega(
-                            salvada.getId(),
+                            null,
                             p.getIdDonacion(),
                             idEntidad,
                             nombreEntidad,
                             emailEntidad,
                             idDonante,
                             emailDonante,
-                            salvada.getPatenteCamion()
+                            ruta.getPatenteCamion()
                     );
                     entrega.setCanalPreferidoDonante(canalDonante);
                     entrega.setContactoPreferidoDonante(contactoDonante != null ? contactoDonante : emailDonante);
+                    entregasParaGuardar.add(entrega);
+                }
+
+                Ruta salvada = rutaRepository.save(ruta);
+                if (salvada == null) {
+                    salvada = ruta;
+                }
+                rutasGuardadas.add(salvada);
+
+                for (Entrega entrega : entregasParaGuardar) {
+                    entrega.setIdRuta(salvada.getId());
                     entregaRepository.save(entrega);
                 }
             }

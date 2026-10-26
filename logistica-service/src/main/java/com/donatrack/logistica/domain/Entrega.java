@@ -47,11 +47,22 @@ public class Entrega {
     private String motivoFalla;
     private boolean replanificable = false;
 
+    // --- Contrato Operativo Chofer <-> Receptor de Entidad Beneficiaria ---
+    private String etapaOperativa = "PENDIENTE_RETIRO_DEPOSITO";
+    private boolean confirmadoPorChofer = false;
+    private boolean confirmadoPorEntidad = false;
+    private String reportadoPor;
+    private String etapaFalla;
+    private String observacionesRecepcion;
+    private LocalDateTime fechaRetiroDeposito;
+    private LocalDateTime fechaArriboSede;
+
     private LocalDateTime fechaCreacion = LocalDateTime.now();
     private LocalDateTime fechaActualizacion = LocalDateTime.now();
 
     public Entrega() {
         this.estado = EstadoEntrega.PENDIENTE;
+        this.etapaOperativa = "PENDIENTE_RETIRO_DEPOSITO";
         this.fechaCreacion = LocalDateTime.now();
         this.fechaActualizacion = LocalDateTime.now();
     }
@@ -75,6 +86,25 @@ public class Entrega {
 
     public void marcarEnTraslado() {
         this.estado = EstadoEntrega.EN_TRASLADO;
+        if (this.etapaOperativa == null || "PENDIENTE_RETIRO_DEPOSITO".equals(this.etapaOperativa)) {
+            this.etapaOperativa = "CARGADA_EN_CAMION";
+        }
+        if (this.fechaRetiroDeposito == null) {
+            this.fechaRetiroDeposito = LocalDateTime.now();
+        }
+        this.fechaActualizacion = LocalDateTime.now();
+    }
+
+    public void registrarArriboSede(String observaciones) {
+        if (this.estado == EstadoEntrega.PENDIENTE) {
+            this.estado = EstadoEntrega.EN_TRASLADO;
+        }
+        this.etapaOperativa = "EN_PUERTA_SEDE";
+        this.confirmadoPorChofer = true;
+        this.fechaArriboSede = LocalDateTime.now();
+        if (observaciones != null && !observaciones.isBlank()) {
+            this.observacionesRecepcion = observaciones.trim();
+        }
         this.fechaActualizacion = LocalDateTime.now();
     }
 
@@ -87,11 +117,15 @@ public class Entrega {
             throw new IllegalArgumentException("Es obligatorio adjuntar al menos una fotografía de los bienes recibidos");
         }
         this.estado = EstadoEntrega.ENTREGADA;
+        this.etapaOperativa = "RECEPCION_CONFIRMADA";
+        this.confirmadoPorChofer = true;
+        this.confirmadoPorEntidad = true;
         this.fotosConfirmacionUrls.clear();
         this.fotosConfirmacionUrls.addAll(fotosUrls);
         if (receptorNombre != null) this.receptorNombre = receptorNombre;
         if (receptorDni != null) this.receptorDni = receptorDni;
         if (firmaDigitalUrl != null) this.firmaDigitalUrl = firmaDigitalUrl;
+        if (this.fechaArriboSede == null) this.fechaArriboSede = LocalDateTime.now();
         this.fechaActualizacion = LocalDateTime.now();
     }
 
@@ -104,6 +138,7 @@ public class Entrega {
             throw new IllegalArgumentException("El motivo o justificación de fallo es estrictamente obligatorio");
         }
         this.estado = EstadoEntrega.NO_RECIBIDA;
+        this.etapaOperativa = "INCIDENCIA_REGISTRADA";
         this.motivoFalla = motivo.trim();
         this.replanificable = replanificable;
         this.fechaActualizacion = LocalDateTime.now();
@@ -115,6 +150,9 @@ public class Entrega {
      */
     public void replanificar(String motivoReplanificacion) {
         this.estado = EstadoEntrega.PENDIENTE;
+        this.etapaOperativa = "PENDIENTE_RETIRO_DEPOSITO";
+        this.confirmadoPorChofer = false;
+        this.confirmadoPorEntidad = false;
         this.replanificable = false;
         this.motivoFalla = motivoReplanificacion != null ? "Replanificada tras incidencia: " + motivoReplanificacion : "Replanificada";
         this.fechaActualizacion = LocalDateTime.now();
@@ -175,6 +213,30 @@ public class Entrega {
 
     public boolean isReplanificable() { return replanificable; }
     public void setReplanificable(boolean replanificable) { this.replanificable = replanificable; }
+
+    public String getEtapaOperativa() { return etapaOperativa; }
+    public void setEtapaOperativa(String etapaOperativa) { this.etapaOperativa = etapaOperativa; }
+
+    public boolean isConfirmadoPorChofer() { return confirmadoPorChofer; }
+    public void setConfirmadoPorChofer(boolean confirmadoPorChofer) { this.confirmadoPorChofer = confirmadoPorChofer; }
+
+    public boolean isConfirmadoPorEntidad() { return confirmadoPorEntidad; }
+    public void setConfirmadoPorEntidad(boolean confirmadoPorEntidad) { this.confirmadoPorEntidad = confirmadoPorEntidad; }
+
+    public String getReportadoPor() { return reportadoPor; }
+    public void setReportadoPor(String reportadoPor) { this.reportadoPor = reportadoPor; }
+
+    public String getEtapaFalla() { return etapaFalla; }
+    public void setEtapaFalla(String etapaFalla) { this.etapaFalla = etapaFalla; }
+
+    public String getObservacionesRecepcion() { return observacionesRecepcion; }
+    public void setObservacionesRecepcion(String observacionesRecepcion) { this.observacionesRecepcion = observacionesRecepcion; }
+
+    public LocalDateTime getFechaRetiroDeposito() { return fechaRetiroDeposito; }
+    public void setFechaRetiroDeposito(LocalDateTime fechaRetiroDeposito) { this.fechaRetiroDeposito = fechaRetiroDeposito; }
+
+    public LocalDateTime getFechaArriboSede() { return fechaArriboSede; }
+    public void setFechaArriboSede(LocalDateTime fechaArriboSede) { this.fechaArriboSede = fechaArriboSede; }
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }

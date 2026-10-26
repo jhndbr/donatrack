@@ -41,6 +41,12 @@ public class AuditoriaNotificacion {
 
     private int intentos = 1;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean leida = false;
+
+    @Column(name = "fecha_lectura")
+    private LocalDateTime fechaLectura;
+
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
@@ -87,6 +93,17 @@ public class AuditoriaNotificacion {
 
     public int getIntentos() { return intentos; }
     public void setIntentos(int intentos) { this.intentos = intentos; }
+
+    public boolean isLeida() { return leida; }
+    public void setLeida(boolean leida) { this.leida = leida; }
+
+    public LocalDateTime getFechaLectura() { return fechaLectura; }
+    public void setFechaLectura(LocalDateTime fechaLectura) { this.fechaLectura = fechaLectura; }
+
+    public void marcarComoLeida() {
+        this.leida = true;
+        this.fechaLectura = LocalDateTime.now();
+    }
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }

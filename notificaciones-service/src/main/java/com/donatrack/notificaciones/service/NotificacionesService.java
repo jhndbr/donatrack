@@ -111,6 +111,37 @@ public class NotificacionesService {
     }
 
     /**
+     * Notificar registro inicial de donación en depósito (EN_DEPOSITO).
+     */
+    public void notificarDonacionRegistrada(DonacionRegistradaEvent evento) {
+        if (evento == null) return;
+        log.info("Notificaciones: Procesando donacion.registrada idDonacion={}", evento.getIdDonacion());
+
+        CanalNotificacion canalDonante = resolverCanal(evento.getCanalPreferido());
+        String destDonante = resolverDestinatario(canalDonante, evento.getContactoPreferido(), evento.getEmailDonante());
+        if (destDonante == null || destDonante.isBlank()) return;
+
+        String clave = "notif-donacion-registrada-donante-" + evento.getIdDonacion() + "-" + evento.getIdDonante();
+        String asunto = "¡Hemos registrado tu donación en DonaTrack!";
+        Map<String, String> detalles = new LinkedHashMap<>();
+        detalles.put("Código de Donación", "#" + evento.getIdDonacion());
+        detalles.put("Bienes Registrados", String.format("%.2f %s de %s", evento.getCantidad(), evento.getUnidadMedida(), evento.getSubcategoria()));
+        detalles.put("Estado Actual", "EN_DEPOSITO (Pendiente de asignación o en proceso de emparejamiento)");
+
+        String contenido = formatearContenido(
+                canalDonante,
+                asunto,
+                "¡Muchas gracias por tu solidaridad, " + evento.getNombreDonante() + "!",
+                "Hemos registrado tu donación en nuestro sistema. Te notificaremos apenas sea asignada a una entidad beneficiaria y cuando inicie su recorrido de entrega.",
+                detalles,
+                "Consultar Estado de Mis Donaciones",
+                frontendBaseUrl + "/donante/donaciones"
+        );
+
+        despacharConAuditoria(clave, "DONACION_REGISTRADA", canalDonante, destDonante, asunto, contenido);
+    }
+
+    /**
      * CU-58: Notificar asignación de donación a donante y entidad beneficiaria.
      */
     public void notificarDonacionAsignada(DonacionAsignadaEvent evento) {

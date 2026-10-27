@@ -130,15 +130,20 @@ public class IncentivosService {
 
     @Transactional
     public PerfilDonanteIncentivo obtenerOCrearPerfil(Long idDonante, String nombre, String email) {
-        return perfilRepository.findByIdDonante(idDonante)
-                .orElseGet(() -> {
-                    String nombreFinal = (nombre != null && !nombre.isBlank()) ? nombre : "Donante " + idDonante;
-                    String emailFinal = (email != null && !email.isBlank()) ? email : "donante" + idDonante + "@donatrack.org";
-                    PerfilDonanteIncentivo nuevo = new PerfilDonanteIncentivo(idDonante, nombreFinal, emailFinal);
-                    perfilRepository.save(nuevo);
-                    inicializarMisionesParaDonante(idDonante, CategoriaDonante.COLABORADOR);
-                    return nuevo;
-                });
+        Optional<PerfilDonanteIncentivo> existing = perfilRepository.findByIdDonante(idDonante);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        try {
+            String nombreFinal = (nombre != null && !nombre.isBlank()) ? nombre : "Donante " + idDonante;
+            String emailFinal = (email != null && !email.isBlank()) ? email : "donante" + idDonante + "@donatrack.org";
+            PerfilDonanteIncentivo nuevo = new PerfilDonanteIncentivo(idDonante, nombreFinal, emailFinal);
+            perfilRepository.save(nuevo);
+            inicializarMisionesParaDonante(idDonante, CategoriaDonante.COLABORADOR);
+            return nuevo;
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return perfilRepository.findByIdDonante(idDonante).orElse(null);
+        }
     }
 
     private void inicializarMisionesParaDonante(Long idDonante, CategoriaDonante categoria) {
@@ -291,14 +296,13 @@ public class IncentivosService {
     /**
      * CU-47: Consulta y cálculo de métricas de actividad y analítica avanzada para el donante.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> obtenerAnaliticaDonante(Long idDonante) {
-        Optional<PerfilDonanteIncentivo> perfilOpt = perfilRepository.findByIdDonante(idDonante);
-        if (perfilOpt.isEmpty()) {
+        PerfilDonanteIncentivo perfil = obtenerOCrearPerfil(idDonante, null, null);
+        if (perfil == null) {
             return Collections.emptyMap();
         }
 
-        PerfilDonanteIncentivo perfil = perfilOpt.get();
         List<ProgresoMision> completadas = progresoRepository.findByIdDonanteAndCompletadaTrue(idDonante);
 
         LocalDate ahora = LocalDate.now();

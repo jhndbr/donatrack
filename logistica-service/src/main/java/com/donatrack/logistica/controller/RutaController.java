@@ -54,9 +54,9 @@ public class RutaController {
     }
 
     /**
-     * Disparo bajo demanda de la planificación automática de rutas sobre todas las donaciones en ASIGNACION_REALIZADA (Modo Demo / Operativo).
+     * Disparo bajo demanda de la planificación automática de rutas sobre todas las donaciones en ASIGNACION_REALIZADA (Modo Demo / Operativo / REST Spec).
      */
-    @PostMapping("/planificar-pendientes")
+    @PostMapping({"/planificar-pendientes", "/planificaciones"})
     public ResponseEntity<Map<String, Object>> planificarPendientesAhora() {
         if (planificacionRutasService != null) {
             planificacionRutasService.ejecutarPlanificacionNocturna();
@@ -65,6 +65,19 @@ public class RutaController {
                 "status", "EJECUTADO",
                 "totalRutas", rutaRepository.count()
         ));
+    }
+
+    @GetMapping("/planificaciones/{id}")
+    public ResponseEntity<Map<String, Object>> consultarPlanificacion(@PathVariable("id") String id) {
+        return rutaRepository.findById(id)
+                .map(r -> ResponseEntity.ok(Map.<String, Object>of(
+                        "status", "COMPLETADO",
+                        "idRuta", r.getId(),
+                        "estado", r.getEstado().name(),
+                        "patenteCamion", r.getPatenteCamion() != null ? r.getPatenteCamion() : "",
+                        "paradasCount", r.getParadas() != null ? r.getParadas().size() : 0
+                )))
+                .orElse(ResponseEntity.ok(Map.of("status", "NO_ENCONTRADO", "id", id)));
     }
 
     /**

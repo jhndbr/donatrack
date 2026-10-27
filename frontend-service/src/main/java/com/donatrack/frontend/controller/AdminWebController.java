@@ -232,7 +232,7 @@ public class AdminWebController {
         java.util.List<Map<String, Object>> mediosContacto = new java.util.ArrayList<>();
         mediosContacto.add(Map.of("tipo", "EMAIL", "valor", email, "esPredeterminado", true));
         if (telefono != null && !telefono.trim().isEmpty()) {
-            mediosContacto.add(Map.of("tipo", "TELEFONO", "valor", telefono.trim(), "esPredeterminado", false));
+            mediosContacto.add(Map.of("tipo", "SMS", "valor", telefono.trim(), "esPredeterminado", false));
         }
         String dirFinal = (direccion != null && !direccion.isBlank()) ? direccion.trim() : "Sin dirección";
 
@@ -343,6 +343,7 @@ public class AdminWebController {
     public String reingresarDonacion(@PathVariable("id") Long id,
                                      @RequestParam(value = "motivo", defaultValue = "Reingreso físico a depósito tras entrega fallida") String motivo,
                                      org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttrs) {
+        apiClient.replanificarEntregaPorDonacion(id, motivo);
         boolean ok = apiClient.actualizarEstadoDonacion(id, "EN_DEPOSITO", motivo);
         if (ok) {
             redirectAttrs.addFlashAttribute("mensajeExito", "Donación DON-" + String.format("%04d", id) + " reingresada exitosamente a depósito (CU-45).");
@@ -379,7 +380,7 @@ public class AdminWebController {
                                  @RequestParam(value = "destinatario", required = false) String destinatario) {
         Map<String, Object> estadisticas = apiClient.obtenerEstadisticasNotificaciones();
         List<Map<String, Object>> notificaciones = apiClient.listarNotificaciones(destinatario);
-        List<Map<String, Object>> listaFinal = notificaciones != null ? notificaciones : Collections.emptyList();
+        List<Map<String, Object>> listaFinal = notificaciones != null ? notificaciones : List.of();
         long noLeidasEnLista = listaFinal.stream()
                 .filter(n -> !Boolean.TRUE.equals(n.get("leida")))
                 .count();

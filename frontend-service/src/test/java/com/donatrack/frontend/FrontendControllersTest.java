@@ -13,7 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -259,6 +259,7 @@ class FrontendControllersTest {
         UserSession session = new UserSession("comedor1", "Comedor Esperanza", "comedor@test.com", "ROLE_BENEFICIARIA");
         session.setEntidadId(1L);
 
+        when(apiClientService.confirmarEntregaPorDonacion(eq(1L), any(), any(), any(), any(), any())).thenReturn(true);
         when(apiClientService.entregarDonacion(any(), any())).thenReturn(true);
 
         mockMvc.perform(post("/beneficiaria/confirmar")
@@ -978,6 +979,165 @@ class FrontendControllersTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/camiones"))
                 .andExpect(flash().attributeExists("mensajeExito"));
+    }
+
+    @Test
+    @DisplayName("Flujo Chofer: Arribo en puerta, Confirmar con fotos, Fallida y Comprobante JSON")
+    void testFlujoCompletoChoferLlegadaYConfirmacion() throws Exception {
+        UserSession choferSession = new UserSession("chofer1", "Carlos Chofer", "chofer@donatrack.org", "ROLE_CHOFER");
+
+        when(apiClientService.registrarArriboSedePorDonacion(eq(100L), any())).thenReturn(true);
+        when(apiClientService.confirmarEntregaPorDonacion(eq(100L), any(), any(), any(), any())).thenReturn(true);
+        when(apiClientService.registrarEntregaFallidaPorDonacion(eq(100L), any(), anyBoolean())).thenReturn(true);
+        when(apiClientService.obtenerComprobanteEntregaPorDonacion(100L)).thenReturn(Map.of(
+                "idDonacion", 100L,
+                "estado", "ENTREGADA",
+                "nombreEntidad", "Comedor San José",
+                "patenteCamion", "AE789XY",
+                "receptorNombre", "Laura Gómez"
+        ));
+        when(apiClientService.finalizarRuta("RUTA-1")).thenReturn(true);
+
+        // 1. Arribo en puerta
+        mockMvc.perform(post("/chofer/entregas/100/arribo")
+                        .param("rutaId", "RUTA-1")
+                        .param("observaciones", "En rampa de descarga")
+                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, choferSession))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/chofer?rutaId=RUTA-1"))
+                .andExpect(flash().attributeExists("mensajeExito"));
+
+        // 2. Confirmación acta conjunta chofer + receptor
+        mockMvc.perform(post("/chofer/entregas/100/confirmar")
+                        .param("rutaId", "RUTA-1")
+                        .param("receptorNombre", "Laura Gómez")
+                        .param("receptorDni", "30111222")
+                        .param("fotoUrl", "https://img.test/entrega.jpg")
+                        .param("observaciones", "Recepción conforme")
+                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, choferSession))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/chofer?rutaId=RUTA-1"))
+                .andExpect(flash().attributeExists("mensajeExito"));
+
+        // 3. Consulta de comprobante digital JSON
+        mockMvc.perform(get("/chofer/comprobante/donacion/100")
+                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, choferSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.idDonacion").value(100))
+                .andExpect(jsonPath("$.estado").value("ENTREGADA"))
+                .andExpect(jsonPath("$.receptorNombre").value("Laura Gómez"));
+
+        // 4. Incidencia / Falla
+        mockMvc.perform(post("/chofer/entregas/100/fallida")
+                        .param("rutaId", "RUTA-1")
+                        .param("motivo", "Sede cerrada")
+                        .param("etapaFalla", "EN_PUERTA_SEDE")
+                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, choferSession))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/chofer?rutaId=RUTA-1"))
+                .andExpect(flash().attributeExists("mensajeExito"));
+
+        // 5. Finalizar ruta
+        mockMvc.perform(post("/chofer/rutas/RUTA-1/finalizar")
+                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, choferSession))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/chofer?rutaId=RUTA-1"))
+                .andExpect(flash().attributeExists("mensajeExito"));
+    }
+
+    @Test
+    @DisplayName("Flujo Entidad Beneficiaria: Alerta En Puerta en Dashboard, Confirmar con fotos, Fallida y Comprobante JSON")
+    void testFlujoCompletoBeneficiariaRecepcionYComprobante() throws Exception {
+        UserSession benefSession = new UserSession("comedor_esperanza", "Comedor Esperanza", "esperanza@comedor.org", "ROLE_BENEFICIARIA");
+        benefSession.setEntidadId(5L);
+
+        when(apiClientService.listarEntidades()).thenReturn(List.of(
+                Map.of("id", 5L, "razonSocial", "Comedor Esperanza")
+        ));
+        when(apiClientService.listarDonaciones(any())).thenReturn(List.of(
+                Map.of("id", 200L, "subcategoria", "Fideos", "cantidad", 30, "unidadMedida", "KG", "estado", "EN_TRASLADO",
+                        "entidadAsignada", Map.of("id", 5L))
+        ));
+        when(apiClientService.listarRutas()).thenReturn(List.of(
+                Map.of("id", "RUTA-05", "paradas", List.of(
+                        Map.of("idDonacion", 200L, "estadoParada", "EN_PUERTA_SEDE")
+                ))
+        ));
+
+        when(apiClientService.confirmarEntregaPorDonacion(eq(200L), any(), any(), any(), any(), eq(5L))).thenReturn(true);
+        when(apiClientService.registrarEntregaFallidaPorDonacion(eq(200L), any(), anyBoolean())).thenReturn(true);
+        when(apiClientService.obtenerComprobanteEntregaPorDonacion(200L)).thenReturn(Map.of(
+                "idDonacion", 200L,
+                "estado", "ENTREGADA",
+                "nombreEntidad", "Comedor Esperanza",
+                "patenteCamion", "AE789XY",
+                "receptorNombre", "Marta López"
+        ));
+
+        // 1. Dashboard con aviso destacado de donación EN_PUERTA_SEDE
+        mockMvc.perform(get("/beneficiaria").sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, benefSession))
+                .andExpect(status().isOk())
+                .andExpect(view().name("beneficiaria/dashboard"))
+                .andExpect(model().attributeExists("donacionesEnPuerta"))
+                .andExpect(model().attributeExists("estadoParadaPorDonacion"));
+
+        // 2. Confirmación formal con fotos por parte del comedor
+        mockMvc.perform(post("/beneficiaria/confirmar")
+                        .param("entidadId", "5")
+                        .param("donacionId", "200")
+                        .param("receptorNombre", "Marta López")
+                        .param("receptorDni", "28333444")
+                        .param("fotoUrl", "https://img.test/recibido.jpg")
+                        .param("observaciones", "Insumos en excelente estado")
+                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, benefSession))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/beneficiaria?entidadId=5"))
+                .andExpect(flash().attributeExists("mensajeExito"));
+
+        // 3. Consulta de comprobante digital JSON
+        mockMvc.perform(get("/beneficiaria/comprobante/donacion/200")
+                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, benefSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.idDonacion").value(200))
+                .andExpect(jsonPath("$.estado").value("ENTREGADA"))
+                .andExpect(jsonPath("$.receptorNombre").value("Marta López"));
+
+        // 4. Reporte de entrega fallida
+        mockMvc.perform(post("/beneficiaria/fallida")
+                        .param("entidadId", "5")
+                        .param("donacionId", "200")
+                        .param("motivo", "Mercadería vencida")
+                        .param("replanificable", "true")
+                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, benefSession))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/beneficiaria"))
+                .andExpect(flash().attributeExists("mensajeExito"));
+    }
+
+    @Test
+    void testConfirmarRecepcionFallaCuandoChoferNoEstaEnPuerta() throws Exception {
+        UserSession benefSession = new UserSession("comedor_esperanza", "Comedor Esperanza", "esperanza@comedor.org", "ROLE_BENEFICIARIA");
+        benefSession.setEntidadId(5L);
+
+        when(apiClientService.listarEntidades()).thenReturn(List.of(
+                Map.of("id", 5L, "razonSocial", "Comedor Esperanza")
+        ));
+        when(apiClientService.listarDonaciones(any())).thenReturn(List.of(
+                Map.of("id", 201L, "subcategoria", "Leche", "cantidad", 10, "unidadMedida", "L", "estado", "EN_TRASLADO",
+                        "entidadAsignada", Map.of("id", 5L))
+        ));
+        when(apiClientService.confirmarEntregaPorDonacion(eq(201L), any(), any(), any(), any(), eq(5L))).thenReturn(false);
+
+        mockMvc.perform(post("/beneficiaria/confirmar")
+                        .param("entidadId", "5")
+                        .param("donacionId", "201")
+                        .param("receptorNombre", "Marta López")
+                        .param("receptorDni", "28333444")
+                        .param("fotoUrl", "https://img.test/recibido.jpg")
+                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, benefSession))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/beneficiaria?entidadId=5"))
+                .andExpect(flash().attributeExists("mensajeError"));
     }
 }
 

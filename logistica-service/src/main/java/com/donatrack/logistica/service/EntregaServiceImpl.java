@@ -161,6 +161,21 @@ public class EntregaServiceImpl implements EntregaService {
         entrega.registrarArriboSede(observaciones);
         Entrega guardada = entregaRepository.save(entrega);
         sincronizarParadaEnRuta(guardada, "EN_PUERTA_SEDE", observaciones);
+
+        // Notificar a la entidad beneficiaria que el camión arribó a la puerta
+        String linkConfirmar = "http://localhost:8086/beneficiaria/confirmar?donacionId=" + guardada.getIdDonacion();
+        com.donatrack.common.events.CamionEnPuertaEvent evento = new com.donatrack.common.events.CamionEnPuertaEvent(
+                guardada.getId(),
+                guardada.getIdDonacion(),
+                guardada.getIdEntidadBeneficiaria(),
+                guardada.getNombreEntidad(),
+                guardada.getEmailEntidad(),
+                guardada.getPatenteCamion(),
+                observaciones,
+                linkConfirmar
+        );
+        eventPublisher.publicarCamionEnPuerta(evento);
+
         log.info("Arribo en puerta de sede registrado por chofer para entrega {} (donación {})", idEntrega, entrega.getIdDonacion());
         return guardada;
     }
@@ -169,6 +184,27 @@ public class EntregaServiceImpl implements EntregaService {
     public Entrega confirmarEntrega(String idEntrega, ConfirmarEntregaRequestDto request) {
         Entrega entrega = obtenerPorId(idEntrega);
         enriquecerEmailsSiFaltan(entrega);
+
+        // Validación de autorización: Una entidad no puede confirmar entregas asignadas a otra entidad
+        if (request.idEntidadBeneficiaria() != null && entrega.getIdEntidadBeneficiaria() != null) {
+            if (!request.idEntidadBeneficiaria().equals(entrega.getIdEntidadBeneficiaria())) {
+                throw new com.donatrack.logistica.exception.ConflictException("La entidad #" + request.idEntidadBeneficiaria()
+                        + " no está autorizada para confirmar la entrega asignada a la entidad #" + entrega.getIdEntidadBeneficiaria());
+            }
+
+            // Regla de Negocio: La entidad receptora únicamente puede confirmar cuando el camión se encuentra en puerta
+            if (!"EN_PUERTA_SEDE".equals(entrega.getEtapaOperativa()) && entrega.getEstado() != Entrega.EstadoEntrega.ENTREGADA) {
+                throw new com.donatrack.logistica.exception.ConflictException(
+                        "La entrega aún no ha sido notificada en puerta por el chofer. " +
+                        "La entidad beneficiaria únicamente puede confirmar la recepción cuando el vehículo se encuentra físicamente en puerta de la sede.");
+            }
+        }
+
+        // Idempotencia: Si ya fue confirmada previamente, retornar el recurso persistido sin duplicar eventos
+        if (entrega.getEstado() == Entrega.EstadoEntrega.ENTREGADA) {
+            log.info("La entrega {} ya se encuentra confirmada como ENTREGADA (idempotencia activa).", idEntrega);
+            return entrega;
+        }
 
         // Validación y registro en dominio (CU-43)
         entrega.confirmarRecepcion(
@@ -217,6 +253,12 @@ public class EntregaServiceImpl implements EntregaService {
     public Entrega registrarEntregaFallida(String idEntrega, EntregaFallidaRequestDto request) {
         Entrega entrega = obtenerPorId(idEntrega);
         enriquecerEmailsSiFaltan(entrega);
+
+        // Idempotencia: Si ya fue registrada como NO_RECIBIDA, retornar sin re-emitir eventos
+        if (entrega.getEstado() == Entrega.EstadoEntrega.NO_RECIBIDA) {
+            log.info("La entrega {} ya fue registrada previamente como no recibida (idempotencia activa).", idEntrega);
+            return entrega;
+        }
 
         // Validación estricta y registro en dominio (CU-44)
         entrega.registrarNoRecibida(request.motivo(), request.replanificable());
@@ -281,6 +323,35 @@ public class EntregaServiceImpl implements EntregaService {
     }
 
     @Override
+    public Entrega replanificarEntregaPorDonacion(Long idDonacion, ReplanificarRequestDto request) {
+        Entrega entrega = entregaRepository.findByIdDonacion(idDonacion)
+                .orElseThrow(() -> new ResourceNotFoundException("Entrega no encontrada para donación: " + idDonacion));
+        return replanificarEntrega(entrega.getId(), request);
+    }
+
+    @Override
+    public Entrega agregarEvidencias(String idEntrega, List<String> fotos) {
+        if (fotos == null || fotos.isEmpty() || fotos.stream().allMatch(String::isBlank)) {
+            throw new IllegalArgumentException("Debe proporcionar al menos una URL de evidencia válida");
+        }
+        Entrega entrega = obtenerPorId(idEntrega);
+        entrega.agregarEvidencias(fotos);
+        return entregaRepository.save(entrega);
+    }
+
+    @Override
+    public Entrega agregarEvidenciasPorDonacion(Long idDonacion, List<String> fotos) {
+        Entrega entrega = entregaRepository.findByIdDonacion(idDonacion)
+                .orElseThrow(() -> new ResourceNotFoundException("Entrega no encontrada para donación: " + idDonacion));
+        return agregarEvidencias(entrega.getId(), fotos);
+    }
+
+    @Override
+    public List<Entrega> listarTodas() {
+        return entregaRepository.findAll();
+    }
+
+    @Override
     public ComprobanteEntregaDto obtenerComprobante(String idEntrega) {
         Entrega entrega = obtenerPorId(idEntrega);
         return new ComprobanteEntregaDto(
@@ -296,6 +367,19 @@ public class EntregaServiceImpl implements EntregaService {
                 entrega.getFechaActualizacion(),
                 entrega.getEstado().name()
         );
+    }
+
+    @Override
+    public ComprobanteEntregaDto obtenerComprobantePorDonacion(Long idDonacion) {
+        Entrega entrega = entregaRepository.findByIdDonacion(idDonacion)
+                .orElseThrow(() -> new ResourceNotFoundException("Entrega no encontrada para donación: " + idDonacion));
+        return obtenerComprobante(entrega.getId());
+    }
+
+    @Override
+    public Entrega obtenerPorDonacion(Long idDonacion) {
+        return entregaRepository.findByIdDonacion(idDonacion)
+                .orElseThrow(() -> new ResourceNotFoundException("Entrega no encontrada para donación: " + idDonacion));
     }
 
     @Override

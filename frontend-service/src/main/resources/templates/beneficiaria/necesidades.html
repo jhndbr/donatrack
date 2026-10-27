@@ -10,32 +10,38 @@
             <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clipboard-list text-primary me-2"></i>Registrar Necesidad Material Concreta</h2>
             <p class="text-secondary">Indica los recursos que tu entidad requiere para ser priorizada en el algoritmo de Matchmaking.</p>
         </div>
-        <a href="/beneficiaria" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver al Panel</a>
+        <a th:href="@{/beneficiaria(entidadId=${entidadId})}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver al Panel</a>
     </div>
 
-    <!-- Alertas -->
-    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+    <!-- Alertas de Éxito y Error -->
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0" role="alert">
         <i class="fa-solid fa-check-circle me-2"></i><span th:text="${mensajeExito}">Éxito</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${mensajeError}">Error</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
     <div class="row">
-        <div class="col-md-8 mx-auto">
+        <div class="col-lg-10 mx-auto">
             <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
-                <form action="/beneficiaria/necesidades" method="post">
+                <form id="formRegistrarNecesidad" action="/beneficiaria/necesidades" method="post">
+                    <input type="hidden" name="redirectTo" value="/beneficiaria/necesidades">
+
                     <!-- Entidad Solicitante: Solo modificable por Administrador -->
                     <div class="mb-3" th:if="${session.userSession != null and session.userSession.isAdmin()}">
                         <label class="form-label fw-semibold"><i class="fa-solid fa-building me-1 text-primary"></i>Entidad Beneficiaria (Modo Administrador)</label>
-                        <select name="entidadId" class="form-select" required>
+                        <select name="entidadId" class="form-select" required onchange="window.location.href='/beneficiaria/necesidades?entidadId=' + this.value">
                             <option th:each="ent : ${entidades}" th:value="${ent.id}" th:selected="${ent.id == entidadId}" th:text="${ent.razonSocial + ' (ID #' + ent.id + ')'}">Comedor Los Chicos</option>
                         </select>
-                        <small class="text-muted">Como administrador central, puedes registrar necesidades para cualquier sede.</small>
+                        <small class="text-muted">Como administrador central, puedes registrar y auditar necesidades para cualquier sede.</small>
                     </div>
                     <div class="mb-3" th:unless="${session.userSession != null and session.userSession.isAdmin()}">
                         <label class="form-label fw-semibold"><i class="fa-solid fa-building me-1 text-primary"></i>Entidad Beneficiaria Solicitante</label>
                         <div class="p-2 px-3 bg-light border rounded-3 d-flex align-items-center">
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-2">Tu Sede</span>
-                            <span class="fw-bold text-dark fs-6" th:text="${nombreEntidad}">comerdor 444</span>
+                            <span class="fw-bold text-dark fs-6" th:text="${nombreEntidad}">Comedor Comunitario</span>
                             <input type="hidden" name="entidadId" th:value="${entidadId}">
                         </div>
                         <small class="text-muted">Las necesidades de recursos se asignan exclusivamente a tu sede comunitaria.</small>
@@ -44,42 +50,58 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Subcategoría (Unidad Mínima)</label>
-                            <input type="text" name="subcategoria" class="form-control" placeholder="Ej. arroz, fideos, leche, frazadas" required>
-                            <small class="text-muted">Debe coincidir semánticamente con las donaciones.</small>
+                            <input type="text" name="subcategoria" id="inputSubcategoria" list="subcategoriasDatalist"
+                                   class="form-control" placeholder="Ej. arroz, fideos, leche, frazadas" required autocomplete="off">
+                            <datalist id="subcategoriasDatalist">
+                                <option th:each="sug : ${subcategoriasSugeridas}" th:value="${sug}"></option>
+                            </datalist>
+                            <small class="text-muted">
+                                <i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i>Debe coincidir semánticamente con las donaciones (selecciona una sugerencia o escribe la subcategoría).
+                            </small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Tipo de Necesidad</label>
-                            <select name="tipo" class="form-select" required>
-                                <option value="EXTRAORDINARIA">Extraordinaria (Alta Urgencia / Emergencia)</option>
-                                <option value="RECURRENTE">Recurrente (Periódica)</option>
+                            <select name="tipo" id="selectTipoNecesidad" class="form-select" required onchange="actualizarEstadoPeriodicidad()">
+                                <option value="EXTRAORDINARIA" selected>Extraordinaria (Alta Urgencia / Emergencia Puntual)</option>
+                                <option value="RECURRENTE">Recurrente (Se renueva periódicamente)</option>
                             </select>
+                            <small class="text-muted">Las necesidades extraordinarias tienen prioridad de urgencia; las recurrentes se renuevan según su ciclo.</small>
                         </div>
                     </div>
 
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Cantidad Solicitada</label>
-                            <input type="number" step="0.1" name="cantidadSolicitada" class="form-control" placeholder="50.0" required>
+                            <input type="number" step="0.1" min="0.1" name="cantidadSolicitada" id="inputCantidadSolicitada" class="form-control" placeholder="50.0" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Unidad de Medida</label>
-                            <select name="unidadMedida" class="form-select" required>
+                            <select name="unidadMedida" id="selectUnidadMedida" class="form-select" required>
                                 <option value="kg">Kilogramos (kg)</option>
                                 <option value="litros">Litros</option>
                                 <option value="unidades">Unidades</option>
                                 <option value="paquetes">Paquetes</option>
+                                <option value="cajas">Cajas</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Periodicidad (Solo si es Recurrente)</label>
-                        <input type="text" name="periodo" class="form-control" placeholder="Ej. SEMANAL, MENSUAL">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                Periodicidad
+                                <span id="badgePeriodicidadEstado" class="badge bg-secondary-subtle text-secondary ms-1">Inactivo (Extraordinaria)</span>
+                            </label>
+                            <select name="periodo" id="selectPeriodoNecesidad" class="form-select bg-light" disabled>
+                                <option value="" id="optNoAplica">-- No aplica en Extraordinaria --</option>
+                                <option th:each="per : ${periodosPermitidos}"
+                                        th:value="${per.name()}"
+                                        th:text="${per.name() + ' - ' + per.etiqueta}">SEMANAL - Semanal (Cada 7 días)</option>
+                            </select>
+                            <small class="text-muted" id="helpPeriodicidad">Se activa únicamente al elegir tipo <strong>Recurrente</strong>.</small>
+                        </div>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Descripción Detallada</label>
-                        <textarea name="descripcion" class="form-control" rows="3" placeholder="Detalle el destino o motivo del recurso solicitado..." required></textarea>
+                        <textarea name="descripcion" id="inputDescripcionNecesidad" class="form-control" rows="3" placeholder="Detalle el destino o motivo del recurso solicitado..." required></textarea>
                     </div>
 
                     <div class="d-grid">
@@ -90,48 +112,186 @@
                 </form>
             </div>
 
-            <!-- Tabla de Necesidades Registradas con Edición y Baja -->
+            <!-- Tabla de Necesidades Registradas con Edición, Cuadro de Confirmación y Baja -->
             <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mt-4">
-                <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>Necesidades Materiales Registradas</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check text-primary me-2"></i>Necesidades Materiales Registradas</h5>
+                    <span class="badge bg-light text-dark border" th:text="${#lists.size(necesidades) + ' activa(s)'}">0 activas</span>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
+                                <th>ID</th>
                                 <th>Subcategoría</th>
-                                <th>Tipo</th>
-                                <th>Solicitado</th>
+                                <th>Tipo y Periodicidad</th>
+                                <th>Solicitado / Cubierto</th>
                                 <th>Descripción</th>
-                                <th class="text-end">Acciones</th>
+                                <th class="text-end">Actualizar / Gestionar</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:if="${#lists.isEmpty(necesidades)}">
-                                <td colspan="5" class="text-center text-muted py-3">No hay necesidades materiales activas registradas aún.</td>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="fa-solid fa-clipboard-question fs-3 d-block mb-2 text-secondary"></i>
+                                    No hay necesidades materiales activas registradas aún para esta sede.
+                                </td>
                             </tr>
                             <tr th:each="n : ${necesidades}">
-                                <td><span class="badge bg-primary-subtle text-primary" th:text="${n.subcategoria}">arroz</span></td>
-                                <td><span class="badge bg-light text-dark border" th:text="${n.tipo}">EXTRAORDINARIA</span></td>
-                                <td th:text="${n.cantidadSolicitada} + ' ' + ${n.unidadMedida}">50.0 kg</td>
-                                <td class="small text-muted" th:text="${n.descripcion}">Detalle</td>
+                                <td class="small font-monospace text-muted" th:text="${'#' + n.id}">#1</td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary fs-6" th:text="${n.subcategoria}">arroz</span>
+                                </td>
+                                <td>
+                                    <span th:class="'badge ' + (${n.tipo == 'EXTRAORDINARIA'} ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-info-subtle text-info border border-info-subtle')"
+                                          th:text="${n.tipo}">EXTRAORDINARIA</span>
+                                    <div th:if="${n.tipo == 'RECURRENTE' and n.periodo != null and !#strings.isEmpty(n.periodo)}" class="mt-1">
+                                        <span class="badge bg-light text-dark border small">
+                                            <i class="fa-solid fa-rotate me-1 text-primary"></i><span th:text="${n.periodo}">SEMANAL</span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark" th:text="${n.cantidadSolicitada + ' ' + n.unidadMedida}">50.0 kg</div>
+                                    <small class="text-success" th:if="${n.cantidadCubierta != null}">
+                                        Cubierto: <strong th:text="${n.cantidadCubierta + ' ' + n.unidadMedida}">0.0 kg</strong>
+                                    </small>
+                                </td>
+                                <td class="small text-muted" style="max-width: 240px;" th:text="${n.descripcion}">Detalle</td>
                                 <td class="text-end">
-                                    <div class="d-inline-flex gap-1">
-                                        <form th:action="@{'/beneficiaria/necesidades/' + ${n.id} + '/editar'}" method="post" class="d-inline-flex gap-1 align-items-center">
-                                            <input type="hidden" name="entidadId" th:value="${entidadId}">
-                                            <input type="hidden" name="subcategoria" th:value="${n.subcategoria}">
-                                            <input type="hidden" name="descripcion" th:value="${n.descripcion}">
-                                            <input type="hidden" name="tipo" th:value="${n.tipo}">
-                                            <input type="hidden" name="unidadMedida" th:value="${n.unidadMedida}">
-                                            <input type="number" step="0.1" name="cantidadSolicitada" th:value="${n.cantidadSolicitada}" class="form-control form-control-sm" style="width: 80px;" title="Modificar cantidad">
-                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Actualizar necesidad">
-                                                <i class="fa-solid fa-pen"></i>
-                                            </button>
-                                        </form>
-                                        <form th:action="@{'/beneficiaria/necesidades/' + ${n.id} + '/eliminar'}" method="post" class="d-inline">
-                                            <input type="hidden" name="entidadId" th:value="${entidadId}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Dar de baja / eliminar necesidad">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </button>
-                                        </form>
+                                    <div class="d-inline-flex gap-1 align-items-center">
+                                        <!-- Botón que abre el Cuadro de Confirmación y Edición Completa -->
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                th:attr="data-bs-target='#modalEditarNecesidad-' + ${n.id}"
+                                                title="Editar / Actualizar necesidad con confirmación">
+                                            <i class="fa-solid fa-pen-to-square me-1"></i> Actualizar
+                                        </button>
+                                        <!-- Botón que abre el Cuadro de Confirmación de Baja -->
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                th:attr="data-bs-target='#modalEliminarNecesidad-' + ${n.id}"
+                                                title="Cerrar o dar de baja necesidad">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Modal de Edición y Cuadro de Confirmación de Actualización (CU-27) -->
+                                    <div class="modal fade text-start" th:id="'modalEditarNecesidad-' + ${n.id}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content rounded-4 border-0 shadow">
+                                                <form th:action="@{'/beneficiaria/necesidades/' + ${n.id} + '/editar'}" method="post"
+                                                      onsubmit="return confirm('¿Confirma la actualización de los datos de esta necesidad material?');">
+                                                    <div class="modal-header bg-primary text-white">
+                                                        <h5 class="modal-title fw-bold">
+                                                            <i class="fa-solid fa-pen-to-square me-2"></i>Actualizar Necesidad #<span th:text="${n.id}">1</span>
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4">
+                                                        <input type="hidden" name="entidadId" th:value="${entidadId}">
+
+                                                        <div class="alert alert-info small py-2 mb-3">
+                                                            <i class="fa-solid fa-circle-info me-1"></i>
+                                                            <strong>Regla de negocio (CU-27):</strong> La nueva cantidad solicitada no puede ser menor a la cantidad ya cubierta por donaciones (<strong th:text="${(n.cantidadCubierta != null ? n.cantidadCubierta : 0.0) + ' ' + n.unidadMedida}">0.0 kg</strong>).
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-semibold small">Subcategoría (Unidad Mínima)</label>
+                                                            <input type="text" name="subcategoria" list="subcategoriasDatalist" class="form-control"
+                                                                   th:value="${n.subcategoria}" required>
+                                                        </div>
+
+                                                        <div class="row g-2 mb-3">
+                                                            <div class="col-6">
+                                                                <label class="form-label fw-semibold small">Cantidad Solicitada</label>
+                                                                <input type="number" step="0.1"
+                                                                       th:min="${n.cantidadCubierta != null and n.cantidadCubierta > 0 ? n.cantidadCubierta : 0.1}"
+                                                                       name="cantidadSolicitada" class="form-control"
+                                                                       th:value="${n.cantidadSolicitada}" required>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <label class="form-label fw-semibold small">Unidad de Medida</label>
+                                                                <select name="unidadMedida" class="form-select" required>
+                                                                    <option value="kg" th:selected="${n.unidadMedida == 'kg'}">Kilogramos (kg)</option>
+                                                                    <option value="litros" th:selected="${n.unidadMedida == 'litros'}">Litros</option>
+                                                                    <option value="unidades" th:selected="${n.unidadMedida == 'unidades'}">Unidades</option>
+                                                                    <option value="paquetes" th:selected="${n.unidadMedida == 'paquetes'}">Paquetes</option>
+                                                                    <option value="cajas" th:selected="${n.unidadMedida == 'cajas'}">Cajas</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row g-2 mb-3">
+                                                            <div class="col-6">
+                                                                <label class="form-label fw-semibold small">Tipo de Necesidad</label>
+                                                                <select name="tipo" class="form-select"
+                                                                        th:attr="onchange='togglePeriodoModal(' + ${n.id} + ', this.value)'">
+                                                                    <option value="EXTRAORDINARIA" th:selected="${n.tipo == 'EXTRAORDINARIA'}">Extraordinaria</option>
+                                                                    <option value="RECURRENTE" th:selected="${n.tipo == 'RECURRENTE'}">Recurrente</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <label class="form-label fw-semibold small">Periodicidad</label>
+                                                                <select name="periodo" th:id="'periodoModal-' + ${n.id}"
+                                                                        class="form-select"
+                                                                        th:disabled="${n.tipo != 'RECURRENTE'}">
+                                                                    <option value="">-- No aplica --</option>
+                                                                    <option th:each="per : ${periodosPermitidos}"
+                                                                            th:value="${per.name()}"
+                                                                            th:selected="${n.periodo == per.name()}"
+                                                                            th:text="${per.name() + ' (' + per.etiqueta + ')'}">SEMANAL</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="mb-2">
+                                                            <label class="form-label fw-semibold small">Descripción</label>
+                                                            <textarea name="descripcion" class="form-control" rows="2" required th:text="${n.descripcion}"></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer bg-light">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-primary btn-sm fw-semibold">
+                                                            <i class="fa-solid fa-floppy-disk me-1"></i> Confirmar y Guardar Cambios
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal de Confirmación de Eliminación / Cancelación (CU-29) -->
+                                    <div class="modal fade text-start" th:id="'modalEliminarNecesidad-' + ${n.id}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content rounded-4 border-0 shadow">
+                                                <form th:action="@{'/beneficiaria/necesidades/' + ${n.id} + '/eliminar'}" method="post">
+                                                    <div class="modal-header bg-danger text-white">
+                                                        <h5 class="modal-title fw-bold">
+                                                            <i class="fa-solid fa-triangle-exclamation me-2"></i>Confirmar Cierre de Necesidad #<span th:text="${n.id}">1</span>
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4">
+                                                        <input type="hidden" name="entidadId" th:value="${entidadId}">
+                                                        <p class="mb-3">
+                                                            ¿Está seguro de que desea cerrar o dar de baja la necesidad de
+                                                            <strong th:text="${n.cantidadSolicitada + ' ' + n.unidadMedida + ' de ' + n.subcategoria}">50 kg de arroz</strong>?
+                                                        </p>
+                                                        <div class="mb-2">
+                                                            <label class="form-label fw-semibold small">Motivo de cierre o cancelación (CU-29)</label>
+                                                            <input type="text" name="motivo" class="form-control" value="Necesidad cubierta o dada de baja por la entidad" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer bg-light">
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                                                            <i class="fa-solid fa-check me-1"></i> Confirmar Baja
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -141,6 +301,59 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function actualizarEstadoPeriodicidad() {
+            const tipoSelect = document.getElementById('selectTipoNecesidad');
+            const periodoSelect = document.getElementById('selectPeriodoNecesidad');
+            const badge = document.getElementById('badgePeriodicidadEstado');
+            const optNoAplica = document.getElementById('optNoAplica');
+
+            if (!tipoSelect || !periodoSelect) return;
+
+            if (tipoSelect.value === 'RECURRENTE') {
+                periodoSelect.disabled = false;
+                periodoSelect.required = true;
+                periodoSelect.classList.remove('bg-light');
+                if (optNoAplica) optNoAplica.disabled = true;
+                if (!periodoSelect.value) {
+                    periodoSelect.value = 'SEMANAL';
+                }
+                if (badge) {
+                    badge.className = 'badge bg-primary-subtle text-primary ms-1';
+                    badge.textContent = 'Obligatorio (Recurrente)';
+                }
+            } else {
+                if (optNoAplica) optNoAplica.disabled = false;
+                periodoSelect.value = '';
+                periodoSelect.required = false;
+                periodoSelect.disabled = true;
+                periodoSelect.classList.add('bg-light');
+                if (badge) {
+                    badge.className = 'badge bg-secondary-subtle text-secondary ms-1';
+                    badge.textContent = 'Inactivo (Extraordinaria)';
+                }
+            }
+        }
+
+        function togglePeriodoModal(id, tipoVal) {
+            const selectModal = document.getElementById('periodoModal-' + id);
+            if (!selectModal) return;
+            if (tipoVal === 'RECURRENTE') {
+                selectModal.disabled = false;
+                selectModal.required = true;
+                if (!selectModal.value) {
+                    selectModal.value = 'SEMANAL';
+                }
+            } else {
+                selectModal.value = '';
+                selectModal.required = false;
+                selectModal.disabled = true;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', actualizarEstadoPeriodicidad);
+    </script>
 </div>
 </body>
 </html>

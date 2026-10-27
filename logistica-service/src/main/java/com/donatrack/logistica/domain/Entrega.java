@@ -113,6 +113,9 @@ public class Entrega {
     }
 
     public void confirmarRecepcion(List<String> fotosUrls, String receptorNombre, String receptorDni, String firmaDigitalUrl) {
+        if (this.estado == EstadoEntrega.CANCELADA) {
+            throw new IllegalStateException("No se puede confirmar una entrega cancelada");
+        }
         if (fotosUrls == null || fotosUrls.isEmpty() || fotosUrls.stream().allMatch(String::isBlank)) {
             throw new IllegalArgumentException("Es obligatorio adjuntar al menos una fotografía de los bienes recibidos");
         }
@@ -121,7 +124,11 @@ public class Entrega {
         this.confirmadoPorChofer = true;
         this.confirmadoPorEntidad = true;
         this.fotosConfirmacionUrls.clear();
-        this.fotosConfirmacionUrls.addAll(fotosUrls);
+        for (String f : fotosUrls) {
+            if (f != null && !f.isBlank()) {
+                this.fotosConfirmacionUrls.add(f.trim());
+            }
+        }
         if (receptorNombre != null) this.receptorNombre = receptorNombre;
         if (receptorDni != null) this.receptorDni = receptorDni;
         if (firmaDigitalUrl != null) this.firmaDigitalUrl = firmaDigitalUrl;
@@ -134,6 +141,12 @@ public class Entrega {
     }
 
     public void registrarNoRecibida(String motivo, boolean replanificable) {
+        if (this.estado == EstadoEntrega.ENTREGADA) {
+            throw new IllegalStateException("No se puede registrar como no recibida una entrega ya ENTREGADA");
+        }
+        if (this.estado == EstadoEntrega.CANCELADA) {
+            throw new IllegalStateException("No se puede registrar como no recibida una entrega CANCELADA");
+        }
         if (motivo == null || motivo.trim().isEmpty()) {
             throw new IllegalArgumentException("El motivo o justificación de fallo es estrictamente obligatorio");
         }
@@ -149,6 +162,12 @@ public class Entrega {
      * Si la donación regresa físicamente al depósito en buen estado, la entrega se restablece a PENDIENTE.
      */
     public void replanificar(String motivoReplanificacion) {
+        if (this.estado == EstadoEntrega.ENTREGADA) {
+            throw new IllegalStateException("No se puede replanificar una entrega que ya fue formalmente ENTREGADA");
+        }
+        if (this.estado == EstadoEntrega.EN_TRASLADO) {
+            throw new IllegalStateException("No se puede replanificar directamente una entrega en traslado sin registrar previamente la incidencia o retorno al depósito");
+        }
         this.estado = EstadoEntrega.PENDIENTE;
         this.etapaOperativa = "PENDIENTE_RETIRO_DEPOSITO";
         this.confirmadoPorChofer = false;
@@ -156,6 +175,20 @@ public class Entrega {
         this.replanificable = false;
         this.motivoFalla = motivoReplanificacion != null ? "Replanificada tras incidencia: " + motivoReplanificacion : "Replanificada";
         this.fechaActualizacion = LocalDateTime.now();
+    }
+
+    /**
+     * Incorporación de evidencias fotográficas adicionales (CU-43 / CU-46).
+     */
+    public void agregarEvidencias(List<String> nuevasFotos) {
+        if (nuevasFotos != null && !nuevasFotos.isEmpty()) {
+            for (String f : nuevasFotos) {
+                if (f != null && !f.isBlank() && !this.fotosConfirmacionUrls.contains(f.trim())) {
+                    this.fotosConfirmacionUrls.add(f.trim());
+                }
+            }
+            this.fechaActualizacion = LocalDateTime.now();
+        }
     }
 
     // --- Getters y Setters ---

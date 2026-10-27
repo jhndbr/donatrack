@@ -1,5 +1,6 @@
 package com.donatrack.notificaciones.consumer;
 
+import com.donatrack.common.events.CamionEnPuertaEvent;
 import com.donatrack.common.events.EntregaConfirmadaEvent;
 import com.donatrack.common.events.EntregaFallidaEvent;
 import com.donatrack.common.events.RutaIniciadaEvent;
@@ -58,6 +59,17 @@ public class LogisticaNotificacionesConsumer {
             notificacionesService.notificarEntregaFallida(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de entrega fallida: {}", e.getMessage(), e);
+        }
+    }
+
+    @RabbitListener(queues = "${donatrack.rabbitmq.queues.camion-en-puerta:q.notificaciones.camion-en-puerta}")
+    public void recibirCamionEnPuerta(Object payload) {
+        try {
+            CamionEnPuertaEvent evento = parsearEvento(payload, CamionEnPuertaEvent.class);
+            log.info("Consumidor AMQP: Procesando camion.en-puerta para entrega id={}, entidad={}", evento.getIdEntrega(), evento.getNombreEntidad());
+            notificacionesService.notificarCamionEnPuerta(evento);
+        } catch (Exception e) {
+            log.error("Error al procesar mensaje de camion en puerta: {}", e.getMessage(), e);
         }
     }
 

@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -26,8 +26,7 @@ public class DonacionesServiceClient {
     private final RestClient restClient;
 
     public DonacionesServiceClient(@Value("${donatrack.servicios.donaciones-url:http://localhost:8082}") String donacionesUrl) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(3));
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory();
         factory.setReadTimeout(Duration.ofSeconds(5));
 
         this.restClient = RestClient.builder()
@@ -105,7 +104,7 @@ public class DonacionesServiceClient {
         }
 
         try {
-            restClient.patch()
+            restClient.post()
                     .uri("/api/v1/donaciones/{id}/estado", donacionId)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)

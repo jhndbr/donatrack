@@ -69,7 +69,7 @@
             <h5 class="fw-bold text-dark mb-0">
                 2. Evaluación de Propuestas para
                 <span class="badge bg-primary-subtle text-primary font-monospace"
-                      th:text="${donacionDetalle != null ? 'DON-' + #numbers.formatInteger(donacionDetalle.id, 4) + ' (' + donacionDetalle.subcategoria + ')' : 'Donación #' + donacionSeleccionada}">DON-0001</span>
+                      th:text="${donacionDetalle != null and donacionDetalle['id'] != null ? 'DON-' + #numbers.formatInteger(donacionDetalle['id'], 4) + ' (' + donacionDetalle['subcategoria'] + ')' : 'Donación #' + donacionSeleccionada}">DON-0001</span>
             </h5>
             <small class="text-muted">Motor algorítmico multicriterio</small>
         </div>
@@ -79,14 +79,14 @@
             <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-star text-warning me-2"></i>Recomendación Óptima (Presente en Ambos Algoritmos):</h6>
             <div th:each="c : ${evaluacion.coincidenciasDestacadas}" class="d-flex flex-wrap justify-content-between align-items-center py-2 border-bottom border-warning-subtle">
                 <div>
-                    <strong class="text-dark" th:text="${c.nombreEntidad}">Comedor Los Chicos</strong>:
-                    <span class="text-muted small" th:text="${c.descripcionNecesidad}">50 kg arroz</span>
-                    <span class="badge bg-dark ms-2" th:text="'Score: ' + ${c.score}">0.95</span>
+                    <strong class="text-dark" th:text="${c['nombreEntidad']}">Comedor Los Chicos</strong>:
+                    <span class="text-muted small" th:text="${c['descripcionNecesidad']}">50 kg arroz</span>
+                    <span class="badge bg-dark ms-2" th:text="'Score: ' + ${c['score']}">0.95</span>
                 </div>
                 <form action="/admin/matchmaking/asignar" method="post" class="mt-2 mt-md-0">
                     <input type="hidden" name="donacionId" th:value="${donacionSeleccionada}">
-                    <input type="hidden" name="entidadId" th:value="${c.idEntidad}">
-                    <input type="hidden" name="necesidadId" th:value="${c.necesidadId}">
+                    <input type="hidden" name="entidadId" th:value="${c['idEntidad'] != null ? c['idEntidad'] : c['entidadId']}">
+                    <input type="hidden" name="necesidadId" th:value="${c['idNecesidad'] != null ? c['idNecesidad'] : c['necesidadId']}">
                     <button type="submit" class="btn btn-success btn-sm"><i class="fa-solid fa-check me-1"></i>Confirmar Asignación</button>
                 </form>
             </div>
@@ -141,15 +141,15 @@
                     <ul class="list-group list-group-flush">
                         <li th:each="p : ${evaluacion.rankingSemanticoTop10}" class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
                             <div>
-                                <div class="fw-semibold text-dark" th:text="${p.nombreEntidad}">Comedor A</div>
-                                <small class="text-muted" th:text="${p.descripcionNecesidad}">Necesidad</small>
+                                <div class="fw-semibold text-dark" th:text="${p['nombreEntidad']}">Comedor A</div>
+                                <small class="text-muted" th:text="${p['descripcionNecesidad']}">Necesidad</small>
                             </div>
                             <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-primary rounded-pill" th:text="${p.score}">0.92</span>
+                                <span class="badge bg-primary rounded-pill" th:text="${p['score']}">0.92</span>
                                 <form action="/admin/matchmaking/asignar" method="post" class="d-inline">
                                     <input type="hidden" name="donacionId" th:value="${donacionSeleccionada}">
-                                    <input type="hidden" name="entidadId" th:value="${p.idEntidad}">
-                                    <input type="hidden" name="necesidadId" th:value="${p.necesidadId}">
+                                    <input type="hidden" name="entidadId" th:value="${p['idEntidad'] != null ? p['idEntidad'] : p['entidadId']}">
+                                    <input type="hidden" name="necesidadId" th:value="${p['idNecesidad'] != null ? p['idNecesidad'] : p['necesidadId']}">
                                     <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">Asignar</button>
                                 </form>
                             </div>
@@ -165,15 +165,15 @@
                     <ul class="list-group list-group-flush">
                         <li th:each="p : ${evaluacion.rankingSubatendidosTop10}" class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
                             <div>
-                                <div class="fw-semibold text-dark" th:text="${p.nombreEntidad}">Comedor B</div>
-                                <small class="text-muted" th:text="${p.descripcionNecesidad}">Necesidad</small>
+                                <div class="fw-semibold text-dark" th:text="${p['nombreEntidad']}">Comedor B</div>
+                                <small class="text-muted" th:text="${p['descripcionNecesidad']}">Necesidad</small>
                             </div>
                             <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-success rounded-pill" th:text="${p.score}">0.88</span>
+                                <span class="badge bg-success rounded-pill" th:text="${p['score']}">0.88</span>
                                 <form action="/admin/matchmaking/asignar" method="post" class="d-inline">
                                     <input type="hidden" name="donacionId" th:value="${donacionSeleccionada}">
-                                    <input type="hidden" name="entidadId" th:value="${p.idEntidad}">
-                                    <input type="hidden" name="necesidadId" th:value="${p.necesidadId}">
+                                    <input type="hidden" name="entidadId" th:value="${p['idEntidad'] != null ? p['idEntidad'] : p['entidadId']}">
+                                    <input type="hidden" name="necesidadId" th:value="${p['idNecesidad'] != null ? p['idNecesidad'] : p['necesidadId']}">
                                     <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2" style="font-size: 0.75rem;">Asignar</button>
                                 </form>
                             </div>

@@ -39,6 +39,9 @@ public class RabbitMqConfig {
     @Value("${donatrack.rabbitmq.queues.entrega-fallida:q.notificaciones.entrega-fallida}")
     private String qEntregaFallida;
 
+    @Value("${donatrack.rabbitmq.queues.camion-en-puerta:q.notificaciones.camion-en-puerta}")
+    private String qCamionEnPuerta;
+
     @Value("${donatrack.rabbitmq.queues.mision-cumplida:q.notificaciones.mision-cumplida}")
     private String qMisionCumplida;
 
@@ -127,6 +130,11 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Queue camionEnPuertaQueue() {
+        return crearCola(qCamionEnPuerta);
+    }
+
+    @Bean
     public Queue misionCumplidaQueue() {
         return crearCola(qMisionCumplida);
     }
@@ -171,6 +179,11 @@ public class RabbitMqConfig {
     @Bean
     public Binding bindEntregaFallida(Queue entregaFallidaQueue, TopicExchange eventsExchange) {
         return BindingBuilder.bind(entregaFallidaQueue).to(eventsExchange).with("entrega.fallida");
+    }
+
+    @Bean
+    public Binding bindCamionEnPuerta(Queue camionEnPuertaQueue, TopicExchange eventsExchange) {
+        return BindingBuilder.bind(camionEnPuertaQueue).to(eventsExchange).with("camion.en-puerta");
     }
 
     @Bean

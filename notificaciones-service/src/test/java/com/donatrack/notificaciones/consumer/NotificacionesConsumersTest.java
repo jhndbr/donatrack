@@ -129,4 +129,16 @@ public class NotificacionesConsumersTest {
 
         verify(notificacionesService, times(1)).notificarCategoriaAscendida(any(CategoriaAscendidaEvent.class));
     }
+
+    @Test
+    void testCamionEnPuertaDelegaEnNotificacionesService() {
+        CamionEnPuertaEvent evento = new CamionEnPuertaEvent(
+                "ENT-01", 100L, 10L, "Comedor Los Chicos", "comedor@mail.com",
+                "AE789XY", "Estacionado en puerta", "http://localhost:8086/beneficiaria/confirmar?donacionId=100"
+        );
+
+        logisticaConsumer.recibirCamionEnPuerta(evento);
+
+        verify(notificacionesService, times(1)).notificarCamionEnPuerta(any(CamionEnPuertaEvent.class));
+    }
 }

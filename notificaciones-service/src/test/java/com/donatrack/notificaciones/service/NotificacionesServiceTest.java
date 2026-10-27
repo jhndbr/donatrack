@@ -101,6 +101,44 @@ public class NotificacionesServiceTest {
     }
 
     @Test
+    void testNotificarEntregaConfirmadaConComprobanteYPatenteCamion() {
+        when(eventoRepo.existsByClaveEvento(anyString())).thenReturn(false);
+        when(dispatcher.despachar(eq(CanalNotificacion.EMAIL), anyString(), anyString(), anyString())).thenReturn(true);
+
+        EntregaConfirmadaEvent evento = new EntregaConfirmadaEvent(
+                "ENT-01", 100L, 42L, 10L, "AF123CD",
+                "http://localhost:8086/beneficiaria/notificaciones",
+                "donante@mail.com", "entidad@mail.com",
+                CanalNotificacion.EMAIL, "donante@mail.com"
+        );
+
+        notificacionesService.notificarEntregaConfirmada(evento);
+
+        // Despacha confirmación al donante y a la entidad
+        verify(dispatcher, times(1)).despachar(eq(CanalNotificacion.EMAIL), eq("donante@mail.com"), contains("Donación entregada"), contains("AF123CD"));
+        verify(dispatcher, times(1)).despachar(eq(CanalNotificacion.EMAIL), eq("entidad@mail.com"), contains("Donación entregada"), contains("AF123CD"));
+        verify(auditoriaRepo, times(2)).save(any(AuditoriaNotificacion.class));
+    }
+
+    @Test
+    void testNotificarCamionEnPuertaEnviaAlertaAEntidad() {
+        when(eventoRepo.existsByClaveEvento(anyString())).thenReturn(false);
+        when(dispatcher.despachar(eq(CanalNotificacion.EMAIL), anyString(), anyString(), anyString())).thenReturn(true);
+
+        com.donatrack.common.events.CamionEnPuertaEvent evento = new com.donatrack.common.events.CamionEnPuertaEvent(
+                "ENT-01", 100L, 10L, "Comedor Los Chicos", "comedor@mail.com",
+                "AF123CD", "Estacionado en puerta", "http://localhost:8086/beneficiaria/confirmar?donacionId=100"
+        );
+
+        notificacionesService.notificarCamionEnPuerta(evento);
+
+        // Despacha alerta a la entidad con enlace de confirmación directa
+        verify(dispatcher, times(1)).despachar(eq(CanalNotificacion.EMAIL), eq("comedor@mail.com"), contains("camión ha llegado a la puerta"), contains("AF123CD"));
+        verify(auditoriaRepo, times(1)).save(any(AuditoriaNotificacion.class));
+        verify(eventoRepo, times(1)).save(any(RegistroEventoNotificacion.class));
+    }
+
+    @Test
     void testNotificarEntregaFallidaEnviaAlertaAAdministrador() {
         when(eventoRepo.existsByClaveEvento(anyString())).thenReturn(false);
         when(dispatcher.despachar(eq(CanalNotificacion.EMAIL), anyString(), anyString(), anyString())).thenReturn(true);

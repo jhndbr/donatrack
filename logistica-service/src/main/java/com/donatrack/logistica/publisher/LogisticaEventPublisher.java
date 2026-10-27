@@ -1,5 +1,6 @@
 package com.donatrack.logistica.publisher;
 
+import com.donatrack.common.events.CamionEnPuertaEvent;
 import com.donatrack.common.events.EntregaConfirmadaEvent;
 import com.donatrack.common.events.EntregaFallidaEvent;
 import com.donatrack.common.events.RutaIniciadaEvent;
@@ -28,8 +29,21 @@ public class LogisticaEventPublisher {
     @Value("${donatrack.rabbitmq.routing-key.entrega-fallida:entrega.fallida}")
     private String routingKeyEntregaFallida;
 
+    @Value("${donatrack.rabbitmq.routing-key.camion-en-puerta:camion.en-puerta}")
+    private String routingKeyCamionEnPuerta;
+
     public LogisticaEventPublisher(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
+    }
+
+    public void publicarCamionEnPuerta(CamionEnPuertaEvent event) {
+        try {
+            rabbitTemplate.convertAndSend(exchange, routingKeyCamionEnPuerta, event);
+            log.info("Evento CamionEnPuerta publicado exitosamente para entrega {} (donación {})",
+                    event.getIdEntrega(), event.getIdDonacion());
+        } catch (Exception e) {
+            log.error("Fallo al publicar CamionEnPuertaEvent para entrega {}: {}", event.getIdEntrega(), e.getMessage());
+        }
     }
 
     public void publicarRutaIniciada(RutaIniciadaEvent event) {

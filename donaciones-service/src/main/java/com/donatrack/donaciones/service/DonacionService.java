@@ -331,9 +331,26 @@ public class DonacionService {
             default -> throw new IllegalArgumentException("Transicion de estado no permitida directamente: " + nuevoEstado);
         }
 
-        if (fotoUrl != null && !fotoUrl.isBlank() && donacion.getBienes() != null && !donacion.getBienes().isEmpty()) {
-            for (BienDonado b : donacion.getBienes()) {
-                b.setFotoUrl(fotoUrl);
+        if (fotoUrl != null && !fotoUrl.isBlank()) {
+            if (donacion.getBienes() == null) {
+                donacion.setBienes(new ArrayList<>());
+            }
+            if (donacion.getBienes().isEmpty()) {
+                BienDonado bien = new BienDonado(
+                        donacion.getSubcategoria() != null ? donacion.getSubcategoria() : "Bien Donado",
+                        "GENERAL",
+                        donacion.getSubcategoria() != null ? donacion.getSubcategoria() : "General",
+                        donacion.getCantidad() > 0 ? donacion.getCantidad() : 1.0,
+                        donacion.getUnidadMedida() != null && !donacion.getUnidadMedida().isBlank() ? donacion.getUnidadMedida() : "Unidades",
+                        donacion.isEsUsado(),
+                        null,
+                        fotoUrl
+                );
+                donacion.agregarBien(bien);
+            } else {
+                for (BienDonado b : donacion.getBienes()) {
+                    b.setFotoUrl(fotoUrl);
+                }
             }
         }
 

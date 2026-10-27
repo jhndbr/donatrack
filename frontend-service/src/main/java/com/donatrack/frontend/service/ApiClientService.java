@@ -203,6 +203,17 @@ public class ApiClientService {
     }
 
     @SuppressWarnings("unchecked")
+    public Map<String, Object> obtenerEntidad(Long id) {
+        if (id == null) return Collections.emptyMap();
+        try {
+            return restTemplate.getForObject(gatewayUrl + "/api/v1/entidades/" + id, Map.class);
+        } catch (Exception e) {
+            log.warn("Fallo obteniendo entidad id={}: {}", id, e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> listarDonantes() {
         try {
             return restTemplate.getForObject(gatewayUrl + "/api/v1/donantes", List.class);
@@ -676,6 +687,26 @@ public class ApiClientService {
     }
 
     @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> listarEntregas() {
+        try {
+            return restTemplate.getForObject(gatewayUrl + "/api/v1/logistica/entregas", List.class);
+        } catch (Exception e) {
+            log.warn("Fallo listando entregas generales: {}", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> obtenerEntregaPorDonacion(Long donacionId) {
+        try {
+            return restTemplate.getForObject(gatewayUrl + "/api/v1/logistica/entregas/donacion/" + donacionId, Map.class);
+        } catch (Exception e) {
+            log.warn("Fallo obteniendo entrega para donacion {}: {}", donacionId, e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     public Map<String, Object> obtenerUltimaPosicion(String patente) {
         try {
             return restTemplate.getForObject(gatewayUrl + "/api/v1/logistica/telemetria/camion/" + patente + "/ultima", Map.class);
@@ -700,10 +731,14 @@ public class ApiClientService {
     }
 
     public boolean confirmarEntregaPorDonacion(Long donacionId, String urlFoto, String comentario) {
-        return confirmarEntregaPorDonacion(donacionId, urlFoto, comentario, null, null);
+        return confirmarEntregaPorDonacion(donacionId, urlFoto, comentario, null, null, null);
     }
 
     public boolean confirmarEntregaPorDonacion(Long donacionId, String urlFoto, String comentario, String receptorNombre, String receptorDni) {
+        return confirmarEntregaPorDonacion(donacionId, urlFoto, comentario, receptorNombre, receptorDni, null);
+    }
+
+    public boolean confirmarEntregaPorDonacion(Long donacionId, String urlFoto, String comentario, String receptorNombre, String receptorDni, Long idEntidadBeneficiaria) {
         try {
             HttpHeaders headers = buildAuthHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -721,6 +756,9 @@ public class ApiClientService {
             }
             if (receptorDni != null && !receptorDni.isBlank()) {
                 body.put("receptorDni", receptorDni.trim());
+            }
+            if (idEntidadBeneficiaria != null) {
+                body.put("idEntidadBeneficiaria", idEntidadBeneficiaria);
             }
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
             restTemplate.postForEntity(gatewayUrl + "/api/v1/logistica/entregas/donacion/" + donacionId + "/confirmar", entity, Map.class);
@@ -773,6 +811,24 @@ public class ApiClientService {
             return true;
         } catch (Exception e) {
             log.error("Error registrando entrega fallida por donacion {}: {}", donacionId, e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean replanificarEntregaPorDonacion(Long donacionId, String motivo) {
+        try {
+            HttpHeaders headers = buildAuthHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            Map<String, Object> body = Map.of(
+                    "motivo", motivo != null ? motivo : "Reingreso a depósito para replanificación",
+                    "regresoAlDeposito", true,
+                    "donacionRegresoBuenEstado", true
+            );
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            restTemplate.postForEntity(gatewayUrl + "/api/v1/logistica/entregas/donacion/" + donacionId + "/replanificar", entity, Map.class);
+            return true;
+        } catch (Exception e) {
+            log.warn("No se pudo replanificar en logistica la entrega para donacion {}: {}", donacionId, e.getMessage());
             return false;
         }
     }
@@ -1022,6 +1078,16 @@ public class ApiClientService {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> obtenerComprobanteEntregaPorDonacion(Long donacionId) {
+        try {
+            return restTemplate.getForObject(gatewayUrl + "/api/v1/logistica/entregas/donacion/" + donacionId + "/comprobante", Map.class);
+        } catch (Exception e) {
+            log.warn("Fallo obteniendo comprobante formal para donacion {}: {}", donacionId, e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
     public boolean alternarVisibilidadInsignia(Long idInsignia, boolean visible) {
         try {
             HttpHeaders headers = buildAuthHeaders();
@@ -1039,9 +1105,13 @@ public class ApiClientService {
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> listarNotificaciones(String destinatario) {
         try {
-            String url = gatewayUrl + "/api/v1/notificaciones/historial" +
-                    (destinatario != null && !destinatario.isBlank() ? "?destinatario=" + destinatario : "");
-            List<Map<String, Object>> res = restTemplate.getForObject(url, List.class);
+            org.springframework.web.util.UriComponentsBuilder builder =
+                    org.springframework.web.util.UriComponentsBuilder.fromHttpUrl(gatewayUrl + "/api/v1/notificaciones/historial");
+            if (destinatario != null && !destinatario.isBlank()) {
+                builder.queryParam("destinatario", destinatario.trim());
+            }
+            java.net.URI uri = builder.build().toUri();
+            List<Map<String, Object>> res = restTemplate.getForObject(uri, List.class);
             return res != null ? res : Collections.emptyList();
         } catch (Exception e) {
             log.warn("Fallo consultando historial de notificaciones: {}", e.getMessage());
@@ -1052,11 +1122,13 @@ public class ApiClientService {
     @SuppressWarnings("unchecked")
     public long obtenerConteoNotificacionesNoLeidas(String destinatario) {
         try {
-            String url = gatewayUrl + "/api/v1/notificaciones/no-leidas/count" +
-                    (destinatario != null && !destinatario.isBlank()
-                            ? "?destinatario=" + java.net.URLEncoder.encode(destinatario.trim(), java.nio.charset.StandardCharsets.UTF_8)
-                            : "");
-            Map<String, Object> res = restTemplate.getForObject(url, Map.class);
+            org.springframework.web.util.UriComponentsBuilder builder =
+                    org.springframework.web.util.UriComponentsBuilder.fromHttpUrl(gatewayUrl + "/api/v1/notificaciones/no-leidas/count");
+            if (destinatario != null && !destinatario.isBlank()) {
+                builder.queryParam("destinatario", destinatario.trim());
+            }
+            java.net.URI uri = builder.build().toUri();
+            Map<String, Object> res = restTemplate.getForObject(uri, Map.class);
             if (res != null && res.get("noLeidas") instanceof Number num) {
                 return num.longValue();
             }
@@ -1072,7 +1144,8 @@ public class ApiClientService {
         try {
             HttpHeaders headers = buildAuthHeaders();
             HttpEntity<Void> entity = new HttpEntity<>(headers);
-            restTemplate.postForEntity(gatewayUrl + "/api/v1/notificaciones/" + id + "/leer", entity, Map.class);
+            java.net.URI uri = java.net.URI.create(gatewayUrl + "/api/v1/notificaciones/" + id + "/leer");
+            restTemplate.postForEntity(uri, entity, Map.class);
             return true;
         } catch (Exception e) {
             log.warn("Fallo marcando notificación {} como leída: {}", id, e.getMessage());
@@ -1084,11 +1157,13 @@ public class ApiClientService {
         try {
             HttpHeaders headers = buildAuthHeaders();
             HttpEntity<Void> entity = new HttpEntity<>(headers);
-            String url = gatewayUrl + "/api/v1/notificaciones/leer-todas" +
-                    (destinatario != null && !destinatario.isBlank()
-                            ? "?destinatario=" + java.net.URLEncoder.encode(destinatario.trim(), java.nio.charset.StandardCharsets.UTF_8)
-                            : "");
-            restTemplate.postForEntity(url, entity, Map.class);
+            org.springframework.web.util.UriComponentsBuilder builder =
+                    org.springframework.web.util.UriComponentsBuilder.fromHttpUrl(gatewayUrl + "/api/v1/notificaciones/leer-todas");
+            if (destinatario != null && !destinatario.isBlank()) {
+                builder.queryParam("destinatario", destinatario.trim());
+            }
+            java.net.URI uri = builder.build().toUri();
+            restTemplate.postForEntity(uri, entity, Map.class);
             return true;
         } catch (Exception e) {
             log.warn("Fallo marcando todas las notificaciones como leídas: {}", e.getMessage());
@@ -1099,7 +1174,8 @@ public class ApiClientService {
     @SuppressWarnings("unchecked")
     public Map<String, Object> obtenerEstadisticasNotificaciones() {
         try {
-            Map<String, Object> res = restTemplate.getForObject(gatewayUrl + "/api/v1/notificaciones/estadisticas", Map.class);
+            java.net.URI uri = java.net.URI.create(gatewayUrl + "/api/v1/notificaciones/estadisticas");
+            Map<String, Object> res = restTemplate.getForObject(uri, Map.class);
             return res != null ? res : Collections.emptyMap();
         } catch (Exception e) {
             log.warn("Fallo consultando estadisticas de notificaciones: {}", e.getMessage());
@@ -1115,13 +1191,16 @@ public class ApiClientService {
             String asuntoStr = asunto != null && !asunto.isBlank() ? asunto : "Notificación de Prueba DonaTrack";
             String mensajeStr = mensaje != null && !mensaje.isBlank() ? mensaje : "Mensaje de prueba enviado desde el panel de administración.";
 
-            String url = gatewayUrl + "/api/v1/notificaciones/test?canal=" + canalStr
-                    + "&destinatario=" + java.net.URLEncoder.encode(destinatario != null ? destinatario : "", java.nio.charset.StandardCharsets.UTF_8)
-                    + "&asunto=" + java.net.URLEncoder.encode(asuntoStr, java.nio.charset.StandardCharsets.UTF_8)
-                    + "&mensaje=" + java.net.URLEncoder.encode(mensajeStr, java.nio.charset.StandardCharsets.UTF_8);
+            org.springframework.web.util.UriComponentsBuilder builder =
+                    org.springframework.web.util.UriComponentsBuilder.fromHttpUrl(gatewayUrl + "/api/v1/notificaciones/test")
+                            .queryParam("canal", canalStr)
+                            .queryParam("destinatario", destinatario != null ? destinatario : "")
+                            .queryParam("asunto", asuntoStr)
+                            .queryParam("mensaje", mensajeStr);
+            java.net.URI uri = builder.build().toUri();
 
             HttpEntity<Void> entity = new HttpEntity<>(headers);
-            restTemplate.postForEntity(url, entity, Map.class);
+            restTemplate.postForEntity(uri, entity, Map.class);
             return true;
         } catch (Exception e) {
             log.error("Error enviando notificación de prueba: {}", e.getMessage());

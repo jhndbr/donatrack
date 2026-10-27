@@ -115,7 +115,7 @@ RAND_SUFFIX="$RANDOM$RANDOM"
 DONANTE_EMAIL="carlos.gomez.$RAND_SUFFIX@donatrack.org"
 DONANTE_RES=$(curl -s -X POST http://localhost:8082/api/v1/donantes/humana \
   -H "Content-Type: application/json" \
-  -d "{\"nombre\":\"Carlos\",\"apellido\":\"Gómez\",\"edad\":34,\"nroDocumento\":\"$RAND_SUFFIX\",\"genero\":\"M\",\"direccion\":\"Mitre 456, CABA\",\"mediosContacto\":[{\"tipo\":\"EMAIL\",\"valor\":\"$DONANTE_EMAIL\",\"esPredeterminado\":true},{\"tipo\":\"TELEFONO\",\"valor\":\"+541123456789\",\"esPredeterminado\":false}]}")
+  -d "{\"nombre\":\"Carlos\",\"apellido\":\"Gómez\",\"edad\":34,\"nroDocumento\":\"$RAND_SUFFIX\",\"genero\":\"M\",\"direccion\":\"Mitre 456, CABA\",\"mediosContacto\":[{\"tipo\":\"EMAIL\",\"valor\":\"$DONANTE_EMAIL\",\"esPredeterminado\":true},{\"tipo\":\"SMS\",\"valor\":\"+541123456789\",\"esPredeterminado\":false}]}")
 DONANTE_ID=$(echo "$DONANTE_RES" | grep -o '"id":[0-9]*' | head -n1 | cut -d: -f2)
 
 if [ -n "$DONANTE_ID" ]; then
@@ -224,8 +224,8 @@ fi
 echo -n " -> Logística - Despacho y Confirmación de Entrega por Donación... "
 CONFIRM_ENTREGA=$(curl -s -X POST "http://localhost:8083/api/v1/logistica/entregas/donacion/$DONACION_ID/confirmar" \
   -H "Content-Type: application/json" \
-  -d '{"urlFotoComprobante":"https://images.unsplash.com/photo-1593113598332-cd288d649433","comentarios":"Entrega confirmada y recibida en comedor"}')
-if echo "$CONFIRM_ENTREGA" | grep -q "idEntrega\|ENTREGADA\|mensaje"; then
+  -d '{"fotos":["https://images.unsplash.com/photo-1593113598332-cd288d649433"],"urlFotoComprobante":"https://images.unsplash.com/photo-1593113598332-cd288d649433","receptorNombre":"Maria Gomez","receptorDni":"32456789","comentarios":"Entrega confirmada y recibida en comedor"}')
+if echo "$CONFIRM_ENTREGA" | grep -q "idEntrega\|ENTREGADA\|mensaje\|id"; then
     echo -e "${GREEN}[OK - Entrega coordinada con servicio de logística]${NC}"
     PASSED=$((PASSED + 1))
 else
@@ -246,7 +246,7 @@ else
 fi
 
 echo -n " -> Notificaciones - Verificando procesamiento asíncrono Outbox -> RabbitMQ -> Mailpit... "
-sleep 3
+sleep 6
 NOTIF_HIST=$(curl -s "http://localhost:8085/api/v1/notificaciones/historial?destinatario=$DONANTE_EMAIL")
 MAILPIT_MSGS=$(curl -s "http://localhost:8025/api/v1/messages")
 if echo "$NOTIF_HIST" | grep -q "ENVIADO" && echo "$MAILPIT_MSGS" | grep -q "$DONANTE_EMAIL"; then

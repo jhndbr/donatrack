@@ -52,8 +52,8 @@ public class NotificationTemplateService {
                   <meta name="viewport" content="width=device-width, initial-scale=1.0">
                   <title>{{TITULO}}</title>
                 </head>
-                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px; color: #1e293b;">
-                  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);">
+                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; color: #1e293b;">
+                  <div style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
                     <!-- Header -->
                     <div style="background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%); padding: 32px 24px; text-align: center;">
                       <h1 style="color: #ffffff; margin: 0; font-size: 26px; letter-spacing: -0.5px; font-weight: 800;">

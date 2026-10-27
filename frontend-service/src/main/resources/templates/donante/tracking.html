@@ -144,7 +144,7 @@
                         var dir = ent.direccion || "CABA";
                         L.marker([lat, lng], { icon: comedorIcon }).addTo(map)
                             .bindPopup("<b>" + razon + "</b><br>" + dir + "<br><i>Donación: " + (d.subcategoria || "") + " [" + (d.estado || "") + "]</i>");
-                        L.polyline([[-34.5985, -58.4201], [lat, lng]], { color: '#0284c7', weight: 3, dashArray: '6, 8', opacity: 0.7 }).addTo(map);
+                        L.polyline([ [-34.5985, -58.4201], [lat, lng] ], { color: '#0284c7', weight: 3, dashArray: '6, 8', opacity: 0.7 }).addTo(map);
                     }
                 });
             }

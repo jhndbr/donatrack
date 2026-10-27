@@ -132,32 +132,33 @@
                                 </div>
 
                                 <div class="row">
-                                    <!-- Subcategoría (Criterio clave del modelo de dominio) -->
+                                    <!-- Subcategoría (Criterio clave del modelo de dominio y Matchmaking) -->
                                     <div class="col-md-5 mb-3">
                                         <label class="form-label fw-bold">Subcategoría (Unidad de Asignación) <span class="text-danger">*</span></label>
-                                        <select name="subcategoria" class="form-select" required>
-                                            <option value="" disabled selected>-- Elija Subcategoría --</option>
-                                            <optgroup label="Alimentos">
-                                                <option value="ALIMENTOS_NO_PERECEDEROS">Alimentos No Perecederos</option>
-                                                <option value="LACTEOS">Lácteos y Derivados</option>
-                                                <option value="FRESCOS">Frutas, Verduras y Frescos</option>
-                                            </optgroup>
-                                            <optgroup label="Indumentaria y Calzado">
-                                                <option value="ROPA_ABRIGO">Ropa de Invierno y Abrigo</option>
-                                                <option value="CALZADO">Calzado (Zapatillas/Botas)</option>
-                                                <option value="ROPA_GENERAL">Ropa General / Diaria</option>
-                                            </optgroup>
-                                            <optgroup label="Higiene y Salud">
-                                                <option value="ARTICULOS_HIGIENE">Artículos de Higiene Personal</option>
-                                                <option value="LIMPIEZA">Artículos de Limpieza Institucional</option>
-                                                <option value="PRIMEROS_AUXILIOS">Botiquín y Primeros Auxilios</option>
-                                            </optgroup>
-                                            <optgroup label="Equipamiento y Otros">
-                                                <option value="UTILES_ESCOLARES">Útiles y Material Didáctico</option>
-                                                <option value="MOBILIARIO">Mobiliario y Enseres</option>
-                                                <option value="JUGUETES">Juguetes y Recreación</option>
-                                            </optgroup>
-                                        </select>
+                                        <input type="text" name="subcategoria" class="form-control" list="subcategoriasAdminList"
+                                               placeholder="Ej. fideos, arroz, leche, frazadas..." required autocomplete="off">
+                                        <datalist id="subcategoriasAdminList">
+                                            <option value="fideos">fideos</option>
+                                            <option value="arroz">arroz</option>
+                                            <option value="leche">leche</option>
+                                            <option value="harina">harina</option>
+                                            <option value="aceite">aceite</option>
+                                            <option value="azucar">azucar</option>
+                                            <option value="lentejas">lentejas</option>
+                                            <option value="polenta">polenta</option>
+                                            <option value="frazadas">frazadas</option>
+                                            <option value="camperas">camperas</option>
+                                            <option value="calzado">calzado</option>
+                                            <option value="pañales">pañales</option>
+                                            <option value="articulos_higiene">articulos_higiene</option>
+                                            <option value="limpieza">limpieza</option>
+                                            <option value="utiles_escolares">utiles_escolares</option>
+                                            <option value="mobiliario">mobiliario</option>
+                                            <option value="ALIMENTOS_NO_PERECEDEROS">ALIMENTOS_NO_PERECEDEROS</option>
+                                            <option value="LACTEOS">LACTEOS</option>
+                                            <option value="FRESCOS">FRESCOS</option>
+                                            <option value="ROPA_ABRIGO">ROPA_ABRIGO</option>
+                                        </datalist>
                                     </div>
 
                                     <!-- Cantidad -->

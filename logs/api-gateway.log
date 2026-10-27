@@ -7,32 +7,32 @@
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::                (v3.2.5)
 
-2026-10-25T16:13:14.237-03:00  INFO 105490 --- [api-gateway] [           main] c.d.gateway.ApiGatewayApplication        : Starting ApiGatewayApplication using Java 27.0.1.0.3 with PID 105490 (/home/jhon/Documentos/Github/TP-DDSI/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar started by jhon in /home/jhon/Documentos/Github/TP-DDSI)
-2026-10-25T16:13:14.252-03:00  INFO 105490 --- [api-gateway] [           main] c.d.gateway.ApiGatewayApplication        : No active profile set, falling back to 1 default profile: "default"
-2026-10-25T16:13:21.296-03:00  INFO 105490 --- [api-gateway] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=24bb4b3d-1b15-37d9-9787-a93f76511c79
+2026-10-27T12:13:45.135-03:00  INFO 185160 --- [api-gateway] [           main] c.d.gateway.ApiGatewayApplication        : Starting ApiGatewayApplication using Java 27.0.1.0.3 with PID 185160 (/home/jhon/Documentos/Github/TP-DDSI/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar started by jhon in /home/jhon/Documentos/Github/TP-DDSI)
+2026-10-27T12:13:45.161-03:00  INFO 185160 --- [api-gateway] [           main] c.d.gateway.ApiGatewayApplication        : No active profile set, falling back to 1 default profile: "default"
+2026-10-27T12:13:54.332-03:00  INFO 185160 --- [api-gateway] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=24bb4b3d-1b15-37d9-9787-a93f76511c79
 WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
 WARNING: sun.misc.Unsafe::objectFieldOffset has been called by io.netty.util.internal.PlatformDependent0$4 (jar:nested:/home/jhon/Documentos/Github/TP-DDSI/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar/!BOOT-INF/lib/netty-common-4.1.109.Final.jar!/)
 WARNING: Please consider reporting this to the maintainers of class io.netty.util.internal.PlatformDependent0$4
 WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
-2026-10-25T16:13:27.634-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [After]
-2026-10-25T16:13:27.635-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Before]
-2026-10-25T16:13:27.635-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Between]
-2026-10-25T16:13:27.635-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Cookie]
-2026-10-25T16:13:27.635-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Header]
-2026-10-25T16:13:27.635-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Host]
-2026-10-25T16:13:27.635-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Method]
-2026-10-25T16:13:27.635-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Path]
-2026-10-25T16:13:27.635-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Query]
-2026-10-25T16:13:27.636-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [ReadBody]
-2026-10-25T16:13:27.644-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [RemoteAddr]
-2026-10-25T16:13:27.644-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [XForwardedRemoteAddr]
-2026-10-25T16:13:27.644-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Weight]
-2026-10-25T16:13:27.644-03:00  INFO 105490 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [CloudFoundryRouteService]
-2026-10-25T16:13:29.656-03:00  INFO 105490 --- [api-gateway] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 4 endpoint(s) beneath base path '/actuator'
+2026-10-27T12:14:02.202-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [After]
+2026-10-27T12:14:02.202-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Before]
+2026-10-27T12:14:02.207-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Between]
+2026-10-27T12:14:02.212-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Cookie]
+2026-10-27T12:14:02.212-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Header]
+2026-10-27T12:14:02.213-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Host]
+2026-10-27T12:14:02.213-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Method]
+2026-10-27T12:14:02.213-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Path]
+2026-10-27T12:14:02.213-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Query]
+2026-10-27T12:14:02.213-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [ReadBody]
+2026-10-27T12:14:02.213-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [RemoteAddr]
+2026-10-27T12:14:02.217-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [XForwardedRemoteAddr]
+2026-10-27T12:14:02.217-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Weight]
+2026-10-27T12:14:02.218-03:00  INFO 185160 --- [api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [CloudFoundryRouteService]
+2026-10-27T12:14:04.359-03:00  INFO 185160 --- [api-gateway] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 4 endpoint(s) beneath base path '/actuator'
 WARNING: A restricted method in java.lang.System has been called
 WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal.NativeLibraryUtil in an unnamed module (jar:nested:/home/jhon/Documentos/Github/TP-DDSI/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar/!BOOT-INF/lib/netty-common-4.1.109.Final.jar!/)
 WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
 WARNING: Restricted methods will be blocked in a future release unless native access is enabled
 
-2026-10-25T16:13:31.719-03:00  INFO 105490 --- [api-gateway] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 8080
-2026-10-25T16:13:32.070-03:00  INFO 105490 --- [api-gateway] [           main] c.d.gateway.ApiGatewayApplication        : Started ApiGatewayApplication in 20.87 seconds (process running for 23.985)
+2026-10-27T12:14:07.269-03:00  INFO 185160 --- [api-gateway] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 8080
+2026-10-27T12:14:07.607-03:00  INFO 185160 --- [api-gateway] [           main] c.d.gateway.ApiGatewayApplication        : Started ApiGatewayApplication in 26.584 seconds (process running for 30.674)

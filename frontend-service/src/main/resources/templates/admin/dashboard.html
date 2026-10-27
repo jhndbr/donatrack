@@ -11,7 +11,6 @@
             <p class="text-secondary">Monitoreo de operaciones, flota logística, asignaciones por algoritmo y carga de datos masiva.</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="/admin/notificaciones" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-bell me-1"></i>Notificaciones</a>
             <a href="/admin/donaciones/nueva" class="btn btn-dt-primary btn-sm"><i class="fa-solid fa-box me-1"></i>Registrar Donación</a>
             <a href="/admin/importar-csv" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-file-csv me-1"></i>Importar CSV</a>
         </div>
@@ -23,14 +22,14 @@
             <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-primary border-4">
                 <small class="text-muted fw-bold">DONACIONES TOTALES</small>
                 <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalDonaciones}">0</div>
-                <small class="text-muted">En base de datos PostgreSQL</small>
+                <small class="text-muted">Registradas en la red</small>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-success border-4">
                 <small class="text-muted fw-bold">CAMIONES EN FLOTA</small>
                 <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalCamiones}">0</div>
-                <small class="text-muted">En base de datos MongoDB</small>
+                <small class="text-muted">Unidades operativas</small>
             </div>
         </div>
         <div class="col-md-3">
@@ -85,7 +84,12 @@
                 <i class="fa-solid fa-satellite-dish text-info fs-2 mb-2"></i>
                 <h5 class="fw-bold text-dark">Centro de Notificaciones</h5>
                 <p class="text-muted small">Audita envíos RabbitMQ/Mailpit, pruebas multicanal y donantes inactivos.</p>
-                <a href="/admin/notificaciones" class="btn btn-outline-info btn-sm mt-auto">Auditar Notificaciones</a>
+                <a href="/admin/notificaciones" class="btn btn-outline-info btn-sm mt-auto position-relative">
+                    Auditar Notificaciones
+                    <span class="badge rounded-pill bg-danger ms-1"
+                          th:if="${notificacionesNoLeidasCount != null and notificacionesNoLeidasCount > 0}"
+                          th:text="${notificacionesNoLeidasCount}">0</span>
+                </a>
             </div>
         </div>
     </div>
@@ -154,16 +158,16 @@
                     <tr th:each="d : ${donacionesFallidas}">
                         <td>
                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace px-2 py-1"
-                                  th:text="${d.id != null ? 'DON-' + #numbers.formatInteger(d.id, 4) : 'DON-0000'}">DON-0001</span>
+                                  th:text="${d['id'] != null ? 'DON-' + #numbers.formatInteger(d['id'], 4) : 'DON-0000'}">DON-0001</span>
                         </td>
-                        <td><span class="badge bg-light text-dark border" th:text="${d.subcategoria}">Alimentos</span></td>
-                        <td th:text="${d.cantidad} + ' ' + ${d.unidadMedida}">10.0 kg</td>
-                        <td th:text="${d.entidadAsignada != null ? d.entidadAsignada.razonSocial : 'No asignada'}">Comedor Los Chicos Felices</td>
+                        <td><span class="badge bg-light text-dark border" th:text="${d['subcategoria']}">Alimentos</span></td>
+                        <td th:text="${d['cantidad']} + ' ' + ${d['unidadMedida']}">10.0 kg</td>
+                        <td th:text="${d['entidadAsignada'] != null ? d['entidadAsignada']['razonSocial'] : 'No asignada'}">Comedor Los Chicos Felices</td>
                         <td>
-                            <span class="text-danger fw-semibold" th:text="${d.justificacionFalla != null ? d.justificacionFalla : 'Rechazo / Sede cerrada'}">Entrega fallida reportada</span>
+                            <span class="text-danger fw-semibold" th:text="${d['justificacionFalla'] != null ? d['justificacionFalla'] : 'Rechazo / Sede cerrada'}">Entrega fallida reportada</span>
                         </td>
                         <td>
-                            <form th:action="@{'/admin/donaciones/' + ${d.id} + '/reingresar'}" method="post" class="d-inline">
+                            <form th:action="@{'/admin/donaciones/' + ${d['id']} + '/reingresar'}" method="post" class="d-inline">
                                 <input type="hidden" name="motivo" value="Reingreso formal a depósito tras incidencia logística (CU-45)">
                                 <button type="submit" class="btn btn-sm btn-outline-success" title="Desasigna y reingresa el bien a depósito para reasignarlo mediante Matchmaking">
                                     <i class="fa-solid fa-rotate-left me-1"></i>Reingresar a Depósito
@@ -201,19 +205,19 @@
                     <tr th:each="d : ${donacionesPendientes}">
                         <td>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1"
-                                  th:text="${d.id != null ? 'DON-' + #numbers.formatInteger(d.id, 4) : 'DON-0000'}">DON-0001</span>
+                                  th:text="${d['id'] != null ? 'DON-' + #numbers.formatInteger(d['id'], 4) : 'DON-0000'}">DON-0001</span>
                         </td>
-                        <td><span class="badge bg-light text-dark border" th:text="${d.subcategoria}">Alimentos</span></td>
-                        <td th:text="${d.cantidad} + ' ' + ${d.unidadMedida}">50 kg</td>
-                        <td th:text="${d.donante != null ? d.donante.nombreCompleto : 'Donante'}">Carlos</td>
+                        <td><span class="badge bg-light text-dark border" th:text="${d['subcategoria']}">Alimentos</span></td>
+                        <td th:text="${d['cantidad']} + ' ' + ${d['unidadMedida']}">50 kg</td>
+                        <td th:text="${d['donante'] != null ? d['donante']['nombreCompleto'] : 'Donante'}">Carlos</td>
                         <td><span class="badge badge-status status-EN_DEPOSITO">EN_DEPOSITO</span></td>
                         <td>
                             <div class="d-flex gap-1">
-                                <a th:href="@{'/admin/matchmaking?donacionId=' + ${d.id}}" class="btn btn-sm btn-primary">
+                                <a th:href="@{'/admin/matchmaking?donacionId=' + ${d['id']}}" class="btn btn-sm btn-primary">
                                     <i class="fa-solid fa-brain me-1"></i>Evaluar
                                 </a>
-                                <form th:action="@{'/admin/donaciones/' + ${d.id} + '/marcar-vencida'}" method="post" class="d-inline"
-                                      onsubmit="return confirm('¿Confirma que desea marcar como VENCIDA la donación DON-' + [[${d.id}]] + '?');">
+                                <form th:action="@{'/admin/donaciones/' + ${d['id']} + '/marcar-vencida'}" method="post" class="d-inline"
+                                      onsubmit="return confirm('¿Confirma que desea marcar como VENCIDA esta donación?');">
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Marcar como Vencida">
                                         <i class="fa-solid fa-calendar-xmark me-1"></i>Vencida
                                     </button>

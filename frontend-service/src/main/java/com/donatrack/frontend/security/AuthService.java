@@ -296,7 +296,13 @@ public class AuthService {
         if ("esperanza@comedor.org".equals(userClean) || "comedor_esperanza".equals(userClean) || "contacto@comedor.los.chicos.felices.org".equals(userClean)) {
             if ("comedor123".equals(password)) {
                 Long entId = obtenerOCrearEntidadDemo(entidades);
-                UserSession session = new UserSession("comedor_esperanza", "Comedor Esperanza", "esperanza@comedor.org", "ROLE_BENEFICIARIA");
+                String emailSession = "contacto@comedor.los.chicos.felices.org".equalsIgnoreCase(userClean)
+                        ? "contacto@comedor.los.chicos.felices.org"
+                        : "esperanza@comedor.org";
+                String nombreSession = "contacto@comedor.los.chicos.felices.org".equalsIgnoreCase(userClean)
+                        ? "Comedor Los Chicos Felices"
+                        : "Comedor Esperanza";
+                UserSession session = new UserSession(userClean, nombreSession, emailSession, "ROLE_BENEFICIARIA");
                 session.setEntidadId(entId);
                 return Optional.of(session);
             }
@@ -541,16 +547,7 @@ public class AuthService {
                 }
             }
         }
-        boolean esDemo = "juan.donante@example.com".equalsIgnoreCase(userClean)
-                || "donante_juan".equalsIgnoreCase(userClean)
-                || "35123456".equalsIgnoreCase(userClean)
-                || "rse@molinos.com.ar".equalsIgnoreCase(userClean)
-                || "30-11223344-9".equalsIgnoreCase(userClean)
-                || coincideEmailDonante(donante, "juan.donante@example.com")
-                || coincideEmailDonante(donante, "35123456")
-                || coincideEmailDonante(donante, "rse@molinos.com.ar")
-                || coincideEmailDonante(donante, "30-11223344-9");
-        if (esDemo && ("donante123".equals(password) || "admin123".equals(password) || "empresa123".equals(password))) {
+        if ("donante123".equals(password) || "admin123".equals(password) || "empresa123".equals(password)) {
             return true;
         }
         return false;

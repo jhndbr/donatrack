@@ -20,6 +20,12 @@ public class EmailNotificationSender implements NotificationSender {
 
     private final JavaMailSender mailSender;
 
+    @org.springframework.beans.factory.annotation.Value("${donatrack.notificaciones.remitente-email:notificaciones@donatrack.org}")
+    private String remitenteEmail = "notificaciones@donatrack.org";
+
+    @org.springframework.beans.factory.annotation.Value("${donatrack.notificaciones.remitente-nombre:DonaTrack Solidaria}")
+    private String remitenteNombre = "DonaTrack Solidaria";
+
     public EmailNotificationSender(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
@@ -41,7 +47,7 @@ public class EmailNotificationSender implements NotificationSender {
             if (esHtml) {
                 MimeMessage mimeMessage = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-                helper.setFrom("notificaciones@donatrack.org", "DonaTrack Solidaria");
+                helper.setFrom(remitenteEmail, remitenteNombre);
                 helper.setTo(destinatario);
                 helper.setSubject(asunto);
                 helper.setText(mensaje, true);
@@ -49,7 +55,7 @@ public class EmailNotificationSender implements NotificationSender {
                 log.info("Email HTML enviado exitosamente a '{}' con asunto: '{}'", destinatario, asunto);
             } else {
                 SimpleMailMessage mail = new SimpleMailMessage();
-                mail.setFrom("notificaciones@donatrack.org");
+                mail.setFrom(remitenteEmail);
                 mail.setTo(destinatario);
                 mail.setSubject(asunto);
                 mail.setText(mensaje != null ? mensaje : "");

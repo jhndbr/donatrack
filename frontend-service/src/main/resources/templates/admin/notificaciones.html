@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
 <head>
-    <title>Auditoría y Centro de Notificaciones - Administración DonaTrack</title>
+    <title>Auditoría de Notificaciones - Administración DonaTrack</title>
 </head>
 <body>
 <div th:fragment="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Encabezado Principal -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div>
-            <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill mb-1">
-                <i class="fa-solid fa-satellite-dish me-1"></i> Microservicio de Notificaciones (:8085)
-            </span>
-            <h2 class="fw-bold text-dark mb-0">Auditoría y Centro de Comunicaciones</h2>
-            <p class="text-secondary mb-0">Monitoreo de eventos RabbitMQ, envíos SMTP (Mailpit), SMS/WhatsApp, control de idempotencia y alertas operativas.</p>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill">
+                    <i class="fa-solid fa-satellite-dish me-1"></i> Auditoría Central de Notificaciones
+                </span>
+                <span class="badge bg-danger rounded-pill px-3 py-2"
+                      th:if="${notificacionesNoLeidasVista != null and notificacionesNoLeidasVista > 0}"
+                      th:text="${notificacionesNoLeidasVista + ' sin leer'}">0 sin leer</span>
+            </div>
+            <h2 class="fw-bold text-dark mb-0">Consola de Auditoría y Comunicaciones</h2>
+            <p class="text-secondary mb-0">Monitoreo de eventos asíncronos RabbitMQ, envíos multicanal (SMTP, SMS, WhatsApp), control de idempotencia y alertas operativas.</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="http://localhost:8025" target="_blank" class="btn btn-outline-primary btn-sm">
-                <i class="fa-solid fa-envelope-open-text me-1"></i> Abrir Mailpit (:8025)
-            </a>
             <a href="/admin" class="btn btn-outline-secondary btn-sm">
                 <i class="fa-solid fa-arrow-left me-1"></i> Volver a Admin
             </a>
@@ -24,11 +27,11 @@
     </div>
 
     <!-- Alertas Flash -->
-    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0 mb-4" role="alert">
         <i class="fa-solid fa-circle-check me-2"></i><span th:text="${mensajeExito}">Éxito</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm border-0 mb-4" role="alert">
         <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${mensajeError}">Error</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -36,53 +39,55 @@
     <!-- Métricas de Auditoría -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-primary border-4">
-                <small class="text-muted fw-bold">TOTAL AUDITADOS</small>
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-primary border-4 h-100">
+                <small class="text-muted fw-bold">TOTAL REGISTRADOS</small>
                 <div class="fs-3 fw-bold text-dark mt-1" th:text="${estadisticas['totalRegistros'] != null ? estadisticas['totalRegistros'] : 0}">0</div>
                 <small class="text-muted">Eventos procesados</small>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-success border-4">
-                <small class="text-muted fw-bold">ENVIADOS CON ÉXITO</small>
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-success border-4 h-100">
+                <small class="text-muted fw-bold">DESPACHADOS CON ÉXITO</small>
                 <div class="fs-3 fw-bold text-success mt-1" th:text="${estadisticas['enviados'] != null ? estadisticas['enviados'] : 0}">0</div>
-                <small class="text-muted">Despachados por Strategy</small>
+                <small class="text-muted">Por adaptador multicanal</small>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-danger border-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-danger border-4 h-100">
                 <small class="text-muted fw-bold">ENVÍOS FALLIDOS</small>
                 <div class="fs-3 fw-bold text-danger mt-1" th:text="${estadisticas['fallidos'] != null ? estadisticas['fallidos'] : 0}">0</div>
-                <small class="text-muted">Con registro de error</small>
+                <small class="text-muted">Con error registrado</small>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-info border-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-info border-4 h-100">
                 <small class="text-muted fw-bold">IDEMPOTENCIA ACTIVA</small>
                 <div class="fs-3 fw-bold text-info mt-1" th:text="${estadisticas['duplicadosIgnorados'] != null ? estadisticas['duplicadosIgnorados'] : 0}">0</div>
-                <small class="text-muted">Duplicados ignorados</small>
+                <small class="text-muted">Duplicados prevenidos</small>
             </div>
         </div>
     </div>
 
-    <!-- Acciones Operativas y Despacho de Prueba -->
+    <!-- Acciones Operativas y Despacho Multicanal -->
     <div class="row g-4 mb-4">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-paper-plane text-primary me-2"></i>Despacho Manual / Prueba de Estrategia Multicanal</h5>
+                <h5 class="fw-bold text-dark mb-3">
+                    <i class="fa-solid fa-paper-plane text-primary me-2"></i>Despacho Manual y Emisión Multicanal
+                </h5>
                 <form action="/admin/notificaciones/test" method="post">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold">Canal (Strategy)</label>
+                            <label class="form-label small fw-bold">Canal</label>
                             <select name="canal" class="form-select form-select-sm" required>
-                                <option value="EMAIL">EMAIL (SMTP Mailpit)</option>
-                                <option value="WHATSAPP">WHATSAPP (Adapter)</option>
-                                <option value="SMS">SMS (Adapter)</option>
+                                <option value="EMAIL">EMAIL (Servidor SMTP)</option>
+                                <option value="WHATSAPP">WHATSAPP (Meta Cloud API)</option>
+                                <option value="SMS">SMS (Twilio)</option>
                             </select>
                         </div>
                         <div class="col-md-8">
                             <label class="form-label small fw-bold">Destinatario (Email o Teléfono)</label>
-                            <input type="text" name="destinatario" class="form-control form-select-sm" placeholder="ej. auditoria@donatrack.org o +5491144445555" required>
+                            <input type="text" name="destinatario" class="form-control form-control-sm" placeholder="ej. usuario@donatrack.org o +5491144445555" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Asunto</label>
@@ -95,7 +100,7 @@
                     </div>
                     <div class="mt-3 text-end">
                         <button type="submit" class="btn btn-dt-primary btn-sm px-3">
-                            <i class="fa-solid fa-bolt me-1"></i> Enviar Notificación Ahora
+                            <i class="fa-solid fa-bolt me-1"></i> Despachar Notificación Ahora
                         </button>
                     </div>
                 </form>
@@ -105,9 +110,11 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
                 <div>
-                    <h5 class="fw-bold text-dark mb-2"><i class="fa-solid fa-user-clock text-warning me-2"></i>Fidelización de Donantes (CU-19)</h5>
+                    <h5 class="fw-bold text-dark mb-2">
+                        <i class="fa-solid fa-user-clock text-warning me-2"></i>Fidelización de Donantes
+                    </h5>
                     <p class="text-muted small">
-                        Ejecuta bajo demanda la detección de donantes sin actividad reciente (&gt;60 días) y emite el evento asíncrono <code>donante.inactivo</code> hacia RabbitMQ para invitarlos a volver a colaborar.
+                        Ejecuta bajo demanda el escaneo de donantes sin actividad reciente (&gt;20 días) y emite el evento <code>donante.inactivo</code> hacia RabbitMQ para invitarlos a colaborar.
                     </p>
                 </div>
                 <form action="/admin/notificaciones/inactivos" method="post" class="mt-3">
@@ -122,12 +129,26 @@
     <!-- Tabla de Auditoría de Notificaciones -->
     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-            <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-table-list text-primary me-2"></i>Registro de Auditoría (PostgreSQL `auditoria_notificaciones`)</h5>
-            <form action="/admin/notificaciones" method="get" class="d-flex gap-2">
-                <input type="text" name="destinatario" class="form-control form-control-sm" placeholder="Filtrar por destinatario..." th:value="${destinatarioFiltro}">
-                <button type="submit" class="btn btn-outline-primary btn-sm">Filtrar</button>
-                <a th:if="${!#strings.isEmpty(destinatarioFiltro)}" href="/admin/notificaciones" class="btn btn-outline-secondary btn-sm">Limpiar</a>
-            </form>
+            <h5 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-table-list text-primary me-2"></i>Registro de Auditoría Relacional (PostgreSQL)
+                <span class="badge rounded-pill bg-danger ms-2"
+                      th:if="${notificacionesNoLeidasVista != null and notificacionesNoLeidasVista > 0}"
+                      th:text="${notificacionesNoLeidasVista + ' sin leer'}">0 sin leer</span>
+            </h5>
+            <div class="d-flex flex-wrap gap-2">
+                <form th:if="${notificacionesNoLeidasVista != null and notificacionesNoLeidasVista > 0}"
+                      th:action="@{/admin/notificaciones/leer-todas}" method="post" class="d-inline">
+                    <input type="hidden" name="destinatario" th:value="${destinatarioFiltro}">
+                    <button type="submit" class="btn btn-outline-success btn-sm">
+                        <i class="fa-solid fa-check-double me-1"></i> Marcar todas leídas
+                    </button>
+                </form>
+                <form action="/admin/notificaciones" method="get" class="d-flex gap-2">
+                    <input type="text" name="destinatario" class="form-control form-control-sm" placeholder="Filtrar por destinatario..." th:value="${destinatarioFiltro}">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">Filtrar</button>
+                    <a th:if="${!#strings.isEmpty(destinatarioFiltro)}" href="/admin/notificaciones" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+                </form>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -135,22 +156,33 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
+                        <th>Estado Lectura</th>
                         <th>Fecha / Hora</th>
                         <th>Canal</th>
                         <th>Destinatario</th>
-                        <th>Asunto y Clave Idempotente</th>
-                        <th>Estado</th>
+                        <th>Asunto</th>
+                        <th>Despacho</th>
+                        <th class="text-end">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:if="${#lists.isEmpty(notificaciones)}">
-                        <td colspan="6" class="text-center py-4 text-muted">
+                        <td colspan="8" class="text-center py-4 text-muted">
                             <i class="fa-regular fa-bell-slash fs-4 d-block mb-2 text-secondary"></i>
                             No se encontraron registros de notificaciones para el criterio seleccionado.
                         </td>
                     </tr>
-                    <tr th:each="n : ${notificaciones}">
+                    <tr th:each="n : ${notificaciones}"
+                        th:classappend="${n['leida'] == null or !n['leida']} ? 'table-warning bg-opacity-10' : ''">
                         <td class="font-monospace small text-muted" th:text="${'#' + n['id']}">#1</td>
+                        <td>
+                            <span th:if="${n['leida'] == null or !n['leida']}" class="badge rounded-pill bg-danger">
+                                <i class="fa-solid fa-circle-dot me-1"></i> NUEVA
+                            </span>
+                            <span th:if="${n['leida'] != null and n['leida']}" class="badge rounded-pill bg-secondary-subtle text-secondary">
+                                <i class="fa-solid fa-check me-1"></i> Leída
+                            </span>
+                        </td>
                         <td class="small font-monospace text-muted" th:text="${n['timestamp'] != null ? (#strings.length(n['timestamp'].toString()) >= 19 ? #strings.substring(n['timestamp'].toString(), 0, 19).replace('T', ' ') : n['timestamp']) : 'Reciente'}">2026-10-19 10:00</td>
                         <td>
                             <span class="badge bg-light text-dark border">
@@ -164,8 +196,64 @@
                             <small class="text-muted font-monospace" th:text="${n['claveEvento']}">notif-key</small>
                         </td>
                         <td>
-                            <span th:class="'badge ' + (${n['estado'] == 'ENVIADO'} ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger')"
+                            <span th:class="'badge ' + (${n['estado'] == 'ENVIADO'} ? 'bg-success-subtle text-success' : (${n['estado'] == 'DUPLICADO_IGNORADO'} ? 'bg-info-subtle text-info' : 'bg-danger-subtle text-danger'))"
                                   th:text="${n['estado']}">ENVIADO</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="modal"
+                                        th:attr="data-bs-target='#modalAdminNotif-' + ${n['id']}"
+                                        title="Ver contenido del mensaje">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <form th:if="${(n['leida'] == null or !n['leida']) and n['id'] != null}"
+                                      th:action="@{/admin/notificaciones/{id}/leer(id=${n['id']})}" method="post" class="d-inline">
+                                    <input type="hidden" name="destinatario" th:value="${destinatarioFiltro}">
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Marcar como leída">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Modal de Vista Detallada de Auditoría -->
+                            <div class="modal fade text-start" th:id="'modalAdminNotif-' + ${n['id']}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                                        <div class="modal-header bg-light border-bottom">
+                                            <h5 class="modal-title fw-bold text-dark mb-0">
+                                                <i class="fa-solid fa-envelope-open-text text-primary me-2"></i>
+                                                <span th:text="${n['asunto']}">Auditoría de Notificación</span>
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-0">
+                                            <div class="d-flex flex-wrap gap-3 small text-muted bg-light px-4 py-2 border-bottom font-monospace">
+                                                <div><strong>Destinatario:</strong> <span th:text="${n['destinatario']}"></span></div>
+                                                <div><strong>Canal:</strong> <span th:text="${n['canal']}"></span></div>
+                                                <div><strong>Estado:</strong> <span th:text="${n['estado']}"></span></div>
+                                                <div><strong>Clave Idempotencia:</strong> <span th:text="${n['claveEvento']}"></span></div>
+                                            </div>
+                                            <div th:if="${n['errorDetalle'] != null}" class="alert alert-danger py-2 small m-3 mb-0">
+                                                <strong>Error registrado:</strong> <span th:text="${n['errorDetalle']}"></span>
+                                            </div>
+                                            <div class="notif-content-render p-3" style="max-height: 500px; overflow-y: auto;"
+                                                 th:utext="${n['mensaje'] != null ? n['mensaje'] : 'Sin cuerpo de mensaje registrado.'}">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light border-top">
+                                            <form th:if="${(n['leida'] == null or !n['leida']) and n['id'] != null}"
+                                                  th:action="@{/admin/notificaciones/{id}/leer(id=${n['id']})}" method="post" class="d-inline">
+                                                <input type="hidden" name="destinatario" th:value="${destinatarioFiltro}">
+                                                <button type="submit" class="btn btn-success btn-sm">
+                                                    <i class="fa-solid fa-check me-1"></i> Marcar como Leída
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>

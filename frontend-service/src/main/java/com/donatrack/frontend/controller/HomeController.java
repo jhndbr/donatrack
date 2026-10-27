@@ -202,11 +202,12 @@ public class HomeController {
         }
 
         boolean tieneTelefono = telefono != null && !telefono.trim().isEmpty();
-        boolean prefTelefono = tieneTelefono && "TELEFONO".equalsIgnoreCase(medioPreferido);
+        boolean prefTelefono = tieneTelefono && ("WHATSAPP".equalsIgnoreCase(medioPreferido) || "SMS".equalsIgnoreCase(medioPreferido) || "TELEFONO".equalsIgnoreCase(medioPreferido));
         java.util.List<Map<String, Object>> mediosContacto = new java.util.ArrayList<>();
         mediosContacto.add(Map.of("tipo", "EMAIL", "valor", email, "esPredeterminado", !prefTelefono));
         if (tieneTelefono) {
-            mediosContacto.add(Map.of("tipo", "TELEFONO", "valor", telefono.trim(), "esPredeterminado", prefTelefono));
+            String tipoCanal = "WHATSAPP".equalsIgnoreCase(medioPreferido) ? "WHATSAPP" : "SMS";
+            mediosContacto.add(Map.of("tipo", tipoCanal, "valor", telefono.trim(), "esPredeterminado", prefTelefono));
         }
 
         Map<String, Object> body = Map.of(
@@ -258,11 +259,12 @@ public class HomeController {
         }
 
         boolean tieneTelefono = telefono != null && !telefono.trim().isEmpty();
-        boolean prefTelefono = tieneTelefono && "TELEFONO".equalsIgnoreCase(medioPreferido);
+        boolean prefTelefono = tieneTelefono && ("WHATSAPP".equalsIgnoreCase(medioPreferido) || "SMS".equalsIgnoreCase(medioPreferido) || "TELEFONO".equalsIgnoreCase(medioPreferido));
         java.util.List<Map<String, Object>> mediosContacto = new java.util.ArrayList<>();
         mediosContacto.add(Map.of("tipo", "EMAIL", "valor", email, "esPredeterminado", !prefTelefono));
         if (tieneTelefono) {
-            mediosContacto.add(Map.of("tipo", "TELEFONO", "valor", telefono.trim(), "esPredeterminado", prefTelefono));
+            String tipoCanal = "WHATSAPP".equalsIgnoreCase(medioPreferido) ? "WHATSAPP" : "SMS";
+            mediosContacto.add(Map.of("tipo", tipoCanal, "valor", telefono.trim(), "esPredeterminado", prefTelefono));
         }
 
         Map<String, Object> body = new java.util.HashMap<>();

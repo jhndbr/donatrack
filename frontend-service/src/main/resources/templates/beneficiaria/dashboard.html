@@ -5,24 +5,23 @@
 </head>
 <body>
 <div th:fragment="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <span class="badge bg-success-subtle text-success fw-semibold px-3 py-2 rounded-pill mb-1">
                 <i class="fa-solid fa-building me-1"></i> <span th:text="${nombreEntidad != null ? nombreEntidad : 'Entidad Beneficiaria'}">Comedor Los Chicos Felices</span>
             </span>
             <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-building text-success me-2"></i>Portal de Entidad Beneficiaria</h2>
-            <p class="text-secondary">Gestiona tus necesidades de recursos, verifica donaciones asignadas y confirma recepciones con fotos.</p>
+            <p class="text-secondary mb-0">Gestiona tus necesidades de recursos, verifica donaciones asignadas y confirma recepciones con fotos.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a th:href="@{/beneficiaria/necesidades(entidadId=${entidadId})}" class="btn btn-dt-secondary"><i class="fa-solid fa-plus me-1"></i>Registrar Necesidad</a>
             <a th:href="@{/beneficiaria/confirmar(entidadId=${entidadId})}" class="btn btn-outline-success"><i class="fa-solid fa-camera me-1"></i>Confirmar Recepción</a>
-            <a th:href="@{/beneficiaria/notificaciones(entidadId=${entidadId})}" class="btn btn-outline-primary"><i class="fa-solid fa-bell me-1"></i>Notificaciones</a>
         </div>
     </div>
 
     <!-- Selector de Entidad para Administradores -->
-    <div th:if="${session.userSession != null and session.userSession.isAdmin()}" class="alert alert-light border rounded-3 mb-4 p-3 shadow-sm">
-        <label class="form-label fw-bold text-dark mb-1"><i class="fa-solid fa-building-user me-1 text-primary"></i> Cambiar Entidad a Gestionar (Modo Administrador)</label>
+    <div th:if="${session.userSession != null and session.userSession.isAdmin()}" class="alert alert-light border rounded-4 mb-4 p-3 shadow-sm">
+        <label class="form-label fw-bold text-dark mb-1"><i class="fa-solid fa-building-user me-1 text-primary"></i> Cambiar Entidad a Supervisar (Vista de Supervisión)</label>
         <select class="form-select form-select-sm" onchange="window.location.href='/beneficiaria?entidadId=' + this.value">
             <option th:each="ent : ${entidades}"
                     th:value="${ent.id}"
@@ -32,29 +31,70 @@
         <small class="text-muted">Como administrador puedes inspeccionar el portal de cualquiera de las entidades registradas en DonaTrack.</small>
     </div>
 
+    <!-- Alerta Destacada: Chofer en Puerta de Sede -->
+    <div th:if="${!#lists.isEmpty(donacionesEnPuerta)}" class="card border-0 shadow rounded-4 mb-4 bg-warning-subtle border-start border-warning border-5">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-warning text-dark rounded-circle shadow-sm">
+                        <i class="fa-solid fa-truck-ramp-box fs-2"></i>
+                    </div>
+                    <div>
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1 mb-1">
+                            <i class="fa-solid fa-bell me-1"></i>¡AVISO OPERATIVO EN VIVO!
+                        </span>
+                        <h4 class="fw-bold text-dark mb-1">El camión de reparto está estacionado en la puerta de tu sede</h4>
+                        <p class="text-secondary mb-0">
+                            El chofer ha notificado su arribo con:
+                            <span th:each="dp, iter : ${donacionesEnPuerta}">
+                                <strong class="text-dark font-monospace" th:text="'DON-' + ${#numbers.formatInteger(dp.id, 4)} + ' (' + ${dp.subcategoria} + ')'">DON-0001</strong><span th:if="${!iter.last}">, </span>
+                            </span>.
+                            Realiza la inspección física de los insumos y procede a firmar la recepción con fotografía.
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a th:href="@{/beneficiaria/confirmar(entidadId=${entidadId}, donacionId=${donacionesEnPuerta[0].id})}"
+                       class="btn btn-success btn-lg fw-bold shadow-sm px-4">
+                        <i class="fa-solid fa-file-signature me-2"></i>Recepcionar y Firmar Ahora
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Alertas Flash -->
-    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm mb-4 border-0" role="alert">
         <i class="fa-solid fa-circle-check me-2"></i><span th:text="${mensajeExito}">Éxito</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm mb-4 border-0" role="alert">
         <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${mensajeError}">Error</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
     <!-- Donaciones Asignadas a la Entidad -->
     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-box-open text-primary me-2"></i>Donaciones Asignadas a tu Entidad</h4>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold text-dark mb-0"><i class="fa-solid fa-box-open text-primary me-2"></i>Donaciones Asignadas a tu Entidad</h4>
+                <p class="text-muted small mb-0">Estado logístico, seguimiento en tiempo real y comprobantes digitales emitidos.</p>
+            </div>
+            <a th:href="@{/beneficiaria/confirmar(entidadId=${entidadId})}" class="btn btn-sm btn-outline-success">
+                <i class="fa-solid fa-camera me-1"></i>Ir a Mesa de Entregas
+            </a>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>ID</th>
+                        <th>ID Donación</th>
                         <th>Subcategoría</th>
                         <th>Cantidad</th>
                         <th>Donante</th>
-                        <th>Estado Actual</th>
-                        <th>Acción</th>
+                        <th>Estado Logístico</th>
+                        <th class="text-end">Acción Operativa</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -64,21 +104,128 @@
                     <tr th:each="don : ${donacionesAsignadas}">
                         <td>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1"
-                                  th:text="${don.id != null ? 'DON-' + #numbers.formatInteger(don.id, 4) : 'DON-0000'}">DON-0001</span>
+                                  th:text="${don['id'] != null ? 'DON-' + #numbers.formatInteger(don['id'], 4) : 'DON-0000'}">DON-0001</span>
                         </td>
-                        <td><span class="badge bg-light text-dark border" th:text="${don.subcategoria}">Alimentos</span></td>
-                        <td th:text="${don.cantidad} + ' ' + ${don.unidadMedida}">20 kg</td>
+                        <td><span class="badge bg-light text-dark border" th:text="${don['subcategoria']}">Alimentos</span></td>
+                        <td class="fw-semibold" th:text="${don['cantidad']} + ' ' + ${don['unidadMedida']}">20 kg</td>
                         <td th:text="${don['donante'] != null ? don['donante']['nombreCompleto'] : 'Donante Solidario'}">Carlos Gomez</td>
-                        <td><span th:class="'badge badge-status status-' + ${don.estado}" th:text="${don.estado}">ASIGNACION_REALIZADA</span></td>
                         <td>
-                            <a th:if="${don.estado != 'ENTREGADA'}"
-                               th:href="@{/beneficiaria/confirmar(donacionId=${don.id}, entidadId=${entidadId})}"
-                               class="btn btn-sm btn-outline-success">
-                                <i class="fa-solid fa-check me-1"></i>Confirmar Recepción
-                            </a>
-                            <span th:if="${don.estado == 'ENTREGADA'}" class="badge bg-success-subtle text-success">
-                                <i class="fa-solid fa-circle-check me-1"></i>Recibida
+                            <!-- Estado: EN_PUERTA_SEDE -->
+                            <span th:if="${estadoParadaPorDonacion != null and estadoParadaPorDonacion.get(don['id']) == 'EN_PUERTA_SEDE' and don['estado'] != 'ENTREGADA'}"
+                                  class="badge bg-warning text-dark px-3 py-2 fw-bold shadow-sm">
+                                <i class="fa-solid fa-truck-front me-1"></i>¡EN PUERTA DE SEDE!
                             </span>
+                            <!-- Estado: ENTREGADA -->
+                            <span th:if="${don['estado'] == 'ENTREGADA'}" class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                <i class="fa-solid fa-circle-check me-1"></i>ENTREGADA Y CERTIFICADA
+                            </span>
+                            <!-- Estado: ENTREGA_FALLIDA -->
+                            <span th:if="${don['estado'] == 'ENTREGA_FALLIDA'}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i>NO RECIBIDA / INCIDENCIA
+                            </span>
+                            <!-- Estado: EN_TRASLADO -->
+                            <span th:if="${don['estado'] == 'EN_TRASLADO' and (estadoParadaPorDonacion == null or estadoParadaPorDonacion.get(don['id']) != 'EN_PUERTA_SEDE')}"
+                                  class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2">
+                                <i class="fa-solid fa-truck-fast me-1"></i>EN TRASLADO (EN RUTA)
+                            </span>
+                            <!-- Otros estados (ASIGNACION_REALIZADA, etc.) -->
+                            <span th:if="${don['estado'] != 'ENTREGADA' and don['estado'] != 'ENTREGA_FALLIDA' and don['estado'] != 'EN_TRASLADO' and (estadoParadaPorDonacion == null or estadoParadaPorDonacion.get(don['id']) != 'EN_PUERTA_SEDE')}"
+                                  th:class="'badge badge-status status-' + ${don['estado']}" th:text="${don['estado']}">ASIGNACION_REALIZADA</span>
+                        </td>
+                        <td class="text-end">
+                            <!-- Acciones según estado -->
+                            <div class="d-inline-flex gap-1 align-items-center flex-wrap justify-content-end">
+                                <!-- Si está en puerta de sede: botón Confirmar Recepción prioritario y habilitado -->
+                                <a th:if="${estadoParadaPorDonacion != null and estadoParadaPorDonacion.get(don['id']) == 'EN_PUERTA_SEDE' and don['estado'] != 'ENTREGADA' and don['estado'] != 'ENTREGA_FALLIDA'}"
+                                   th:href="@{/beneficiaria/confirmar(donacionId=${don['id']}, entidadId=${entidadId})}"
+                                   class="btn btn-sm btn-success fw-bold shadow-sm">
+                                    <i class="fa-solid fa-file-signature me-1"></i>Confirmar Recepción
+                                </a>
+
+                                <!-- Si aún no está en puerta: botón bloqueado con candado indicando que espera al chofer -->
+                                <button th:if="${(estadoParadaPorDonacion == null or estadoParadaPorDonacion.get(don['id']) != 'EN_PUERTA_SEDE') and don['estado'] != 'ENTREGADA' and don['estado'] != 'ENTREGA_FALLIDA'}"
+                                        type="button"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        disabled
+                                        title="Habilitado únicamente cuando el chofer marque arribo en la puerta de tu sede">
+                                    <i class="fa-solid fa-lock me-1"></i>Esperando Chofer en Puerta
+                                </button>
+
+                                <!-- Si está en traslado: Ver Tracking GPS en vivo -->
+                                <a th:if="${don['estado'] == 'EN_TRASLADO' and (estadoParadaPorDonacion == null or estadoParadaPorDonacion.get(don['id']) != 'EN_PUERTA_SEDE')}"
+                                   th:href="@{/beneficiaria/tracking(entidadId=${entidadId})}"
+                                   class="btn btn-sm btn-outline-info">
+                                    <i class="fa-solid fa-map-location-dot me-1"></i>Tracking
+                                </a>
+
+                                <!-- Botón Reportar Inconveniente (accesible en todo momento antes de confirmarse) -->
+                                <button th:if="${don['estado'] != 'ENTREGADA' and don['estado'] != 'ENTREGA_FALLIDA'}"
+                                        type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        th:data-bs-target="'#modalIncidenciaEntidad-' + ${don['id']}"
+                                        title="Reportar inconveniente o rechazar entrega">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Inconveniente
+                                </button>
+
+                                <!-- Si está entregada: botón Ver Comprobante Digital -->
+                                <button th:if="${don['estado'] == 'ENTREGADA'}"
+                                        type="button"
+                                        class="btn btn-sm btn-outline-primary"
+                                        th:onclick="'abrirModalComprobantePorDonacion(' + ${don['id']} + ')'">
+                                    <i class="fa-solid fa-file-invoice me-1"></i>Comprobante
+                                </button>
+
+                                <!-- Si falló / no recibida -->
+                                <span th:if="${don['estado'] == 'ENTREGA_FALLIDA'}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                    <i class="fa-solid fa-circle-xmark me-1"></i>Incidencia Registrada
+                                </span>
+                            </div>
+
+                            <!-- Modal Inconveniente / Incidencia para la Entidad Beneficiaria -->
+                            <div class="modal fade" th:id="'modalIncidenciaEntidad-' + ${don['id']}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content rounded-4 border-0 shadow">
+                                        <form action="/beneficiaria/fallida" method="post">
+                                            <input type="hidden" name="entidadId" th:value="${entidadId}">
+                                            <input type="hidden" name="donacionId" th:value="${don['id']}">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title fw-bold">
+                                                    <i class="fa-solid fa-triangle-exclamation me-2"></i>Reportar Inconveniente (DON-<span th:text="${#numbers.formatInteger(don['id'], 4)}">0001</span>)
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body p-4">
+                                                <p class="small text-secondary mb-3">
+                                                    Puedes reportar un inconveniente en cualquier etapa de la entrega. Se notificará a logística, al chofer y a las partes interesadas.
+                                                </p>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold small">Motivo del Inconveniente / Rechazo <span class="text-danger">*</span></label>
+                                                    <select name="motivo" class="form-select form-select-sm" required>
+                                                        <option value="Sede cerrada / Sin receptor presente en horario de reparto" selected>Sede cerrada / Sin receptor presente en horario de reparto</option>
+                                                        <option value="Rechazado en sede (mercadería dañada, vencida o deteriorada)">Rechazado en sede (mercadería dañada, vencida o deteriorada)</option>
+                                                        <option value="Capacidad de almacenamiento colmada en sede">Capacidad de almacenamiento colmada en sede</option>
+                                                        <option value="Acceso vehicular bloqueado a la sede">Acceso vehicular bloqueado a la sede</option>
+                                                        <option value="Emergencia edilicia o corte de suministro en sede">Emergencia edilicia o corte de suministro en sede</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-check bg-light border rounded-3 p-2 ps-4">
+                                                    <input class="form-check-input" type="checkbox" name="replanificable" th:id="'checkReplanEntidad-' + ${don['id']}" value="true" checked>
+                                                    <label class="form-check-label small fw-semibold" th:for="'checkReplanEntidad-' + ${don['id']}">
+                                                        Los bienes regresan al Depósito Central para replanificación administrativa (CU-45)
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer bg-light">
+                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-danger btn-sm fw-semibold">
+                                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Registrar Inconveniente
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -88,23 +235,142 @@
 
     <!-- Accesos rápidos -->
     <div class="row g-3">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center h-100">
                 <i class="fa-solid fa-hand-holding-dollar text-primary fs-1 mb-2"></i>
                 <h5 class="fw-bold text-dark">Solicitud de Recursos</h5>
                 <p class="text-muted small">Carga tus necesidades recurrentes o extraordinarias para que el algoritmo de Matchmaking asigne donaciones.</p>
-                <a href="/beneficiaria/necesidades" class="btn btn-sm btn-dt-primary">Cargar Necesidades</a>
+                <a href="/beneficiaria/necesidades" class="btn btn-sm btn-dt-primary mt-auto">Cargar Necesidades</a>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center h-100">
                 <i class="fa-solid fa-truck-ramp-box text-success fs-1 mb-2"></i>
                 <h5 class="fw-bold text-dark">Camión en Camino</h5>
                 <p class="text-muted small">Sigue en vivo la posición GPS del camión asignado a la entrega de tus insumos.</p>
-                <a href="/beneficiaria/tracking" class="btn btn-sm btn-dt-secondary">Ver Camión en Mapa</a>
+                <a href="/beneficiaria/tracking" class="btn btn-sm btn-dt-secondary mt-auto">Ver Camión en Mapa</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center h-100">
+                <i class="fa-solid fa-camera-retro text-info fs-1 mb-2"></i>
+                <h5 class="fw-bold text-dark">Confirmación con Foto</h5>
+                <p class="text-muted small">Sube las fotos y firma la recepción de las donaciones asignadas a tu sede.</p>
+                <a href="/beneficiaria/confirmar" class="btn btn-sm btn-outline-success mt-auto">Mesa de Recepción</a>
             </div>
         </div>
     </div>
+
+    <!-- Modal Comprobante Formal Digital -->
+    <div class="modal fade" id="modalComprobanteDigital" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <div class="modal-header bg-success text-white py-3">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-file-circle-check me-2"></i>Comprobante Digital de Entrega - DonaTrack
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="modalComprobanteBody">
+                    <div class="text-center py-4" id="comprobanteSpinner">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <div class="small text-muted mt-2">Cargando comprobante de trazabilidad...</div>
+                    </div>
+                    <div id="comprobanteContenido" class="d-none">
+                        <div class="border rounded-4 p-4 bg-light mb-3">
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">ID Donación:</small>
+                                    <strong class="font-monospace fs-5 text-dark" id="compDonacionId">DON-0001</strong>
+                                </div>
+                                <div class="col-sm-6 text-sm-end">
+                                    <small class="text-muted d-block">Estado del Proceso:</small>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1" id="compEstado">ENTREGADA</span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">Entidad Receptora:</small>
+                                    <strong class="text-dark" id="compEntidadNombre">Comedor Los Chicos Felices</strong>
+                                </div>
+                                <div class="col-sm-6 text-sm-end">
+                                    <small class="text-muted d-block">Unidad de Transporte:</small>
+                                    <span class="badge bg-dark font-monospace" id="compPatente">AE789XY</span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">Receptor Responsable en Sede:</small>
+                                    <strong class="text-dark" id="compReceptor">Laura Fernández</strong>
+                                    <span class="text-muted small" id="compDni">(DNI: 32456789)</span>
+                                </div>
+                                <div class="col-sm-6 text-sm-end">
+                                    <small class="text-muted d-block">Fecha y Hora de Recepción:</small>
+                                    <strong class="text-dark font-monospace" id="compFecha">2026-10-27 10:30</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Evidencia Fotográfica -->
+                        <div class="mb-3 text-center">
+                            <h6 class="fw-bold text-dark text-start mb-2"><i class="fa-solid fa-camera text-primary me-1"></i>Evidencia Fotográfica de Entrega</h6>
+                            <div class="p-2 border rounded-4 bg-white shadow-sm d-inline-block w-100" style="max-height: 280px; overflow: hidden;">
+                                <img id="compFotoImg" src="" alt="Comprobante de Recepción" class="img-fluid rounded-3" style="max-height: 260px; object-fit: contain;">
+                            </div>
+                        </div>
+
+                        <div class="alert alert-success-subtle border border-success-subtle rounded-3 p-3 mb-0 text-center small text-success">
+                            <i class="fa-solid fa-shield-halved me-1"></i> Este comprobante digital cuenta con firma y certificación de trazabilidad de DonaTrack para auditoría y donantes.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-dt-primary btn-sm" onclick="window.print()">
+                        <i class="fa-solid fa-print me-1"></i>Imprimir / Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function abrirModalComprobantePorDonacion(donacionId) {
+            var modalEl = document.getElementById('modalComprobanteDigital');
+            var spinner = document.getElementById('comprobanteSpinner');
+            var contenido = document.getElementById('comprobanteContenido');
+            
+            spinner.classList.remove('d-none');
+            contenido.classList.add('d-none');
+
+            var bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            bsModal.show();
+
+            fetch('/beneficiaria/comprobante/donacion/' + donacionId)
+                .then(function(res) {
+                    if (!res.ok) throw new Error('No se encontró el comprobante');
+                    return res.json();
+                })
+                .then(function(data) {
+                    document.getElementById('compDonacionId').textContent = 'DON-' + String(donacionId).padStart(4, '0');
+                    document.getElementById('compEstado').textContent = data.estado || 'ENTREGADA';
+                    document.getElementById('compEntidadNombre').textContent = data.nombreEntidad || 'Entidad Beneficiaria';
+                    document.getElementById('compPatente').textContent = data.patenteCamion || 'Flota DonaTrack';
+                    document.getElementById('compReceptor').textContent = data.receptorNombre || 'Responsable en Sede';
+                    document.getElementById('compDni').textContent = data.receptorDni ? '(DNI: ' + data.receptorDni + ')' : '';
+                    document.getElementById('compFecha').textContent = data.fechaConfirmacion ? data.fechaConfirmacion.replace('T', ' ').substring(0, 16) : new Date().toLocaleString();
+                    
+                    var fotoImg = document.getElementById('compFotoImg');
+                    if (data.fotosConfirmacionUrls && data.fotosConfirmacionUrls.length > 0) {
+                        fotoImg.src = data.fotosConfirmacionUrls[0];
+                    } else {
+                        fotoImg.src = 'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=600&q=80';
+                    }
+
+                    spinner.classList.add('d-none');
+                    contenido.classList.remove('d-none');
+                })
+                .catch(function(err) {
+                    spinner.innerHTML = '<div class="alert alert-warning mb-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>El comprobante formal aún se encuentra en procesamiento o la entrega no fue registrada aún.</div>';
+                });
+        }
+    </script>
 </div>
 </body>
 </html>

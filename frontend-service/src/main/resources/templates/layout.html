@@ -32,18 +32,50 @@
             --color-footer: #003D3F;
         }
 
-        body {
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            box-sizing: border-box;
             background-color: var(--color-background);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             color: var(--color-text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        *, *::before, *::after {
+            box-sizing: inherit;
+        }
+
+        /* Renderizado limpio de cuerpo de notificaciones HTML en modales y paneles */
+        .notif-content-render {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        .notif-content-render body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #ffffff !important;
+        }
+        .notif-content-render > div {
+            max-width: 100% !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: 0 !important;
         }
 
         /* Navbar Corporativa DonaTrack */
         .navbar-custom {
             background-color: var(--color-navbar);
+            width: 100% !important;
+            margin: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: 0 !important;
         }
         .navbar-custom .navbar-brand {
             color: #FFFFFF !important;
@@ -163,9 +195,23 @@
                 <i class="fa-solid fa-hand-holding-heart text-white fs-4"></i>
                 <span>DonaTrack</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Campanita con contador rojo para dispositivos móviles (< 992px) siempre visible -->
+                <a th:if="${session.userSession != null}"
+                   th:href="${session.userSession.isDonante() ? '/donante/notificaciones' : (session.userSession.isBeneficiaria() ? '/beneficiaria/notificaciones' : (session.userSession.isAdmin() ? '/admin/notificaciones' : '/chofer'))}"
+                   class="btn btn-outline-light btn-sm position-relative d-lg-none"
+                   title="Ver notificaciones y avisos">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light"
+                          th:if="${notificacionesNoLeidasCount != null and notificacionesNoLeidasCount > 0}"
+                          th:text="${notificacionesNoLeidasCount}">
+                        0
+                    </span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
             <div class="collapse navbar-collapse" id="navMenu">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
                     <li class="nav-item"><a class="nav-link" href="/"><i class="fa-solid fa-house me-1"></i> Inicio</a></li>
@@ -175,26 +221,14 @@
                     <li class="nav-item" th:if="${session.userSession != null and session.userSession.isDonante()}">
                         <a class="nav-link" href="/donante"><i class="fa-solid fa-user me-1"></i> Mi Portal Donante</a>
                     </li>
-                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isDonante()}">
-                        <a class="nav-link" href="/donante/notificaciones"><i class="fa-solid fa-bell me-1"></i> Mis Notificaciones</a>
-                    </li>
                     <li class="nav-item" th:if="${session.userSession != null and session.userSession.isBeneficiaria()}">
                         <a class="nav-link" href="/beneficiaria"><i class="fa-solid fa-building me-1"></i> Mi Portal Entidad</a>
-                    </li>
-                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isBeneficiaria()}">
-                        <a class="nav-link" href="/beneficiaria/notificaciones"><i class="fa-solid fa-bell me-1"></i> Notificaciones</a>
                     </li>
                     <li class="nav-item" th:if="${session.userSession != null and session.userSession.isChofer()}">
                         <a class="nav-link text-warning fw-semibold" href="/chofer"><i class="fa-solid fa-truck-steering me-1"></i> Mi Ruta Chofer</a>
                     </li>
                     <li class="nav-item" th:if="${session.userSession != null and session.userSession.isAdmin()}">
                         <a class="nav-link text-warning fw-semibold" href="/admin"><i class="fa-solid fa-shield-halved me-1"></i> Panel Administrador</a>
-                    </li>
-                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isAdmin()}">
-                        <a class="nav-link" href="/admin/notificaciones"><i class="fa-solid fa-bell me-1"></i> Auditoría Notificaciones</a>
-                    </li>
-                    <li class="nav-item" th:if="${session.userSession != null}">
-                        <a class="nav-link text-info" href="/buzon" title="Buzón de Notificaciones por Correo Integrado"><i class="fa-solid fa-envelope me-1"></i> Buzón Correos</a>
                     </li>
                 </ul>
                 
@@ -204,8 +238,18 @@
                     <a href="/registro" class="btn btn-dt-primary btn-sm"><i class="fa-solid fa-user-plus me-1"></i> Registrarse</a>
                 </div>
 
-                <!-- Usuario y Logout si ESTÁ autenticado -->
+                <!-- Usuario, Campanita con contador rojo y Logout si ESTÁ autenticado (escritorio >= 992px) -->
                 <div class="d-flex align-items-center gap-3" th:if="${session.userSession != null}">
+                    <a th:href="${session.userSession.isDonante() ? '/donante/notificaciones' : (session.userSession.isBeneficiaria() ? '/beneficiaria/notificaciones' : (session.userSession.isAdmin() ? '/admin/notificaciones' : '/chofer'))}"
+                       class="btn btn-outline-light btn-sm position-relative d-none d-lg-inline-flex"
+                       title="Ver notificaciones y avisos recientes">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light"
+                              th:if="${notificacionesNoLeidasCount != null and notificacionesNoLeidasCount > 0}"
+                              th:text="${notificacionesNoLeidasCount}">
+                            0
+                        </span>
+                    </a>
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-light text-dark px-2 py-1"
                               th:text="${session.userSession.role == 'ROLE_ADMIN' ? 'ADMIN' : (session.userSession.role == 'ROLE_DONANTE' ? 'DONANTE' : (session.userSession.role == 'ROLE_CHOFER' ? 'CHOFER' : 'ENTIDAD'))}">ROL</span>
@@ -239,13 +283,13 @@
                         <li><a href="/comprobantes" class="text-decoration-none">Fotos de Entregas</a></li>
                         <li><a href="/privacidad" class="text-decoration-none">Términos y Privacidad</a></li>
                         <li><a href="/admin/rankings" class="text-decoration-none">Ranking Solidario</a></li>
-                        <li><a th:if="${session.userSession != null}" href="/buzon" class="text-decoration-none"><i class="fa-solid fa-envelope me-1"></i> Mi Buzón de Correos</a></li>
+                        <li><a href="/donante/incentivos" class="text-decoration-none">Programa de Puntos e Incentivos</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
                     <h6 class="text-white fw-semibold mb-2">Estado del Sistema</h6>
                     <span class="badge bg-success-subtle text-success border border-success-subtle p-2">
-                        <i class="fa-solid fa-circle-check me-1"></i> Microservicios Operativos (:8080)
+                        <i class="fa-solid fa-circle-check me-1"></i> Plataforma Operativa en Línea
                     </span>
                 </div>
             </div>

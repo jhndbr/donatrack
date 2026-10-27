@@ -74,4 +74,27 @@ public class NotificacionesControllerTest {
                 .andExpect(jsonPath("$.exito").value(true))
                 .andExpect(jsonPath("$.destinatario").value("test@mail.com"));
     }
+
+    @Test
+    void testConteoNoLeidasYMarcarComoLeida() throws Exception {
+        when(auditoriaRepo.countByDestinatarioIgnoreCaseAndLeidaFalse("lucia@mail.com")).thenReturn(3L);
+
+        mockMvc.perform(get("/api/v1/notificaciones/no-leidas/count")
+                        .param("destinatario", "lucia@mail.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.noLeidas").value(3));
+
+        AuditoriaNotificacion a = new AuditoriaNotificacion(
+                "clave-1", "lucia@mail.com", CanalNotificacion.EMAIL,
+                "Asunto", "Mensaje", EstadoNotificacion.ENVIADO, null
+        );
+        a.setId(7L);
+        when(auditoriaRepo.findById(7L)).thenReturn(java.util.Optional.of(a));
+        when(auditoriaRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        mockMvc.perform(post("/api/v1/notificaciones/7/leer"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.leida").value(true));
+    }
 }

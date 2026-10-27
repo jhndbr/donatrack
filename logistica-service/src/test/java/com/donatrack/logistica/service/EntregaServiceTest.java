@@ -121,6 +121,85 @@ public class EntregaServiceTest {
 
         Entrega confirmada = entregaService.confirmarEntregaPorDonacion(101L, request);
         assertEquals(Entrega.EstadoEntrega.ENTREGADA, confirmada.getEstado());
+        assertEquals("RECEPCION_CONFIRMADA", confirmada.getEtapaOperativa());
+        assertTrue(confirmada.isConfirmadoPorChofer());
+        assertTrue(confirmada.isConfirmadoPorEntidad());
         assertEquals("María López", confirmada.getReceptorNombre());
+    }
+
+    @Test
+    void testRegistrarArriboSedePorDonacionActualizaEtapaOperativa() {
+        when(entregaRepository.findByIdDonacion(101L)).thenReturn(Optional.of(entrega));
+        when(entregaRepository.findById("ENT-101")).thenReturn(Optional.of(entrega));
+        when(entregaRepository.save(any(Entrega.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Entrega enPuerta = entregaService.registrarArriboSedePorDonacion(101L, "Camión en puerta de Comedor Esperanza");
+        assertEquals(Entrega.EstadoEntrega.EN_TRASLADO, enPuerta.getEstado());
+        assertEquals("EN_PUERTA_SEDE", enPuerta.getEtapaOperativa());
+        assertTrue(enPuerta.isConfirmadoPorChofer());
+        assertNotNull(enPuerta.getFechaArriboSede());
+    }
+
+    @Test
+    void testConfirmarEntregaEntidadNoAutorizadaLanzaConflictException() {
+        when(entregaRepository.findById("ENT-101")).thenReturn(Optional.of(entrega));
+        // entrega belongs to idEntidadBeneficiaria = 1L. Request is from entity 99L.
+        ConfirmarEntregaRequestDto request = new ConfirmarEntregaRequestDto(
+                List.of("https://s3.donatrack.org/foto1.png"),
+                "Receptor Ilegítimo",
+                "12345678",
+                null,
+                99L
+        );
+
+        assertThrows(com.donatrack.logistica.exception.ConflictException.class, () ->
+                entregaService.confirmarEntrega("ENT-101", request)
+        );
+    }
+
+    @Test
+    void testConfirmarEntregaIdempotenteNoDuplicaEventos() {
+        entrega.confirmarRecepcion(List.of("http://foto.png"), "Laura", "30111222", null);
+        when(entregaRepository.findById("ENT-101")).thenReturn(Optional.of(entrega));
+
+        ConfirmarEntregaRequestDto request = new ConfirmarEntregaRequestDto(
+                List.of("https://s3.donatrack.org/foto1.png"),
+                "Laura",
+                "30111222",
+                null,
+                1L
+        );
+
+        Entrega yaEntregada = entregaService.confirmarEntrega("ENT-101", request);
+        assertEquals(Entrega.EstadoEntrega.ENTREGADA, yaEntregada.getEstado());
+        verify(eventPublisher, never()).publicarEntregaConfirmada(any());
+    }
+
+    @Test
+    void testAgregarEvidenciasExitoso() {
+        when(entregaRepository.findById("ENT-101")).thenReturn(Optional.of(entrega));
+        when(entregaRepository.save(any(Entrega.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Entrega conEvidencia = entregaService.agregarEvidencias("ENT-101", List.of("http://remito1.jpg", "http://remito2.jpg"));
+        assertEquals(2, conEvidencia.getFotosConfirmacionUrls().size());
+        assertTrue(conEvidencia.getFotosConfirmacionUrls().contains("http://remito1.jpg"));
+    }
+
+    @Test
+    void testAgregarEvidenciasVacioLanzaExcepcion() {
+        assertThrows(IllegalArgumentException.class, () ->
+                entregaService.agregarEvidencias("ENT-101", List.of())
+        );
+    }
+
+    @Test
+    void testReplanificarEntregaYaEntregadaLanzaExcepcion() {
+        entrega.confirmarRecepcion(List.of("http://foto.png"), "Laura", "30111222", null);
+        when(entregaRepository.findById("ENT-101")).thenReturn(Optional.of(entrega));
+
+        ReplanificarRequestDto request = new ReplanificarRequestDto(true, "Intento de reversión inválido");
+        assertThrows(IllegalStateException.class, () ->
+                entregaService.replanificarEntrega("ENT-101", request)
+        );
     }
 }

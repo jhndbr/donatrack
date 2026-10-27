@@ -15,14 +15,25 @@ import java.util.List;
 public class CamionController {
 
     private final FlotaService flotaService;
+    private final com.donatrack.logistica.service.TelemetriaService telemetriaService;
 
-    public CamionController(FlotaService flotaService) {
+    public CamionController(FlotaService flotaService,
+                            @org.springframework.beans.factory.annotation.Autowired(required = false) com.donatrack.logistica.service.TelemetriaService telemetriaService) {
         this.flotaService = flotaService;
+        this.telemetriaService = telemetriaService;
     }
 
     @GetMapping
     public ResponseEntity<List<Camion>> listarCamiones(@RequestParam(value = "activo", required = false) Boolean activo) {
         return ResponseEntity.ok(flotaService.listarCamiones(activo));
+    }
+
+    @GetMapping("/posiciones")
+    public ResponseEntity<List<com.donatrack.logistica.dto.CamionEnVivoDto>> obtenerPosiciones() {
+        if (telemetriaService != null) {
+            return ResponseEntity.ok(telemetriaService.obtenerFlotaEnVivo());
+        }
+        return ResponseEntity.ok(List.of());
     }
 
     @GetMapping("/{id}")

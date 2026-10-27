@@ -2,7 +2,9 @@
 /home/jhon/Documentos/Github/TP-DDSI/common-dtos/src/main/java/com/donatrack/common/enums/CanalNotificacion.java
 /home/jhon/Documentos/Github/TP-DDSI/common-dtos/src/main/java/com/donatrack/common/enums/CategoriaDonante.java
 /home/jhon/Documentos/Github/TP-DDSI/common-dtos/src/main/java/com/donatrack/common/enums/EstadoDonacion.java
+/home/jhon/Documentos/Github/TP-DDSI/common-dtos/src/main/java/com/donatrack/common/enums/PeriodoNecesidad.java
 /home/jhon/Documentos/Github/TP-DDSI/common-dtos/src/main/java/com/donatrack/common/enums/TipoNecesidad.java
+/home/jhon/Documentos/Github/TP-DDSI/common-dtos/src/main/java/com/donatrack/common/events/CamionEnPuertaEvent.java
 /home/jhon/Documentos/Github/TP-DDSI/common-dtos/src/main/java/com/donatrack/common/events/CategoriaAscendidaEvent.java
 /home/jhon/Documentos/Github/TP-DDSI/common-dtos/src/main/java/com/donatrack/common/events/DonacionAsignadaEvent.java
 /home/jhon/Documentos/Github/TP-DDSI/common-dtos/src/main/java/com/donatrack/common/events/DonacionRegistradaEvent.java

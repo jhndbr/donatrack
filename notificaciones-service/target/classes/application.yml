@@ -24,29 +24,49 @@ spring:
     username: ${SPRING_RABBITMQ_USERNAME:donatrack}
     password: ${SPRING_RABBITMQ_PASSWORD:donatrack_password}
 
-  # Configuracion de envio SMTP apuntando a Mailpit (puerto 1025)
+  # Configuración SMTP multientorno (Mailpit local :1025 o servidor real en producción)
   mail:
     host: ${SPRING_MAIL_HOST:localhost}
     port: ${SPRING_MAIL_PORT:1025}
-    protocol: smtp
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    protocol: ${SPRING_MAIL_PROTOCOL:smtp}
+    default-encoding: UTF-8
     properties:
       mail:
         smtp:
-          auth: false
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:false}
           starttls:
-            enable: false
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:false}
+            required: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED:false}
+          connectiontimeout: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_CONNECTIONTIMEOUT:5000}
+          timeout: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_TIMEOUT:5000}
+          writetimeout: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_WRITETIMEOUT:5000}
 
 donatrack:
+  frontend:
+    url: ${DONATRACK_FRONTEND_URL:http://localhost:8086}
   notificaciones:
     admin-email: ${DONATRACK_ADMIN_EMAIL:admin@donatrack.org}
+    remitente-email: ${DONATRACK_MAIL_FROM:notificaciones@donatrack.org}
+    remitente-nombre: ${DONATRACK_MAIL_FROM_NAME:DonaTrack Solidaria}
+  sms:
+    twilio:
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      from-number: ${TWILIO_FROM_NUMBER:+15005550006}
+  whatsapp:
+    api-token: ${WHATSAPP_API_TOKEN:}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
   rabbitmq:
-    exchange: "donatrack.events.exchange"
+    exchange: ${DONATRACK_RABBITMQ_EXCHANGE:donatrack.events.exchange}
     queues:
-      donacion-asignada: "q.notificaciones.donacion-asignada"
-      donante-inactivo: "q.notificaciones.donante-inactivo"
-      donante-registrado: "q.notificaciones.donante-registrado"
-      ruta-iniciada: "q.notificaciones.ruta-iniciada"
-      entrega-confirmada: "q.notificaciones.entrega-confirmada"
-      entrega-fallida: "q.notificaciones.entrega-fallida"
-      mision-cumplida: "q.notificaciones.mision-cumplida"
-      categoria-ascendida: "q.notificaciones.categoria-ascendida"
+      donacion-registrada: ${DONATRACK_QUEUE_DONACION_REGISTRADA:q.notificaciones.donacion-registrada}
+      donacion-asignada: ${DONATRACK_QUEUE_DONACION_ASIGNADA:q.notificaciones.donacion-asignada}
+      donante-inactivo: ${DONATRACK_QUEUE_DONANTE_INACTIVO:q.notificaciones.donante-inactivo}
+      donante-registrado: ${DONATRACK_QUEUE_DONANTE_REGISTRADO:q.notificaciones.donante-registrado}
+      ruta-iniciada: ${DONATRACK_QUEUE_RUTA_INICIADA:q.notificaciones.ruta-iniciada}
+      entrega-confirmada: ${DONATRACK_QUEUE_ENTREGA_CONFIRMADA:q.notificaciones.entrega-confirmada}
+      entrega-fallida: ${DONATRACK_QUEUE_ENTREGA_FALLIDA:q.notificaciones.entrega-fallida}
+      mision-cumplida: ${DONATRACK_QUEUE_MISION_CUMPLIDA:q.notificaciones.mision-cumplida}
+      categoria-ascendida: ${DONATRACK_QUEUE_CATEGORIA_ASCENDIDA:q.notificaciones.categoria-ascendida}

@@ -40,6 +40,59 @@ public class BeneficiariaWebController {
         return paramEntidadId != null ? paramEntidadId : 1L;
     }
 
+    /**
+     * Construye el mapa de estados logísticos de paradas/entregas por donación,
+     * sincronizando tanto desde Hoja de Ruta como desde Documentos de Entrega en MongoDB.
+     * Soporta claves Long, Integer y String para garantizar interoperabilidad 100% con Thymeleaf.
+     */
+    private Map<Object, String> construirMapaEstadoParadas() {
+        Map<Object, String> mapa = new java.util.HashMap<>();
+
+        // 1. Sincronizar desde Hoja de Ruta (MongoDB)
+        List<Map<String, Object>> rutas = apiClient.listarRutas();
+        if (rutas != null) {
+            for (Map<String, Object> r : rutas) {
+                if (r.get("paradas") instanceof List<?> paradasList) {
+                    for (Object pObj : paradasList) {
+                        if (pObj instanceof Map<?, ?> pMap && pMap.get("idDonacion") instanceof Number donNum) {
+                            String estParada = pMap.get("estadoParada") != null ? String.valueOf(pMap.get("estadoParada")) : "PENDIENTE";
+                            long dId = donNum.longValue();
+                            mapa.put(dId, estParada);
+                            mapa.put((int) dId, estParada);
+                            mapa.put(String.valueOf(dId), estParada);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Sincronizar directamente desde Entregas (MongoDB) para máxima resiliencia
+        List<Map<String, Object>> entregas = apiClient.listarEntregas();
+        if (entregas != null) {
+            for (Map<String, Object> ent : entregas) {
+                if (ent.get("idDonacion") instanceof Number donNum) {
+                    long dId = donNum.longValue();
+                    String etapaOp = ent.get("etapaOperativa") != null ? String.valueOf(ent.get("etapaOperativa")) : null;
+                    String estEnt = ent.get("estado") != null ? String.valueOf(ent.get("estado")) : null;
+                    if ("EN_PUERTA_SEDE".equals(etapaOp)) {
+                        mapa.put(dId, "EN_PUERTA_SEDE");
+                        mapa.put((int) dId, "EN_PUERTA_SEDE");
+                        mapa.put(String.valueOf(dId), "EN_PUERTA_SEDE");
+                    } else if ("ENTREGADA".equals(estEnt)) {
+                        mapa.put(dId, "ENTREGADA");
+                        mapa.put((int) dId, "ENTREGADA");
+                        mapa.put(String.valueOf(dId), "ENTREGADA");
+                    } else if ("NO_RECIBIDA".equals(estEnt)) {
+                        mapa.put(dId, "FALLIDA");
+                        mapa.put((int) dId, "FALLIDA");
+                        mapa.put(String.valueOf(dId), "FALLIDA");
+                    }
+                }
+            }
+        }
+        return mapa;
+    }
+
     @GetMapping
     public String dashboard(Model model,
                             @RequestParam(value = "entidadId", required = false) Long entidadId,
@@ -60,6 +113,19 @@ public class BeneficiariaWebController {
                 })
                 .toList();
 
+        Map<Object, String> estadoParadaPorDonacion = construirMapaEstadoParadas();
+
+        List<Map<String, Object>> donacionesEnPuerta = donacionesAsignadas.stream()
+                .filter(d -> {
+                    if ("ENTREGADA".equals(d.get("estado"))) return false;
+                    Object idObj = d.get("id");
+                    if (idObj != null) {
+                        return "EN_PUERTA_SEDE".equals(estadoParadaPorDonacion.get(idObj));
+                    }
+                    return false;
+                })
+                .toList();
+
         String nombreEntidad = entidades.stream()
                 .filter(e -> {
                     Object idVal = e.get("id");
@@ -72,6 +138,8 @@ public class BeneficiariaWebController {
         model.addAttribute("nombreEntidad", nombreEntidad);
         model.addAttribute("entidades", entidades);
         model.addAttribute("donacionesAsignadas", donacionesAsignadas);
+        model.addAttribute("estadoParadaPorDonacion", estadoParadaPorDonacion);
+        model.addAttribute("donacionesEnPuerta", donacionesEnPuerta);
 
         return "beneficiaria/dashboard";
     }
@@ -321,17 +389,22 @@ public class BeneficiariaWebController {
                 })
                 .toList();
 
+        Map<Object, String> estadoParadaPorDonacion = construirMapaEstadoParadas();
         List<Map<String, Object>> rutas = apiClient.listarRutas();
-        Map<Long, String> estadoParadaPorDonacion = new java.util.HashMap<>();
-        if (rutas != null) {
-            for (Map<String, Object> r : rutas) {
-                if (r.get("paradas") instanceof List<?> paradasList) {
-                    for (Object pObj : paradasList) {
-                        if (pObj instanceof Map<?, ?> pMap && pMap.get("idDonacion") instanceof Number donNum) {
-                            String estParada = pMap.get("estadoParada") != null ? String.valueOf(pMap.get("estadoParada")) : "PENDIENTE";
-                            estadoParadaPorDonacion.put(donNum.longValue(), estParada);
-                        }
-                    }
+
+        // Si no se pasó donacionId, auto-seleccionar donación que ya esté en puerta (o la única confirmable)
+        if (donacionId == null && !donacionesConfirmables.isEmpty()) {
+            for (Map<String, Object> d : donacionesConfirmables) {
+                Object idObj = d.get("id");
+                if (idObj != null && "EN_PUERTA_SEDE".equals(estadoParadaPorDonacion.get(idObj))) {
+                    donacionId = ((Number) idObj).longValue();
+                    break;
+                }
+            }
+            if (donacionId == null && donacionesConfirmables.size() == 1) {
+                Object idObj = donacionesConfirmables.get(0).get("id");
+                if (idObj instanceof Number n) {
+                    donacionId = n.longValue();
                 }
             }
         }
@@ -387,22 +460,20 @@ public class BeneficiariaWebController {
 
         boolean ok = false;
         if (donacionId != null) {
-            if (idEntrega == null || idEntrega.isBlank()) {
-                if ((receptorNombre != null && !receptorNombre.isBlank()) || (receptorDni != null && !receptorDni.isBlank())) {
-                    ok = apiClient.confirmarEntregaPorDonacion(donacionId, urlImagenFinal, observaciones, receptorNombre, receptorDni);
-                }
-                if (!ok) {
-                    ok = apiClient.confirmarEntregaPorDonacion(donacionId, urlImagenFinal, observaciones);
-                }
+            if ((receptorNombre != null && !receptorNombre.isBlank()) || (receptorDni != null && !receptorDni.isBlank())) {
+                ok = apiClient.confirmarEntregaPorDonacion(donacionId, urlImagenFinal, observaciones, receptorNombre, receptorDni, resolvedId);
             }
             if (!ok) {
+                ok = apiClient.confirmarEntregaPorDonacion(donacionId, urlImagenFinal, observaciones, null, null, resolvedId);
+            }
+            if (!ok && idEntrega != null && !idEntrega.isBlank()) {
+                ok = apiClient.confirmarEntrega(idEntrega, List.of(urlImagenFinal));
+            }
+            if (!ok && userSession != null && userSession.isAdmin()) {
                 ok = apiClient.entregarDonacion(donacionId, urlImagenFinal);
             }
-        }
-
-        if (idEntrega != null && !idEntrega.isBlank()) {
-            boolean okLog = apiClient.confirmarEntrega(idEntrega, List.of(urlImagenFinal));
-            ok = ok || okLog;
+        } else if (idEntrega != null && !idEntrega.isBlank()) {
+            ok = apiClient.confirmarEntrega(idEntrega, List.of(urlImagenFinal));
         }
 
         if (ok) {
@@ -410,7 +481,8 @@ public class BeneficiariaWebController {
                     "¡Recepción confirmada con éxito! La donación ha sido registrada como ENTREGADA. " +
                             "Se emitió el comprobante de trazabilidad y la fotografía ya es visible públicamente en DonaTrack.");
         } else {
-            redirectAttrs.addFlashAttribute("mensajeError", "No se pudo confirmar la recepción. Verifique los datos ingresados.");
+            redirectAttrs.addFlashAttribute("mensajeError",
+                    "No se pudo confirmar la recepción. Verifique que el camión haya notificado su arribo en la puerta de su sede ('En Puerta') y que los datos sean correctos.");
         }
 
         return "redirect:/beneficiaria" + (entidadId != null ? "?entidadId=" + entidadId : "");
@@ -480,9 +552,9 @@ public class BeneficiariaWebController {
         String detalle = "";
 
         if (donacionId != null) {
-            boolean okDon = false;
-            if (idEntrega == null || idEntrega.isBlank()) {
-                okDon = apiClient.registrarEntregaFallidaPorDonacion(donacionId, motivo, replanificable);
+            boolean okDon = apiClient.registrarEntregaFallidaPorDonacion(donacionId, motivo, replanificable);
+            if (!okDon && idEntrega != null && !idEntrega.isBlank()) {
+                okDon = apiClient.registrarEntregaFallida(idEntrega, motivo, replanificable);
             }
             if (!okDon) {
                 okDon = apiClient.actualizarEstadoDonacion(donacionId, "ENTREGA_FALLIDA", "Rechazo de entidad: " + motivo);
@@ -491,13 +563,11 @@ public class BeneficiariaWebController {
                 ok = true;
                 detalle = "Donación DON-" + String.format("%04d", donacionId);
             }
-        }
-
-        if (idEntrega != null && !idEntrega.isBlank()) {
+        } else if (idEntrega != null && !idEntrega.isBlank()) {
             boolean okLog = apiClient.registrarEntregaFallida(idEntrega, motivo, replanificable);
             if (okLog) {
                 ok = true;
-                detalle = (detalle.isEmpty() ? "" : detalle + " / ") + "Lote " + idEntrega;
+                detalle = "Lote " + idEntrega;
             }
         }
 
@@ -515,5 +585,11 @@ public class BeneficiariaWebController {
     @ResponseBody
     public Map<String, Object> obtenerComprobante(@PathVariable("idEntrega") String idEntrega) {
         return apiClient.obtenerComprobanteEntrega(idEntrega);
+    }
+
+    @GetMapping("/comprobante/donacion/{idDonacion}")
+    @ResponseBody
+    public Map<String, Object> obtenerComprobantePorDonacion(@PathVariable("idDonacion") Long idDonacion) {
+        return apiClient.obtenerComprobanteEntregaPorDonacion(idDonacion);
     }
 }

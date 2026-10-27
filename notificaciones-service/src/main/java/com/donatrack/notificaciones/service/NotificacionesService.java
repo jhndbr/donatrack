@@ -357,6 +357,51 @@ public class NotificacionesService {
     }
 
     /**
+     * Notificar a la entidad beneficiaria que el chofer/camión ha llegado a la puerta de la sede (EN_PUERTA_SEDE).
+     * Habilita la recepción física y la confirmación con fotografías.
+     */
+    public void notificarCamionEnPuerta(CamionEnPuertaEvent evento) {
+        if (evento == null) return;
+        log.info("Notificaciones: Procesando camion.en-puerta idEntrega={}, idDonacion={}, entidad={}",
+                evento.getIdEntrega(), evento.getIdDonacion(), evento.getNombreEntidad());
+
+        String donacionStr = (evento.getIdDonacion() != null)
+                ? "DON-" + String.format("%04d", evento.getIdDonacion())
+                : "donación";
+        String asunto = "🚚 ¡El camión ha llegado a la puerta de tu sede! Lista para recepción (" + donacionStr + ")";
+
+        Map<String, String> detalles = new LinkedHashMap<>();
+        detalles.put("Donación a Recibir", donacionStr);
+        detalles.put("Camión de Reparto", evento.getPatenteCamion() != null ? evento.getPatenteCamion() : "Flota DonaTrack");
+        String fechaHora = (evento.getTimestamp() != null)
+                ? evento.getTimestamp().format(DATE_TIME_FORMATTER)
+                : java.time.LocalDateTime.now().format(DATE_TIME_FORMATTER);
+        detalles.put("Hora de Arribo en Sede", fechaHora);
+        if (evento.getObservaciones() != null && !evento.getObservaciones().isBlank()) {
+            detalles.put("Observaciones del Chofer", evento.getObservaciones());
+        }
+        detalles.put("Estado Operativo", "En puerta de sede - Recepción habilitada");
+
+        String link = (evento.getLinkConfirmacion() != null && !evento.getLinkConfirmacion().isBlank())
+                ? evento.getLinkConfirmacion()
+                : frontendBaseUrl + "/beneficiaria/confirmar" + (evento.getIdDonacion() != null ? "?donacionId=" + evento.getIdDonacion() : "");
+
+        if (evento.getEmailEntidad() != null && !evento.getEmailEntidad().isBlank()) {
+            String clave = "notif-camion-en-puerta-entidad-" + (evento.getIdEntrega() != null ? evento.getIdEntrega() : evento.getIdDonacion());
+            String htmlEntidad = templateService.generarPlantillaHtml(
+                    asunto,
+                    "¡El camión está en tu sede!",
+                    "El chofer acaba de notificar su arribo en la puerta de tu entidad con la " + donacionStr +
+                            ". Ya se encuentra habilitada la opción de inspeccionar los bienes y confirmar la recepción formal con fotografías.",
+                    detalles,
+                    "Recepcionar y Confirmar Entrega",
+                    link
+            );
+            despacharConAuditoria(clave, "CAMION_EN_PUERTA", CanalNotificacion.EMAIL, evento.getEmailEntidad(), asunto, htmlEntidad);
+        }
+    }
+
+    /**
      * CU-61, CU-45, TODO-NOT-06: Notificar entrega fallida a donante, entidad y alerta prioritaria a administración.
      */
     public void notificarEntregaFallida(EntregaFallidaEvent evento) {

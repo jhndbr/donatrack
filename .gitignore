@@ -133,3 +133,12 @@ $RECYCLE.BIN/
 .fuse_hidden*
 .directory
 .Trash-*
+
+# -----------------------------------------------------------------------------
+# Archivos locales de ejecución (no versionar)
+# -----------------------------------------------------------------------------
+.services.pid
+*cookies.txt
+uploads/
+data/credenciales-locales.properties
+**/data/credenciales-locales.properties

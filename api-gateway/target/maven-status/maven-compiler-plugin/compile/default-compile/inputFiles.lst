@@ -1,3 +1,0 @@
-/home/jhon/Documentos/Github/TP-DDSI/api-gateway/src/main/java/com/donatrack/gateway/ApiGatewayApplication.java
-/home/jhon/Documentos/Github/TP-DDSI/api-gateway/src/main/java/com/donatrack/gateway/filter/AuthenticationGatewayFilter.java
-/home/jhon/Documentos/Github/TP-DDSI/api-gateway/src/main/java/com/donatrack/gateway/filter/RateLimitingFilter.java

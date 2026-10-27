@@ -1,6 +1,0 @@
-com/donatrack/gateway/filter/RateLimitingFilter$TokenBucket.class
-com/donatrack/gateway/ApiGatewayApplication.class
-com/donatrack/gateway/filter/RateLimitingFilter.class
-com/donatrack/gateway/filter/AuthenticationGatewayFilter$1.class
-com/donatrack/gateway/filter/AuthenticationGatewayFilter$JwtClaims.class
-com/donatrack/gateway/filter/AuthenticationGatewayFilter.class

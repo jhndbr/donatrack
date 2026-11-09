@@ -1,137 +1,140 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
 <head>
-    <title>Incentivos y Misiones - DonaTrack</title>
+    <title>Metas e impacto — DonaTrack</title>
 </head>
 <body>
 <div th:fragment="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-header">
         <div>
-            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-trophy text-warning me-2"></i>Programa de Incentivos Solidarios</h2>
-            <p class="text-secondary">Cumple misiones, desbloquea insignias de impacto y sube de categoría comunitaria.</p>
+            <h1>Metas e impacto solidario</h1>
+            <p>Seguimiento de objetivos cumplidos, reconocimientos y estadísticas de colaboración.</p>
         </div>
-        <a href="/donante" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+        <a href="/donante" class="btn btn-outline-secondary btn-sm">Volver</a>
     </div>
 
-    <!-- Nivel Actual Card -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-        <div class="row align-items-center">
-            <div class="col-md-3 text-center border-end">
-                <i class="fa-solid fa-crown text-warning fs-1 mb-2"></i>
-                <h4 class="fw-bold text-dark mb-0" th:text="${metricas['categoria'] != null ? metricas['categoria'] : 'COLABORADOR'}">COLABORADOR</h4>
-                <small class="text-muted">Nivel de Donante</small>
+    <!-- Nivel Actual -->
+    <div class="card p-4 mb-4">
+        <div class="row align-items-center gy-3">
+            <div class="col-md-4 border-end">
+                <div class="kpi-label">Categoría actual</div>
+                <div class="h4 fw-bold text-dark mb-1" th:text="${metricas['categoria'] != null ? metricas['categoria'] : 'COLABORADOR'}">COLABORADOR</div>
+                <div class="small text-muted">Progreso automático según objetivos completados</div>
             </div>
-            <div class="col-md-9 ps-md-4">
-                <h5 class="fw-bold text-dark">Escalafón de Impacto:</h5>
-                <div class="d-flex gap-2 align-items-center mt-3">
-                    <span class="badge bg-primary p-2 px-3 rounded-pill">1. COLABORADOR</span>
-                    <i class="fa-solid fa-chevron-right text-muted"></i>
-                    <span class="badge bg-secondary p-2 px-3 rounded-pill">2. SOSTENEDOR</span>
-                    <i class="fa-solid fa-chevron-right text-muted"></i>
-                    <span class="badge bg-warning text-dark p-2 px-3 rounded-pill">3. TRANSFORMADOR</span>
+            <div class="col-md-8 ps-md-4">
+                <div class="small fw-semibold text-muted mb-2">Escalafón de participación</div>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="badge bg-light text-dark border px-3 py-2">1. Colaborador</span>
+                    <i class="fa-solid fa-chevron-right text-muted small"></i>
+                    <span class="badge bg-light text-dark border px-3 py-2">2. Sostenedor</span>
+                    <i class="fa-solid fa-chevron-right text-muted small"></i>
+                    <span class="badge bg-light text-dark border px-3 py-2">3. Transformador</span>
                 </div>
-                <small class="text-muted d-block mt-2">Al completar todas las misiones de tu nivel actual, asciendes automáticamente al siguiente nivel.</small>
             </div>
         </div>
     </div>
 
-    <!-- Misiones de la Categoría -->
-    <div class="mb-5">
-        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>Misiones a Realizar</h4>
+    <!-- Analítica e Impacto -->
+    <div class="row g-3 mb-4" th:if="${analitica != null}">
+        <div class="col-sm-6 col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label">Entidades asistidas</div>
+                <div class="kpi-value" th:text="${analitica['organizacionesAyudadas'] != null ? analitica['organizacionesAyudadas'] : 0}">0</div>
+                <div class="kpi-sub">Organizaciones receptoras</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label">Posición mensual</div>
+                <div class="kpi-value" th:text="${analitica['posicionRanking'] != null and analitica['posicionRanking'] != 0 ? '#' + analitica['posicionRanking'] : '—'}">#1</div>
+                <div class="kpi-sub">Clasificación del período</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label">Objetivos del mes</div>
+                <div class="kpi-value">
+                    <span th:text="${analitica['misionesMesActual'] != null ? analitica['misionesMesActual'] : 0}">0</span>
+                    <span class="fs-6 fw-normal text-muted" th:text="'/ ant: ' + (${analitica['misionesMesAnterior'] != null ? analitica['misionesMesAnterior'] : 0})">/ ant: 0</span>
+                </div>
+                <div class="kpi-sub">Comparativa mensual</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="kpi-card">
+                <div class="kpi-label">Total histórico</div>
+                <div class="kpi-value" th:text="${metricas != null and metricas['totalDonaciones'] != null ? metricas['totalDonaciones'] : 0}">0</div>
+                <div class="kpi-sub">Donaciones registradas</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Objetivos / Misiones -->
+    <div class="card p-4 mb-4">
+        <h2 class="h6 fw-semibold mb-3">Objetivos activos</h2>
         <div class="row g-3">
-            <div th:if="${#lists.isEmpty(misiones)}" class="col-12 text-muted">
-                No hay misiones activas en este momento o ya has completado todas las misiones de tu categoría.
+            <div th:if="${#lists.isEmpty(misiones)}" class="col-12 text-muted small">
+                No hay objetivos pendientes para tu categoría actual.
             </div>
             <div th:each="m : ${misiones}" class="col-md-6">
-                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="p-3 rounded-3 border bg-light h-100">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
-                            <span class="badge bg-info-subtle text-info fw-semibold mb-1" th:text="${m.mision != null ? m.mision.tipo : 'MISION'}">RACHA</span>
-                            <h5 class="fw-bold text-dark mb-0" th:text="${m.mision != null ? m.mision.nombre : 'Misión'}">Primer Paso</h5>
+                            <span class="small text-muted fw-semibold text-uppercase d-block" style="font-size: 0.7rem;" th:text="${m.mision != null ? m.mision.tipo : 'OBJETIVO'}">RACHA</span>
+                            <h3 class="h6 fw-semibold text-dark mb-0" th:text="${m.mision != null ? m.mision.nombre : 'Misión'}">Primer Paso</h3>
                         </div>
-                        <span th:if="${m.completada}" class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Completada</span>
-                        <span th:if="${!m.completada}" class="badge bg-secondary-subtle text-secondary">En Progreso</span>
+                        <span th:if="${m.completada}" class="badge-status status-ENTREGADA">Completado</span>
+                        <span th:if="${!m.completada}" class="badge-status status-EN_DEPOSITO">En curso</span>
                     </div>
-                    <p class="text-muted small mb-3" th:text="${m.mision != null ? m.mision.descripcion : ''}">Realiza 1 donación</p>
+                    <p class="text-secondary small mb-3" th:text="${m.mision != null ? m.mision.descripcion : ''}">Realiza 1 donación</p>
 
-                    <!-- Barra de progreso -->
-                    <div class="progress rounded-pill mb-2" style="height: 10px;">
-                        <div class="progress-bar bg-primary" role="progressbar"
-                             th:style="'width: ' + (${m.completada} ? '100%' : (${m.progresoActual} / (${m.mision != null ? m.mision.objetivo : 1.0}) * 100) + '%')">
+                    <div class="progress mb-2" style="height: 6px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="background-color: var(--color-primary);"
+                             th:style="'background-color: var(--color-primary); width: ' + (${m.completada} ? '100%' : (${m.progresoActual} / (${m.mision != null ? m.mision.objetivo : 1.0}) * 100) + '%')">
                         </div>
                     </div>
                     <div class="d-flex justify-content-between small text-muted">
-                        <span>Progreso: <strong th:text="${m.progresoActual}">0</strong> / <span th:text="${m.mision != null ? m.mision.objetivo : 1}">1</span></span>
-                        <span class="text-warning fw-semibold"><i class="fa-solid fa-medal me-1"></i><span th:text="${m.mision != null ? m.mision.nombreInsignia : 'Insignia'}">Insignia</span></span>
+                        <span>Avance: <strong class="text-dark" th:text="${m.progresoActual}">0</strong> / <span th:text="${m.mision != null ? m.mision.objetivo : 1}">1</span></span>
+                        <span th:text="${m.mision != null ? m.mision.nombreInsignia : 'Insignia'}">Insignia</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Insignias Ganadas -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-5">
-        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-award text-warning me-2"></i>Vitrina de Insignias Obtenidas</h4>
-        <div class="d-flex flex-wrap gap-3" th:if="${!#lists.isEmpty(insignias)}">
-            <div th:each="ins : ${insignias}" class="card border border-warning-subtle rounded-3 p-3 text-center bg-light" style="width: 210px;">
-                <i class="fa-solid fa-shield-halved text-warning fs-1 mb-2"></i>
-                <div class="fw-bold small text-dark" th:text="${ins.nombre}">Insignia</div>
-                <small class="text-muted d-block mb-2" th:text="${ins.descripcion}">Descripción</small>
-                
-                <div class="border-top pt-2 mt-auto">
-                    <form th:action="@{'/donante/insignias/' + ${ins.id} + '/visibilidad'}" method="post" class="d-flex justify-content-between align-items-center">
-                        <input type="hidden" name="visible" th:value="${ins.esPublica == null || !ins.esPublica ? 'true' : 'false'}">
-                        <span class="badge" th:classappend="${ins.esPublica != null && ins.esPublica ? 'bg-success' : 'bg-secondary'}"
-                              th:text="${ins.esPublica != null && ins.esPublica ? 'Pública' : 'Privada'}">Pública</span>
-                        <button type="submit" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
-                            <i class="fa-solid fa-repeat me-1"></i>Cambiar
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div th:if="${#lists.isEmpty(insignias)}" class="text-muted small">
-            Aún no has desbloqueado insignias. ¡Aporta a las misiones para que se difundan en redes y en tu perfil!
-        </div>
-    </div>
-
-    <!-- Sección de Analítica, Impacto y Evolución por Período (CORR-011) -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-5" th:if="${analitica != null}">
-        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-chart-line text-primary me-2"></i>Analítica de Impacto y Evolución Mensual</h4>
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="p-3 rounded-3 bg-light border h-100 text-center">
-                    <div class="fs-3 fw-bold text-primary" th:text="${analitica['organizacionesAyudadas'] != null ? analitica['organizacionesAyudadas'] : 0}">0</div>
-                    <small class="text-muted fw-semibold">Organizaciones Ayudadas</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="p-3 rounded-3 bg-light border h-100 text-center">
-                    <div class="fs-3 fw-bold text-warning" th:text="${analitica['posicionRanking'] != null and analitica['posicionRanking'] != 0 ? '#' + analitica['posicionRanking'] : 'En curso'}">#1</div>
-                    <small class="text-muted fw-semibold">Posición en Ranking Mensual</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="p-3 rounded-3 bg-light border h-100 text-center">
-                    <div class="fs-5 fw-bold text-success">
-                        <span th:text="${analitica['misionesMesActual'] != null ? analitica['misionesMesActual'] : 0}">0</span>
-                        <small class="text-muted fw-normal">vs</small>
-                        <span class="text-secondary" th:text="${analitica['misionesMesAnterior'] != null ? analitica['misionesMesAnterior'] : 0}">0</span>
+    <!-- Insignias y Evolución -->
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card p-4 h-100">
+                <h2 class="h6 fw-semibold mb-3">Insignias obtenidas</h2>
+                <div class="d-flex flex-column gap-2" th:if="${!#lists.isEmpty(insignias)}">
+                    <div th:each="ins : ${insignias}" class="p-3 rounded-2 border bg-light d-flex justify-content-between align-items-center gap-2">
+                        <div>
+                            <div class="fw-semibold small text-dark" th:text="${ins.nombre}">Insignia</div>
+                            <small class="text-muted d-block" th:text="${ins.descripcion}">Descripción</small>
+                        </div>
+                        <form th:action="@{'/donante/insignias/' + ${ins.id} + '/visibilidad'}" method="post" class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <input type="hidden" name="visible" th:value="${ins.esPublica == null || !ins.esPublica ? 'true' : 'false'}">
+                            <span class="badge bg-white text-secondary border"
+                                  th:text="${ins.esPublica != null && ins.esPublica ? 'Pública' : 'Privada'}">Pública</span>
+                            <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;">
+                                Cambiar
+                            </button>
+                        </form>
                     </div>
-                    <small class="text-muted fw-semibold">Misiones Mes Actual vs. Anterior</small>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="p-3 rounded-3 bg-light border h-100 text-center">
-                    <div class="fs-3 fw-bold text-dark" th:text="${metricas != null and metricas['totalDonaciones'] != null ? metricas['totalDonaciones'] : 0}">0</div>
-                    <small class="text-muted fw-semibold">Total Donaciones Históricas</small>
+                <div th:if="${#lists.isEmpty(insignias)}" class="text-muted small">
+                    Aún no has desbloqueado insignias.
                 </div>
             </div>
         </div>
 
-        <div class="p-3 border rounded-3 bg-light">
-            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-chart-column text-secondary me-1"></i>Evolución de Donaciones y Misiones por Período</h6>
-            <canvas id="evolucionMensualChart" height="90"></canvas>
+        <div class="col-lg-7" th:if="${analitica != null}">
+            <div class="card p-4 h-100">
+                <h2 class="h6 fw-semibold mb-3">Evolución por período</h2>
+                <canvas id="evolucionMensualChart" height="120"></canvas>
+            </div>
         </div>
     </div>
 
@@ -152,14 +155,16 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Donaciones Realizadas',
+                            label: 'Donaciones',
                             data: donacionesData,
-                            backgroundColor: '#009B9F'
+                            backgroundColor: '#0F766E',
+                            borderRadius: 4
                         },
                         {
-                            label: 'Misiones Cumplidas',
+                            label: 'Objetivos cumplidos',
                             data: misionesData,
-                            backgroundColor: '#f59e0b'
+                            backgroundColor: '#94A3B8',
+                            borderRadius: 4
                         }
                     ]
                 },

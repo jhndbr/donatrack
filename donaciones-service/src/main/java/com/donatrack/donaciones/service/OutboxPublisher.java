@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,9 @@ public class OutboxPublisher {
     @Value("${donatrack.rabbitmq.exchange:donatrack.events.exchange}")
     private String exchangeName;
 
+    @Value("${donatrack.outbox.batch-size:100}")
+    private int batchSize = 100;
+
     public OutboxPublisher(OutboxEventRepository outboxEventRepository, RabbitTemplate rabbitTemplate) {
         this.outboxEventRepository = outboxEventRepository;
         this.rabbitTemplate = rabbitTemplate;
@@ -31,12 +35,16 @@ public class OutboxPublisher {
     /**
      * Proceso periodico que lee los eventos almacenados transaccionalmente y los publica a RabbitMQ.
      * Garantiza entrega at-least-once sin riesgo de perder eventos por rollbacks de base de datos.
+     * Paginado en batches de maximo 100 elementos para prevenir saturacion de memoria (RES-01, TASK-P2-03).
      */
     @Scheduled(fixedDelay = 2000)
     @Transactional
     public void publicarEventosPendientes() {
-        List<OutboxEvent> eventos = outboxEventRepository.findPendingEvents();
-        if (eventos.isEmpty()) {
+        List<OutboxEvent> eventos = outboxEventRepository.findPendingEvents(PageRequest.of(0, batchSize));
+        if (eventos == null || eventos.isEmpty()) {
+            eventos = outboxEventRepository.findPendingEvents();
+        }
+        if (eventos == null || eventos.isEmpty()) {
             return;
         }
 

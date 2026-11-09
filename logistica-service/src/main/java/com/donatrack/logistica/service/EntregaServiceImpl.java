@@ -217,8 +217,8 @@ public class EntregaServiceImpl implements EntregaService {
         sincronizarParadaEnRuta(guardada, "ENTREGADA", null);
 
         // Sincronizar en donaciones-service a ENTREGADA con fotos (Entrega 3 & 4)
+        String fotoUrl = (request.fotos() != null && !request.fotos().isEmpty()) ? request.fotos().get(0) : null;
         if (entrega.getIdDonacion() != null) {
-            String fotoUrl = (request.fotos() != null && !request.fotos().isEmpty()) ? request.fotos().get(0) : null;
             donacionesServiceClient.actualizarEstadoDonacion(
                     entrega.getIdDonacion(),
                     EstadoDonacion.ENTREGADA,
@@ -229,7 +229,7 @@ public class EntregaServiceImpl implements EntregaService {
         }
 
         // Emitir evento AMQP hacia RabbitMQ incluyendo idDonante para el cálculo de incentivos (CU-48)
-        String comprobanteUrl = "http://localhost:8086/beneficiaria/notificaciones";
+        String comprobanteUrl = (fotoUrl != null && !fotoUrl.isBlank()) ? fotoUrl : "http://localhost:8086/comprobantes";
         EntregaConfirmadaEvent evento = new EntregaConfirmadaEvent(
                 entrega.getId(),
                 entrega.getIdDonacion(),

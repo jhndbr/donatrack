@@ -31,6 +31,9 @@ public class NecesidadMaterial {
     @Column(name = "cantidad_cubierta", nullable = false)
     private double cantidadCubierta = 0.0;
 
+    @Column(name = "cantidad_recibida", nullable = false, columnDefinition = "double precision default 0.0")
+    private double cantidadRecibida = 0.0;
+
     @Column(name = "unidad_medida", nullable = false)
     private String unidadMedida;
 
@@ -51,6 +54,9 @@ public class NecesidadMaterial {
     @JsonIgnore
     private EntidadBeneficiaria entidadBeneficiaria;
 
+    @Version
+    private Long version;
+
     public NecesidadMaterial() {
         this.activa = true;
     }
@@ -65,19 +71,46 @@ public class NecesidadMaterial {
         this.unidadMedida = unidadMedida;
         this.periodo = periodo;
         this.cantidadCubierta = 0.0;
+        this.cantidadRecibida = 0.0;
         this.activa = true;
     }
 
+    /**
+     * Una necesidad se considera efectivamente satisfecha únicamente cuando la entidad
+     * recibe físicamente una cantidad de bienes que iguala o supera la cantidad solicitada
+     * (Enunciado oficial, sección Necesidades de las Entidades).
+     * Una asignación en depósito reserva cobertura (cantidadCubierta), pero no satisface
+     * ni cierra la necesidad hasta su recepción efectiva (ENTREGADA).
+     */
     public boolean estaSatisfecha() {
-        return cantidadCubierta >= cantidadSolicitada;
+        return cantidadRecibida >= cantidadSolicitada;
     }
 
     public double getCantidadPendiente() {
         return Math.max(0.0, cantidadSolicitada - cantidadCubierta);
     }
 
+    public double getCantidadPendienteRecepcion() {
+        return Math.max(0.0, cantidadSolicitada - cantidadRecibida);
+    }
+
+    /**
+     * Registra la cobertura comprometida al asignar una donación en depósito (ASIGNACION_REALIZADA).
+     * No marca la necesidad como satisfecha ni la cierra hasta que se confirme la recepción física.
+     */
     public void registrarCobertura(double cantidad) {
         this.cantidadCubierta += cantidad;
+    }
+
+    /**
+     * Registra la recepción efectiva de bienes cuando se confirma la entrega en sede (ENTREGADA).
+     * Si la cantidad recibida iguala o supera la cantidad solicitada, la necesidad queda satisfecha.
+     */
+    public void registrarRecepcion(double cantidad) {
+        this.cantidadRecibida += cantidad;
+        if (this.cantidadCubierta < this.cantidadRecibida) {
+            this.cantidadCubierta = this.cantidadRecibida;
+        }
         if (estaSatisfecha()) {
             this.activa = false;
             this.fechaCierre = LocalDateTime.now();
@@ -86,7 +119,7 @@ public class NecesidadMaterial {
     }
 
     public void revertirCobertura(double cantidad) {
-        this.cantidadCubierta = Math.max(0.0, this.cantidadCubierta - cantidad);
+        this.cantidadCubierta = Math.max(this.cantidadRecibida, this.cantidadCubierta - cantidad);
         if (!estaSatisfecha() && "Completada y satisfecha en su totalidad".equals(this.motivoCierre)) {
             this.activa = true;
             this.fechaCierre = null;
@@ -97,6 +130,7 @@ public class NecesidadMaterial {
     public void reiniciarPeriodoRecurrente() {
         if (this.tipo == TipoNecesidad.RECURRENTE && (this.motivoCierre == null || "Completada y satisfecha en su totalidad".equals(this.motivoCierre))) {
             this.cantidadCubierta = 0.0;
+            this.cantidadRecibida = 0.0;
             this.activa = true;
             this.fechaCierre = null;
             this.motivoCierre = null;
@@ -130,6 +164,9 @@ public class NecesidadMaterial {
     public double getCantidadCubierta() { return cantidadCubierta; }
     public void setCantidadCubierta(double cantidadCubierta) { this.cantidadCubierta = cantidadCubierta; }
 
+    public double getCantidadRecibida() { return cantidadRecibida; }
+    public void setCantidadRecibida(double cantidadRecibida) { this.cantidadRecibida = cantidadRecibida; }
+
     public String getUnidadMedida() { return unidadMedida; }
     public void setUnidadMedida(String unidadMedida) { this.unidadMedida = unidadMedida; }
 
@@ -147,4 +184,7 @@ public class NecesidadMaterial {
 
     public EntidadBeneficiaria getEntidadBeneficiaria() { return entidadBeneficiaria; }
     public void setEntidadBeneficiaria(EntidadBeneficiaria entidadBeneficiaria) { this.entidadBeneficiaria = entidadBeneficiaria; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 }

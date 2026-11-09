@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:replace="${title}">DonaTrack - Gestión y Trazabilidad de Donaciones</title>
+    <title th:replace="${title}">DonaTrack — Gestión y Trazabilidad de Donaciones</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome Icons -->
@@ -12,48 +16,353 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         :root {
-            /* Identidad visual Donatrack */
-            --color-primary-light: #D1F4F5;
-            --color-primary-dark: #003D3F;
-            --color-secondary: #009B9F;
-            --color-accent: #007A8E;
+            color-scheme: light;
+            --color-primary: #0F766E;
+            --color-primary-hover: #115E59;
+            --color-primary-subtle: #F0FDFA;
+            --color-primary-border: #CCFBF1;
+            --color-accent: #0284C7;
 
-            /* Aplicación */
-            --color-background: #F4FBFC;
+            --color-bg: #F8FAFC;
             --color-surface: #FFFFFF;
-            --color-text: #003D3F;
-            --color-text-muted: #007A8E;
-            --color-border: #009B9F;
+            --color-surface-muted: #F1F5F9;
+            --color-text: #0F172A;
+            --color-text-secondary: #475569;
+            --color-text-muted: #64748B;
+            --color-border: #E2E8F0;
+            --color-border-strong: #CBD5E1;
 
-            /* Interacciones */
-            --color-button-primary: #009B9F;
-            --color-button-hover: #007A8E;
-            --color-navbar: #003D3F;
-            --color-footer: #003D3F;
+            --color-navbar: #0F172A;
+            --color-footer: #0F172A;
+
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.625rem;
+            --shadow-card: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
         }
 
-        html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
+        html {
             box-sizing: border-box;
-            background-color: var(--color-background);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: var(--color-text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
         }
 
         *, *::before, *::after {
             box-sizing: inherit;
         }
 
-        /* Renderizado limpio de cuerpo de notificaciones HTML en modales y paneles */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            background-color: var(--color-bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--color-text);
+            line-height: 1.5;
+            text-align: start;
+            overflow-wrap: break-word;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, th {
+            text-wrap: balance;
+            letter-spacing: -0.015em;
+            color: var(--color-text);
+        }
+
+        p {
+            text-wrap: pretty;
+            max-width: 75ch;
+        }
+
+        :target {
+            scroll-margin-top: 4.5rem;
+        }
+
+        /* Normalización de bordes y tarjetas (sin estética exagerada) */
+        .rounded-4 {
+            border-radius: var(--radius-lg) !important;
+        }
+        .rounded-3 {
+            border-radius: var(--radius-md) !important;
+        }
+        .card {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border) !important;
+            border-radius: var(--radius-lg) !important;
+            box-shadow: var(--shadow-card) !important;
+        }
+        .card-header {
+            background-color: var(--color-surface);
+            border-bottom: 1px solid var(--color-border) !important;
+            padding: 1rem 1.25rem;
+        }
+        .shadow-sm, .shadow {
+            box-shadow: var(--shadow-card) !important;
+        }
+
+        /* Navbar compacta y sobria */
+        .navbar-custom {
+            background-color: var(--color-navbar);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+        }
+        .navbar-custom .navbar-brand {
+            color: #FFFFFF !important;
+            font-weight: 600;
+            font-size: 1.05rem;
+            letter-spacing: -0.02em;
+        }
+        .navbar-custom .brand-mark {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            background-color: var(--color-primary);
+            color: #FFFFFF;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+        .navbar-custom .nav-link {
+            color: #CBD5E1 !important;
+            font-weight: 500;
+            font-size: 0.875rem;
+            padding: 0.4rem 0.75rem !important;
+            border-radius: var(--radius-sm);
+            transition: color 0.15s ease, background-color 0.15s ease;
+        }
+        .navbar-custom .nav-link:hover,
+        .navbar-custom .nav-link:focus-visible {
+            color: #FFFFFF !important;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+        .navbar-custom .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+        }
+        .navbar-custom .navbar-toggler-icon {
+            filter: invert(1);
+            width: 1.15em;
+            height: 1.15em;
+        }
+
+        /* Encabezados de página consistentes */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .page-header h1, .page-header h2 {
+            font-size: 1.375rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .page-header p {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+
+        /* Tarjetas de métricas (KPIs) */
+        .kpi-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: 1.125rem 1.25rem;
+            height: 100%;
+        }
+        .kpi-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--color-text-muted);
+            margin-bottom: 0.35rem;
+        }
+        .kpi-value {
+            font-size: 1.625rem;
+            font-weight: 700;
+            color: var(--color-text);
+            font-variant-numeric: tabular-nums;
+            line-height: 1.2;
+        }
+        .kpi-sub {
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Botones */
+        .btn {
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            padding: 0.45rem 0.9rem;
+        }
+        .btn-sm {
+            font-size: 0.8125rem;
+            padding: 0.3rem 0.65rem;
+        }
+        .btn-lg {
+            font-size: 0.95rem;
+            padding: 0.6rem 1.25rem;
+        }
+        .btn-dt-primary, .btn-primary, .btn-success {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+            color: #FFFFFF;
+        }
+        .btn-dt-primary:hover, .btn-dt-primary:focus,
+        .btn-primary:hover, .btn-primary:focus,
+        .btn-success:hover, .btn-success:focus {
+            background-color: var(--color-primary-hover);
+            border-color: var(--color-primary-hover);
+            color: #FFFFFF;
+        }
+        .btn-dt-secondary {
+            background-color: #1E293B;
+            border-color: #1E293B;
+            color: #FFFFFF;
+        }
+        .btn-dt-secondary:hover, .btn-dt-secondary:focus {
+            background-color: #0F172A;
+            border-color: #0F172A;
+            color: #FFFFFF;
+        }
+        .btn-dt-outline, .btn-outline-primary, .btn-outline-success, .btn-outline-info {
+            background-color: var(--color-surface);
+            color: var(--color-text);
+            border: 1px solid var(--color-border-strong);
+        }
+        .btn-dt-outline:hover, .btn-outline-primary:hover, .btn-outline-success:hover, .btn-outline-info:hover {
+            background-color: var(--color-surface-muted);
+            color: var(--color-text);
+            border-color: #94A3B8;
+        }
+        .btn-outline-secondary {
+            background-color: var(--color-surface);
+            color: var(--color-text-secondary);
+            border-color: var(--color-border-strong);
+        }
+        .btn-outline-secondary:hover {
+            background-color: var(--color-surface-muted);
+            color: var(--color-text);
+            border-color: #94A3B8;
+        }
+
+        /* Formularios */
+        .form-label {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--color-text);
+            margin-bottom: 0.35rem;
+        }
+        .form-control, .form-select {
+            font-size: 0.875rem;
+            border-color: var(--color-border-strong);
+            border-radius: var(--radius-sm);
+            padding: 0.45rem 0.75rem;
+            color: var(--color-text);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+        }
+        .input-group-text {
+            background-color: #F8FAFC;
+            border-color: var(--color-border-strong);
+            color: var(--color-text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Tablas */
+        .table {
+            font-size: 0.875rem;
+            margin-bottom: 0;
+        }
+        .table > thead > tr > th {
+            background-color: #F8FAFC;
+            color: var(--color-text-secondary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .table > tbody > tr > td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #F1F5F9;
+            color: var(--color-text);
+        }
+        .table-hover > tbody > tr:hover > * {
+            background-color: #F8FAFC;
+        }
+
+        /* Estados de Donación */
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+        .badge-status {
+            font-weight: 500;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.55rem;
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border: 1px solid transparent;
+        }
+        .status-EN_DEPOSITO, .status-RECIBIDA_EN_DEPOSITO {
+            background-color: #F1F5F9;
+            color: #334155;
+            border-color: #CBD5E1;
+        }
+        .status-ASIGNACION_REALIZADA {
+            background-color: #FEF3C7;
+            color: #92400E;
+            border-color: #FDE68A;
+        }
+        .status-LISTA_PARA_ENTREGAR {
+            background-color: #E0F2FE;
+            color: #0369A1;
+            border-color: #BAE6FD;
+        }
+        .status-EN_TRASLADO {
+            background-color: #DBEAFE;
+            color: #1D4ED8;
+            border-color: #BFDBFE;
+        }
+        .status-ENTREGADA {
+            background-color: #DCFCE7;
+            color: #15803D;
+            border-color: #BBF7D0;
+        }
+        .status-ENTREGA_FALLIDA {
+            background-color: #FEE2E2;
+            color: #B91C1C;
+            border-color: #FECACA;
+        }
+        .status-VENCIDA {
+            background-color: #F1F5F9;
+            color: #64748B;
+            border-color: #E2E8F0;
+        }
+
+        /* Renderizado limpio de cuerpo de notificaciones HTML en modales */
         .notif-content-render {
             background-color: #ffffff;
-            border-radius: 0.75rem;
+            border-radius: var(--radius-md);
             overflow: hidden;
         }
         .notif-content-render body {
@@ -68,111 +377,32 @@
             border: 0 !important;
         }
 
-        /* Navbar Corporativa DonaTrack */
-        .navbar-custom {
-            background-color: var(--color-navbar);
-            width: 100% !important;
-            margin: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            top: 0 !important;
-        }
-        .navbar-custom .navbar-brand {
-            color: #FFFFFF !important;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        .navbar-custom .nav-link {
-            color: rgba(255, 255, 255, 0.88) !important;
-            font-weight: 500;
-            font-size: 0.95rem;
-            padding: 0.5rem 0.85rem;
-            border-radius: 0.375rem;
-        }
-        .navbar-custom .nav-link:hover {
-            color: #FFFFFF !important;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .navbar-custom .navbar-toggler {
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        .navbar-custom .navbar-toggler-icon {
-            filter: invert(1);
-        }
-
-        /* Botones Sólidos y Profesionales (Sin resplandores ni animaciones innecesarias) */
-        .btn-dt-primary {
-            background-color: var(--color-button-primary);
-            color: #FFFFFF;
-            border: 1px solid var(--color-button-primary);
-            font-weight: 500;
-        }
-        .btn-dt-primary:hover, .btn-dt-primary:focus {
-            background-color: var(--color-button-hover);
-            border-color: var(--color-button-hover);
-            color: #FFFFFF;
-        }
-
-        .btn-dt-secondary {
-            background-color: var(--color-accent);
-            color: #FFFFFF;
-            border: 1px solid var(--color-accent);
-            font-weight: 500;
-        }
-        .btn-dt-secondary:hover, .btn-dt-secondary:focus {
-            background-color: var(--color-primary-dark);
-            border-color: var(--color-primary-dark);
-            color: #FFFFFF;
-        }
-
-        .btn-dt-outline {
-            background-color: transparent;
-            color: var(--color-text);
-            border: 1px solid var(--color-border);
-            font-weight: 500;
-        }
-        .btn-dt-outline:hover {
-            background-color: var(--color-primary-light);
-            color: var(--color-primary-dark);
-            border-color: var(--color-border);
-        }
-
-        /* Estados de Donación */
-        .badge-status {
-            font-weight: 600;
-            padding: 0.35em 0.65em;
-            border-radius: 0.375rem;
-        }
-        .status-EN_DEPOSITO { background-color: #E2E8F0; color: #334155; }
-        .status-ASIGNACION_REALIZADA { background-color: #FEF3C7; color: #92400E; }
-        .status-LISTA_PARA_ENTREGAR { background-color: #E0E7FF; color: #3730A3; }
-        .status-EN_TRASLADO { background-color: #DBEAFE; color: #1E40AF; }
-        .status-ENTREGADA { background-color: #DCFCE7; color: #166534; }
-        .status-ENTREGA_FALLIDA { background-color: #FEE2E2; color: #991B1B; }
-        .status-VENCIDA { background-color: #F1F5F9; color: #64748B; }
-
         /* Paginación */
         .page-item.active .page-link {
-            background-color: var(--color-button-primary);
-            border-color: var(--color-button-primary);
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
             color: #FFFFFF;
         }
         .page-link {
-            color: var(--color-primary-dark);
+            color: var(--color-text);
+            font-size: 0.8125rem;
         }
         .page-link:hover {
-            color: var(--color-button-hover);
-            background-color: var(--color-primary-light);
+            color: var(--color-primary);
+            background-color: var(--color-surface-muted);
         }
 
         /* Footer */
         footer {
             margin-top: auto;
             background-color: var(--color-footer);
-            color: #CBD5E1;
+            color: #94A3B8;
+            border-top: 1px solid #1E293B;
+            font-size: 0.8125rem;
         }
         footer a {
-            color: var(--color-primary-light) !important;
+            color: #CBD5E1 !important;
+            text-decoration: none;
         }
         footer a:hover {
             color: #FFFFFF !important;
@@ -182,120 +412,118 @@
         .map-container {
             height: 400px;
             width: 100%;
-            border-radius: 0.5rem;
+            border-radius: var(--radius-md);
             z-index: 1;
+        }
+
+        /* Soporte para modo de contraste forzado (Accesibilidad) */
+        @media (forced-colors: active) {
+            .card, .kpi-card, .btn, .form-control, .form-select, .badge-status {
+                border: 1px solid CanvasText !important;
+            }
+            .btn-dt-primary, .btn-primary {
+                border: 2px solid ButtonText !important;
+            }
         }
     </style>
 </head>
 <body>
     <!-- Navbar Header -->
-    <nav class="navbar navbar-expand-lg navbar-custom shadow-sm sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                <i class="fa-solid fa-hand-holding-heart text-white fs-4"></i>
+                <span class="brand-mark"><i class="fa-solid fa-box-open"></i></span>
                 <span>DonaTrack</span>
             </a>
             <div class="d-flex align-items-center gap-2">
-                <!-- Campanita con contador rojo para dispositivos móviles (< 992px) siempre visible -->
                 <a th:if="${session.userSession != null}"
                    th:href="${session.userSession.isDonante() ? '/donante/notificaciones' : (session.userSession.isBeneficiaria() ? '/beneficiaria/notificaciones' : (session.userSession.isAdmin() ? '/admin/notificaciones' : '/chofer'))}"
                    class="btn btn-outline-light btn-sm position-relative d-lg-none"
-                   title="Ver notificaciones y avisos">
-                    <i class="fa-solid fa-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light"
+                   aria-label="Notificaciones"
+                   title="Notificaciones">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                           th:if="${notificacionesNoLeidasCount != null and notificacionesNoLeidasCount > 0}"
                           th:text="${notificacionesNoLeidasCount}">
                         0
                     </span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-label="Alternar navegación">
                     <span class="navbar-toggler-icon"></span>
                 </button>
             </div>
             <div class="collapse navbar-collapse" id="navMenu">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
-                    <li class="nav-item"><a class="nav-link" href="/"><i class="fa-solid fa-house me-1"></i> Inicio</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/comprobantes"><i class="fa-solid fa-images me-1"></i> Donaciones Entregadas</a></li>
-                    
-                    <!-- Enlaces visibles estrictamente según rol -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-1">
+                    <li class="nav-item"><a class="nav-link" href="/">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/comprobantes">Entregas verificadas</a></li>
+
                     <li class="nav-item" th:if="${session.userSession != null and session.userSession.isDonante()}">
-                        <a class="nav-link" href="/donante"><i class="fa-solid fa-user me-1"></i> Mi Portal Donante</a>
+                        <a class="nav-link" href="/donante">Portal Donante</a>
+                    </li>
+                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isDonante()}">
+                        <a class="nav-link" href="/donante/donaciones">Mis donaciones</a>
                     </li>
                     <li class="nav-item" th:if="${session.userSession != null and session.userSession.isBeneficiaria()}">
-                        <a class="nav-link" href="/beneficiaria"><i class="fa-solid fa-building me-1"></i> Mi Portal Entidad</a>
+                        <a class="nav-link" href="/beneficiaria">Portal Entidad</a>
+                    </li>
+                    <li class="nav-item" th:if="${session.userSession != null and session.userSession.isBeneficiaria()}">
+                        <a class="nav-link" href="/beneficiaria/necesidades">Necesidades</a>
                     </li>
                     <li class="nav-item" th:if="${session.userSession != null and session.userSession.isChofer()}">
-                        <a class="nav-link text-warning fw-semibold" href="/chofer"><i class="fa-solid fa-truck-steering me-1"></i> Mi Ruta Chofer</a>
+                        <a class="nav-link text-white fw-semibold" href="/chofer">Hoja de ruta</a>
                     </li>
                     <li class="nav-item" th:if="${session.userSession != null and session.userSession.isAdmin()}">
-                        <a class="nav-link text-warning fw-semibold" href="/admin"><i class="fa-solid fa-shield-halved me-1"></i> Panel Administrador</a>
+                        <a class="nav-link text-white fw-semibold" href="/admin">Administración</a>
                     </li>
                 </ul>
-                
-                <!-- Botones si NO está autenticado -->
+
                 <div class="d-flex gap-2" th:if="${session.userSession == null}">
-                    <a href="/login" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Ingresar</a>
-                    <a href="/registro" class="btn btn-dt-primary btn-sm"><i class="fa-solid fa-user-plus me-1"></i> Registrarse</a>
+                    <a href="/login" class="btn btn-outline-light btn-sm">Iniciar sesión</a>
+                    <a href="/registro" class="btn btn-dt-primary btn-sm">Crear cuenta</a>
                 </div>
 
-                <!-- Usuario, Campanita con contador rojo y Logout si ESTÁ autenticado (escritorio >= 992px) -->
                 <div class="d-flex align-items-center gap-3" th:if="${session.userSession != null}">
                     <a th:href="${session.userSession.isDonante() ? '/donante/notificaciones' : (session.userSession.isBeneficiaria() ? '/beneficiaria/notificaciones' : (session.userSession.isAdmin() ? '/admin/notificaciones' : '/chofer'))}"
-                       class="btn btn-outline-light btn-sm position-relative d-none d-lg-inline-flex"
-                       title="Ver notificaciones y avisos recientes">
-                        <i class="fa-solid fa-bell"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light"
+                       class="btn btn-outline-light btn-sm position-relative d-none d-lg-inline-flex align-items-center"
+                       aria-label="Notificaciones"
+                       title="Notificaciones">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                               th:if="${notificacionesNoLeidasCount != null and notificacionesNoLeidasCount > 0}"
                               th:text="${notificacionesNoLeidasCount}">
                             0
                         </span>
                     </a>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-light text-dark px-2 py-1"
-                              th:text="${session.userSession.role == 'ROLE_ADMIN' ? 'ADMIN' : (session.userSession.role == 'ROLE_DONANTE' ? 'DONANTE' : (session.userSession.role == 'ROLE_CHOFER' ? 'CHOFER' : 'ENTIDAD'))}">ROL</span>
-                        <span class="fw-semibold small text-white" th:text="${session.userSession.nombreCompleto}">Usuario</span>
+                    <div class="d-flex align-items-center gap-2 border-start border-secondary ps-3">
+                        <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary px-2 py-1"
+                              style="font-size: 0.7rem;"
+                              th:text="${session.userSession.role == 'ROLE_ADMIN' ? 'Admin' : (session.userSession.role == 'ROLE_DONANTE' ? 'Donante' : (session.userSession.role == 'ROLE_CHOFER' ? 'Chofer' : 'Entidad'))}">Rol</span>
+                        <span class="small text-white fw-medium" th:text="${session.userSession.nombreCompleto}">Usuario</span>
                     </div>
-                    <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Salir</a>
+                    <a href="/logout" class="btn btn-outline-light btn-sm">Salir</a>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content Body -->
-    <main class="py-4">
+    <main class="py-4 flex-grow-1">
         <div class="container" th:insert="${content}">
-            <!-- El contenido específico de cada página se inserta aquí -->
         </div>
     </main>
 
     <!-- Footer -->
     <footer class="py-4 mt-5">
         <div class="container">
-            <div class="row gy-3">
-                <div class="col-md-6">
-                    <h5 class="text-white fw-bold mb-2"><i class="fa-solid fa-hand-holding-heart text-white me-2"></i>DonaTrack</h5>
-                    <p class="small mb-1 text-light">Plataforma integral para la gestión comunitaria, logística y trazabilidad transparente de donaciones materiales.</p>
-                    <p class="small text-white-50 mb-0">Conectando la solidaridad con comedores, hogares y centros de asistencia social.</p>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <span class="text-white fw-semibold me-2">DonaTrack</span>
+                    <span>Gestión logística y trazabilidad de donaciones para organizaciones sociales.</span>
                 </div>
-                <div class="col-md-3">
-                    <h6 class="text-white fw-semibold mb-2">Enlaces Útiles</h6>
-                    <ul class="list-unstyled small">
-                        <li><a href="/comprobantes" class="text-decoration-none">Fotos de Entregas</a></li>
-                        <li><a href="/privacidad" class="text-decoration-none">Términos y Privacidad</a></li>
-                        <li><a href="/admin/rankings" class="text-decoration-none">Ranking Solidario</a></li>
-                        <li><a href="/donante/incentivos" class="text-decoration-none">Programa de Puntos e Incentivos</a></li>
-                    </ul>
+                <div class="d-flex gap-3">
+                    <a href="/comprobantes">Entregas verificadas</a>
+                    <a href="/privacidad">Privacidad y términos</a>
                 </div>
-                <div class="col-md-3">
-                    <h6 class="text-white fw-semibold mb-2">Estado del Sistema</h6>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle p-2">
-                        <i class="fa-solid fa-circle-check me-1"></i> Plataforma Operativa en Línea
-                    </span>
-                </div>
-            </div>
-            <hr class="border-secondary my-3">
-            <div class="text-center small text-white-50">
-                &copy; 2026 DonaTrack. Todos los derechos reservados.
             </div>
         </div>
     </footer>

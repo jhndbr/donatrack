@@ -1,55 +1,45 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
 <head>
-    <title>Panel de Chofer - Recorrido y Entregas - DonaTrack</title>
+    <title>Hoja de ruta — DonaTrack</title>
 </head>
 <body>
 <div th:fragment="content">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="page-header">
         <div>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill mb-1">
-                <i class="fa-solid fa-satellite-dish text-success me-1"></i> Despacho Logístico VRP Activo
-            </span>
-            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-truck-steering text-primary me-2"></i>Hoja de Ruta del Chofer</h2>
-            <p class="text-secondary mb-0">Geolocalización GPS desde el navegador, retiro en depósito y contrato de recepción con comedores.</p>
+            <h1>Hoja de ruta del chofer</h1>
+            <p>Gestión de retiro en depósito, reporte de posición y entrega en comedores y entidades.</p>
         </div>
         <div class="d-flex gap-2 align-items-center flex-wrap">
-            <!-- Optimización y Planificación VRP bajo demanda -->
             <form action="/chofer/rutas/planificar-ahora" method="post" class="d-inline">
-                <button type="submit" class="btn btn-outline-primary btn-sm fw-semibold" title="Ejecuta la optimización y planificación de rutas VRP sobre donaciones asignadas">
-                    <i class="fa-solid fa-route me-1"></i> Optimizar y Planificar Rutas
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    Planificar rutas pendientes
                 </button>
             </form>
-            <span class="badge bg-primary-subtle text-primary py-2 px-3 fw-semibold">
-                <i class="fa-solid fa-user-tie me-1"></i>
-                <span th:text="${userSession != null ? userSession.nombreCompleto : 'Chofer Flota'}">Chofer</span>
-            </span>
-            <a href="/logout" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>Salir</a>
         </div>
     </div>
 
-    <!-- Alertas -->
-    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0" role="alert">
+    <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show py-2 small mb-3" role="alert">
         <i class="fa-solid fa-circle-check me-2"></i>
         <span th:text="${mensajeExito}">Operación exitosa</span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
-    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm border-0" role="alert">
+    <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show py-2 small mb-3" role="alert">
         <i class="fa-solid fa-triangle-exclamation me-2"></i>
         <span th:text="${mensajeError}">Ocurrió un error</span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
 
-    <!-- Selector de Rutas si hay múltiples -->
-    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+    <!-- Selector de Rutas -->
+    <div class="card p-3 mb-4">
         <div class="row align-items-center g-3">
             <div class="col-md-5">
-                <label class="form-label fw-semibold small text-muted mb-1"><i class="fa-solid fa-route me-1"></i>Seleccionar Hoja de Ruta Asignada:</label>
+                <label class="form-label mb-1">Hoja de ruta asignada</label>
                 <select class="form-select select-ruta" onchange="if(this.value) window.location.href='/chofer?rutaId=' + this.value;">
                     <option value="" th:if="${#lists.isEmpty(rutas)}">Sin rutas planificadas</option>
                     <option th:each="r : ${rutas}"
                             th:value="${r['id']}"
-                            th:text="'Ruta #' + ${r['id']} + ' (' + (${r['patenteCamion'] != null} ? ${r['patenteCamion']} : 'Sin camión') + ') - ' + ${r['estado']}"
+                            th:text="'Ruta #' + ${r['id']} + ' (' + (${r['patenteCamion'] != null} ? ${r['patenteCamion']} : 'Sin unidad') + ') — ' + ${r['estado']}"
                             th:selected="${rutaActiva != null and rutaActiva['id'] == r['id']}">
                         Ruta #1 (AE789XY) - PLANIFICADA
                     </option>
@@ -57,42 +47,39 @@
             </div>
             <div class="col-md-7 text-md-end" th:if="${rutaActiva != null}">
                 <div class="d-inline-flex gap-2 align-items-center flex-wrap">
-                    <!-- Paso 1: Botón Iniciar Ruta / Retiro en Depósito (CU-40) -->
                     <form th:if="${rutaActiva['estado'] == 'PLANIFICADA'}" th:action="@{'/chofer/rutas/' + ${rutaActiva['id']} + '/iniciar'}" method="post">
-                        <button type="submit" class="btn btn-success fw-semibold shadow-sm"
-                                onclick="return confirm('¿Confirma que verificó y cargó las donaciones en el Depósito Central para iniciar el recorrido?');">
-                            <i class="fa-solid fa-boxes-packing me-2"></i>Confirmar Retiro en Depósito e Iniciar Ruta
+                        <button type="submit" class="btn btn-dt-primary"
+                                onclick="return confirm('¿Confirma que retiró los lotes en el depósito para iniciar el recorrido?');">
+                            Confirmar retiro e iniciar ruta
                         </button>
                     </form>
 
-                    <!-- Botón Finalizar Ruta -->
                     <form th:if="${rutaActiva['estado'] == 'EN_CURSO'}" th:action="@{'/chofer/rutas/' + ${rutaActiva['id']} + '/finalizar'}" method="post">
-                        <button type="submit" class="btn btn-danger fw-semibold shadow-sm" onclick="return confirm('¿Confirma que desea finalizar el recorrido completo de la hoja de ruta?');">
-                            <i class="fa-solid fa-flag-checkered me-2"></i>Finalizar Hoja de Ruta
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('¿Confirma la finalización de la hoja de ruta?');">
+                            Finalizar recorrido
                         </button>
                     </form>
 
-                    <span class="badge py-2 px-3 rounded-pill"
-                          th:classappend="${rutaActiva['estado'] == 'PLANIFICADA' ? 'bg-secondary' : (rutaActiva['estado'] == 'EN_CURSO' ? 'bg-primary' : 'bg-success')}"
-                          th:text="'Estado Ruta: ' + ${rutaActiva['estado']}">
-                        Estado: EN_CURSO
+                    <span class="badge-status"
+                          th:classappend="${rutaActiva['estado'] == 'PLANIFICADA' ? 'status-EN_DEPOSITO' : (rutaActiva['estado'] == 'EN_CURSO' ? 'status-EN_TRASLADO' : 'status-ENTREGADA')}"
+                          th:text="${rutaActiva['estado'] == 'PLANIFICADA' ? 'Planificada' : (rutaActiva['estado'] == 'EN_CURSO' ? 'En curso' : rutaActiva['estado'])}">
+                        En curso
                     </span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Si no hay ninguna ruta -->
-    <div th:if="${rutaActiva == null}" class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
-        <i class="fa-solid fa-clipboard-check text-muted fs-1 mb-3"></i>
-        <h4 class="fw-bold text-dark">No hay hojas de ruta disponibles en este momento</h4>
-        <p class="text-secondary mb-3">
-            El planificador logístico optimiza automáticamente los recorridos para las donaciones en estado <code>ASIGNACION_REALIZADA</code>.
+    <!-- Estado vacío si no hay ruta -->
+    <div th:if="${rutaActiva == null}" class="card p-5 text-center">
+        <h2 class="h5 fw-semibold text-dark">No hay hojas de ruta activas</h2>
+        <p class="text-secondary small mb-3 mx-auto">
+            Puedes generar un recorrido para las donaciones que ya cuentan con entidad asignada.
         </p>
         <div>
             <form action="/chofer/rutas/planificar-ahora" method="post" class="d-inline">
-                <button type="submit" class="btn btn-dt-primary px-4">
-                    <i class="fa-solid fa-bolt me-2"></i>Ejecutar Planificación de Rutas Ahora
+                <button type="submit" class="btn btn-dt-primary">
+                    Generar planificación ahora
                 </button>
             </form>
         </div>
@@ -100,83 +87,45 @@
 
     <!-- Detalle de la Ruta Activa -->
     <div th:if="${rutaActiva != null}">
-        <!-- Guía rápida del Contrato Operativo Chofer <-> Receptor -->
-        <div class="alert alert-light border rounded-4 shadow-sm p-3 mb-4 bg-white">
-            <div class="row g-2 text-center small">
-                <div class="col-md-3">
-                    <div class="p-2 rounded-3 bg-light h-100">
-                        <span class="badge bg-secondary mb-1">Paso 1: Depósito</span>
-                        <div class="fw-bold text-dark">Retiro y Carga en Camión</div>
-                        <div class="text-muted">Al iniciar el recorrido, los bienes pasan a <code>EN_TRASLADO</code> y se avisa a Donante y Entidad.</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="p-2 rounded-3 bg-light h-100">
-                        <span class="badge bg-primary mb-1">Paso 2: GPS Navegador</span>
-                        <div class="fw-bold text-dark">Ubicación en Tiempo Real</div>
-                        <div class="text-muted">Comparte tu GPS real (<code>navigator.geolocation</code>) o haz clic en el mapa para avanzar.</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="p-2 rounded-3 bg-light h-100">
-                        <span class="badge bg-warning text-dark mb-1">Paso 3: En Puerta Sede</span>
-                        <div class="fw-bold text-dark">Presentación al Receptor</div>
-                        <div class="text-muted">Notifica <strong>Arribo en Puerta</strong> para habilitar la recepción conjunta con el comedor.</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="p-2 rounded-3 bg-light h-100">
-                        <span class="badge bg-success mb-1">Paso 4: Acta o Incidencia</span>
-                        <div class="fw-bold text-dark">Entrega o Falla Justificada</div>
-                        <div class="text-muted">Confirma con foto/receptor (<code>ENTREGADA</code>) o registra incidencia por etapa (<code>ENTREGA_FALLIDA</code>).</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="row g-4 mb-4">
-            <!-- Columna Izquierda: Datos de la Unidad + Telemetría GPS desde el Navegador -->
+            <!-- Columna Izquierda: Unidad y Posición -->
             <div class="col-lg-5">
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Datos de la Unidad y Hoja de Ruta</h5>
+                <div class="card p-4 mb-4">
+                    <h2 class="h6 fw-semibold text-dark mb-3">Resumen del despacho</h2>
                     <ul class="list-unstyled mb-0 small">
                         <li class="py-2 border-bottom d-flex justify-content-between">
-                            <span class="text-muted">Hoja de Ruta ID:</span>
+                            <span class="text-muted">Identificador de ruta</span>
                             <strong class="font-monospace" th:text="${rutaActiva['id']}">RUTA-101</strong>
                         </li>
                         <li class="py-2 border-bottom d-flex justify-content-between">
-                            <span class="text-muted">Camión Asignado:</span>
-                            <span class="badge bg-dark" th:text="${rutaActiva['patenteCamion'] != null ? rutaActiva['patenteCamion'] : 'AE789XY'}">AE789XY</span>
-                        </li>
-                        <li class="py-2 border-bottom d-flex justify-content-between">
-                            <span class="text-muted">Total de Paradas / Entregas:</span>
-                            <strong th:text="${!#lists.isEmpty(paradas) ? #lists.size(paradas) : #lists.size(entregas)}">3</strong>
+                            <span class="text-muted">Unidad asignada</span>
+                            <span class="font-monospace fw-semibold" th:text="${rutaActiva['patenteCamion'] != null ? rutaActiva['patenteCamion'] : 'AE789XY'}">AE789XY</span>
                         </li>
                         <li class="py-2 d-flex justify-content-between">
-                            <span class="text-muted">Motor de Optimización:</span>
-                            <span class="badge bg-info-subtle text-info border border-info-subtle">VRP Multi-Parada</span>
+                            <span class="text-muted">Paradas programadas</span>
+                            <strong th:text="${!#lists.isEmpty(paradas) ? #lists.size(paradas) : #lists.size(entregas)}">3</strong>
                         </li>
                     </ul>
                 </div>
 
-                <!-- Panel de Telemetría GPS en Vivo (Navegador + Manual) -->
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <!-- Telemetría GPS -->
+                <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-satellite-dish text-success me-2"></i>Geolocalización del Navegador</h5>
-                        <span id="gpsStatusBadge" class="badge bg-secondary-subtle text-secondary">GPS Manual</span>
+                        <h2 class="h6 fw-semibold text-dark mb-0">Posición de la unidad</h2>
+                        <span id="gpsStatusBadge" class="badge bg-light text-secondary border">Manual</span>
                     </div>
                     <p class="text-muted small mb-3">
-                        Toma la ubicación GPS de tu navegador (API HTML5 <code>navigator.geolocation</code>) o selecciona un punto en el mapa para actualizar la posición del camión en vivo.
+                        Reporta la ubicación desde tu dispositivo o selecciona un punto sobre el mapa.
                     </p>
 
                     <div class="d-grid gap-2 mb-3">
-                        <button type="button" id="btnTomarGpsNavegador" class="btn btn-success btn-sm fw-semibold" onclick="tomarUbicacionNavegador(true)">
-                            <i class="fa-solid fa-location-crosshairs me-1"></i> Tomar Mi Ubicación GPS del Navegador y Transmitir
+                        <button type="button" id="btnTomarGpsNavegador" class="btn btn-outline-secondary btn-sm" onclick="tomarUbicacionNavegador(true)">
+                            <i class="fa-solid fa-location-crosshairs me-1"></i> Obtener ubicación actual del dispositivo
                         </button>
-                        <div class="form-check form-switch bg-light border rounded-3 p-2 ps-5">
+                        <div class="form-check form-switch bg-light border rounded-2 p-2 ps-5">
                             <input class="form-check-input" type="checkbox" id="switchAutoGps" onchange="alternarAutoTransmisionGps(this.checked)">
-                            <label class="form-check-label small fw-semibold text-dark" for="switchAutoGps">
-                                Compartir ubicación en vivo automáticamente (cada 15 seg)
+                            <label class="form-check-label small text-dark" for="switchAutoGps">
+                                Actualizar ubicación automáticamente cada 15 s
                             </label>
                         </div>
                     </div>
@@ -189,186 +138,177 @@
                         <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
 
                         <div class="col-6">
-                            <label class="form-label small fw-semibold mb-1">Latitud</label>
+                            <label class="form-label mb-1">Latitud</label>
                             <input type="number" step="0.0001" name="latitud" id="inputLatitudGps" class="form-control form-control-sm" value="-34.6037" required>
                         </div>
                         <div class="col-6">
-                            <label class="form-label small fw-semibold mb-1">Longitud</label>
+                            <label class="form-label mb-1">Longitud</label>
                             <input type="number" step="0.0001" name="longitud" id="inputLongitudGps" class="form-control form-control-sm" value="-58.3816" required>
                         </div>
                         <div class="col-6">
-                            <label class="form-label small fw-semibold mb-1">Velocidad (km/h)</label>
+                            <label class="form-label mb-1">Velocidad (km/h)</label>
                             <input type="number" step="1" name="velocidad" id="inputVelocidadGps" class="form-control form-control-sm" value="42" required>
                         </div>
                         <div class="col-6 d-flex align-items-end">
-                            <button type="submit" class="btn btn-outline-success btn-sm w-100 fw-semibold">
-                                <i class="fa-solid fa-location-arrow me-1"></i>Reportar GPS
+                            <button type="submit" class="btn btn-dt-primary btn-sm w-100">
+                                Reportar posición
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Columna Derecha: Mapa Interactivo de Hoja de Ruta y Camión -->
+            <!-- Columna Derecha: Mapa -->
             <div class="col-lg-7">
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Mapa de Recorrido y Paradas en Vivo</h5>
-                        <span class="small text-muted"><i class="fa-solid fa-hand-pointer me-1 text-primary"></i>Haz clic en el mapa para mover el camión a ese punto</span>
+                <div class="card overflow-hidden h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h2 class="h6 fw-semibold mb-0">Mapa del recorrido</h2>
+                        <span class="small text-muted">Haz clic en el mapa para actualizar la posición</span>
                     </div>
-                    <div id="mapaRutaChofer" class="map-container border" style="height: 410px;"></div>
+                    <div class="card-body p-0">
+                        <div id="mapaRutaChofer" class="map-container" style="height: 410px; border-radius: 0;"></div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Tabla de Paradas de la Ruta (Contrato de Recepción Chofer <-> Receptor de Entidad) -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-ol text-primary me-2"></i>Secuencia de Paradas y Contrato de Recepción</h5>
-                <span class="small text-muted">Cada confirmación o incidencia se sincroniza automáticamente con la Entidad Beneficiaria y el Donante.</span>
+        <!-- Tabla de Paradas -->
+        <div class="card overflow-hidden mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h2 class="h6 fw-semibold mb-0">Secuencia de paradas</h2>
+                <span class="small text-muted">Estado sincronizado con la entidad receptora</span>
             </div>
 
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
                             <th style="width: 65px;">Orden</th>
-                            <th>Entidad Beneficiaria Destino</th>
-                            <th>Dirección y Coordenadas</th>
-                            <th>Donación / Detalle</th>
-                            <th>Etapa del Contrato</th>
-                            <th class="text-end">Acciones Operativas del Chofer</th>
+                            <th>Entidad destino</th>
+                            <th>Dirección</th>
+                            <th>Envío</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Si hay lista de paradas -->
                         <tr th:if="${!#lists.isEmpty(paradas)}" th:each="p : ${paradas}">
+                            <td class="fw-semibold text-muted" th:text="${p['orden']}">1</td>
                             <td>
-                                <span class="badge bg-secondary-subtle text-dark fs-6" th:text="${p['orden']}">1</span>
-                            </td>
-                            <td>
-                                <strong class="text-primary d-block" th:text="${p['nombreEntidad'] != null ? p['nombreEntidad'] : 'Entidad Comunitaria'}">Comedor San José</strong>
-                                <small th:if="${p['receptorNombre'] != null}" class="text-success">
-                                    <i class="fa-solid fa-user-check me-1"></i>Recibió: <span th:text="${p['receptorNombre']}"></span>
+                                <div class="fw-semibold text-dark" th:text="${p['nombreEntidad'] != null ? p['nombreEntidad'] : 'Entidad Comunitaria'}">Comedor San José</div>
+                                <small th:if="${p['receptorNombre'] != null}" class="text-muted">
+                                    Recibió: <span th:text="${p['receptorNombre']}"></span>
                                 </small>
                             </td>
                             <td>
-                                <div>
-                                    <i class="fa-solid fa-location-dot text-danger me-1"></i>
-                                    <span th:text="${p['direccion']}">Av. Corrientes 4500, CABA</span>
-                                </div>
+                                <div class="small" th:text="${p['direccion']}">Av. Corrientes 4500, CABA</div>
                                 <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small"
+                                        style="color: var(--color-primary);"
                                         th:if="${p['latitud'] != null and p['longitud'] != null}"
                                         th:attr="onclick='simularMovimientoAParada(' + ${p['latitud']} + ',' + ${p['longitud']} + ')'">
-                                    <i class="fa-solid fa-crosshairs me-1"></i>Mover GPS aquí (<span th:text="${p['latitud'] + ', ' + p['longitud']}"></span>)
+                                    Situar unidad aquí
                                 </button>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border font-monospace" th:text="'DON-' + ${p['idDonacion']}">DON-1</span>
-                                <div class="small text-muted mt-1" th:if="${p['detalleDonacion'] != null}" th:text="${p['detalleDonacion']}">20 kg de fideos</div>
+                                <span class="font-monospace small fw-semibold text-dark" th:text="'DON-' + ${p['idDonacion']}">DON-1</span>
+                                <div class="small text-muted" th:if="${p['detalleDonacion'] != null}" th:text="${p['detalleDonacion']}">20 kg de fideos</div>
                             </td>
                             <td>
-                                <span th:if="${p['estadoParada'] == 'ENTREGADA' or p['completada'] == true}" class="badge bg-success-subtle text-success border border-success-subtle">
-                                    <i class="fa-solid fa-check-double me-1"></i>ENTREGADA Y FIRMADA
+                                <span th:if="${p['estadoParada'] == 'ENTREGADA' or p['completada'] == true}" class="badge-status status-ENTREGADA">
+                                    Entregada
                                 </span>
-                                <span th:if="${p['estadoParada'] == 'FALLIDA'}" class="badge bg-danger-subtle text-danger border border-danger-subtle">
-                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>FALLIDA / NO RECIBIDA
+                                <span th:if="${p['estadoParada'] == 'FALLIDA'}" class="badge-status status-ENTREGA_FALLIDA">
+                                    Incidencia
                                 </span>
-                                <span th:if="${p['estadoParada'] == 'EN_PUERTA_SEDE'}" class="badge bg-info-subtle text-info border border-info-subtle">
-                                    <i class="fa-solid fa-truck-front me-1"></i>EN PUERTA DE SEDE (Esperando Receptor)
+                                <span th:if="${p['estadoParada'] == 'EN_PUERTA_SEDE'}" class="badge-status status-ASIGNACION_REALIZADA">
+                                    En puerta de sede
                                 </span>
                                 <span th:if="${p['estadoParada'] != 'ENTREGADA' and p['completada'] != true and p['estadoParada'] != 'FALLIDA' and p['estadoParada'] != 'EN_PUERTA_SEDE'}"
-                                      class="badge bg-warning-subtle text-warning border border-warning-subtle">
-                                    <i class="fa-solid fa-truck-fast me-1"></i>
-                                    <span th:text="${rutaActiva['estado'] == 'EN_CURSO' ? 'EN TRASLADO' : 'PENDIENTE RETIRO'}">PENDIENTE</span>
+                                      class="badge-status status-EN_TRASLADO"
+                                      th:text="${rutaActiva['estado'] == 'EN_CURSO' ? 'En traslado' : 'Pendiente de salida'}">
+                                    Pendiente
                                 </span>
                                 <div th:if="${p['motivoFalla'] != null}" class="small text-danger mt-1" th:text="${p['motivoFalla']}"></div>
                             </td>
                             <td class="text-end">
                                 <div th:if="${p['completada'] != true and p['estadoParada'] != 'ENTREGADA' and p['estadoParada'] != 'FALLIDA'}" class="d-inline-flex gap-1 flex-wrap justify-content-end">
-                                    <!-- Paso 3: Notificar Arribo en Puerta -->
                                     <form th:if="${p['estadoParada'] != 'EN_PUERTA_SEDE'}"
                                           th:action="@{'/chofer/entregas/' + ${p['idDonacion']} + '/arribo'}" method="post" class="d-inline">
                                         <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
                                         <input type="hidden" name="observaciones" value="Camión estacionado en puerta de la entidad beneficiaria">
-                                        <button type="submit" class="btn btn-sm btn-outline-primary" title="Notificar llegada a la puerta del comedor y actualizar GPS">
-                                            <i class="fa-solid fa-bell-concierge me-1"></i>En Puerta
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                            Notificar en puerta
                                         </button>
                                     </form>
 
-                                    <!-- Paso 4A: Modal Trigger Confirmar Recepción -->
-                                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" th:data-bs-target="'#modalConfirmar-' + ${p['orden']}">
-                                        <i class="fa-solid fa-file-signature me-1"></i>Acta Entrega
+                                    <button type="button" class="btn btn-sm btn-dt-primary" data-bs-toggle="modal" th:data-bs-target="'#modalConfirmar-' + ${p['orden']}">
+                                        Registrar entrega
                                     </button>
 
-                                    <!-- Paso 4B: Modal Trigger Fallida -->
                                     <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" th:data-bs-target="'#modalFallida-' + ${p['orden']}">
-                                        <i class="fa-solid fa-ban me-1"></i>Incidencia
+                                        Incidencia
                                     </button>
                                 </div>
                                 <div th:if="${p['completada'] == true or p['estadoParada'] == 'ENTREGADA'}" class="d-inline-flex align-items-center gap-1">
-                                    <span class="text-success small fw-semibold me-2">
-                                        <i class="fa-solid fa-circle-check me-1"></i>Contrato Cumplido
-                                    </span>
-                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                    <button type="button" class="btn btn-sm btn-outline-secondary"
                                             th:onclick="'abrirModalComprobantePorDonacion(' + ${p['idDonacion']} + ')'">
-                                        <i class="fa-solid fa-file-invoice me-1"></i>Comprobante
+                                        Ver comprobante
                                     </button>
                                 </div>
-                                <span th:if="${p['estadoParada'] == 'FALLIDA'}" class="text-danger small fw-semibold">
-                                    <i class="fa-solid fa-circle-xmark me-1"></i>Incidencia Reportada
+                                <span th:if="${p['estadoParada'] == 'FALLIDA'}" class="small text-muted">
+                                    Incidencia reportada
                                 </span>
 
-                                <!-- Modal Confirmar Acta de Entrega (Chofer + Receptor de Entidad) -->
-                                <div class="modal fade" th:id="'modalConfirmar-' + ${p['orden']}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                                <!-- Modal Confirmar Acta de Entrega -->
+                                <div class="modal fade text-start" th:id="'modalConfirmar-' + ${p['orden']}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content rounded-4 border-0 shadow">
+                                        <div class="modal-content rounded-3 border">
                                             <form th:action="@{'/chofer/entregas/' + ${p['idDonacion']} + '/confirmar'}" method="post" enctype="multipart/form-data">
                                                 <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
-                                                <div class="modal-header bg-success text-white">
-                                                    <h5 class="modal-title fw-bold">
-                                                        <i class="fa-solid fa-file-signature me-2"></i>Acta de Recepción en Sede (DON-<span th:text="${p['idDonacion']}">1</span>)
+                                                <div class="modal-header border-bottom py-3">
+                                                    <h5 class="modal-title fw-semibold h6 mb-0">
+                                                        Acta de recepción en sede (DON-<span th:text="${p['idDonacion']}">1</span>)
                                                     </h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                                 </div>
                                                 <div class="modal-body p-4">
-                                                    <div class="alert alert-light border small mb-3">
+                                                    <div class="p-3 bg-light border rounded-2 small mb-3">
                                                         <strong>Destino:</strong> <span th:text="${p['nombreEntidad']}">Comedor</span><br>
                                                         <strong>Dirección:</strong> <span th:text="${p['direccion']}">Dirección</span>
                                                     </div>
 
                                                     <div class="row g-2 mb-3">
                                                         <div class="col-7">
-                                                            <label class="form-label fw-semibold small">Nombre y Apellido del Receptor (Sede)</label>
-                                                            <input type="text" name="receptorNombre" class="form-control form-control-sm" placeholder="Ej. María Gómez (Encargada)" required>
+                                                            <label class="form-label">Nombre y apellido del receptor</label>
+                                                            <input type="text" name="receptorNombre" class="form-control form-control-sm" placeholder="María Gómez" required>
                                                         </div>
                                                         <div class="col-5">
-                                                            <label class="form-label fw-semibold small">DNI / Legajo Receptor</label>
-                                                            <input type="text" name="receptorDni" class="form-control form-control-sm" placeholder="Ej. 30111222" required>
+                                                            <label class="form-label">DNI / Documento</label>
+                                                            <input type="text" name="receptorDni" class="form-control form-control-sm" placeholder="30111222" required>
                                                         </div>
                                                     </div>
 
                                                     <div class="mb-3">
-                                                        <label class="form-label fw-semibold small">Subir Fotografía del Remito / Bienes Entregados</label>
+                                                        <label class="form-label">Fotografía del remito o entrega</label>
                                                         <input type="file" name="fotoFile" class="form-control form-control-sm" accept="image/*">
                                                     </div>
 
                                                     <div class="mb-3">
-                                                        <label class="form-label fw-semibold small">O URL de Fotografía / Constancia Digital</label>
+                                                        <label class="form-label">O enlace de imagen externa</label>
                                                         <input type="url" name="fotoUrl" class="form-control form-control-sm"
-                                                               value="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=400&q=80" required>
+                                                               placeholder="https://...">
                                                     </div>
 
                                                     <div class="mb-2">
-                                                        <label class="form-label fw-semibold small">Observaciones de Conformidad</label>
+                                                        <label class="form-label">Observaciones</label>
                                                         <input type="text" name="observaciones" class="form-control form-control-sm"
                                                                value="Mercadería verificada y recibida en conformidad en puerta de sede.">
                                                     </div>
                                                 </div>
-                                                <div class="modal-footer bg-light">
-                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                                                    <button type="submit" class="btn btn-success btn-sm fw-semibold">
-                                                        <i class="fa-solid fa-check-double me-1"></i>Confirmar Entrega Sincronizada
+                                                <div class="modal-footer bg-light border-top py-2">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-dt-primary btn-sm">
+                                                        Confirmar entrega
                                                     </button>
                                                 </div>
                                             </form>
@@ -376,31 +316,31 @@
                                     </div>
                                 </div>
 
-                                <!-- Modal Fallida / Incidencia por Etapa (CU-44) -->
-                                <div class="modal fade" th:id="'modalFallida-' + ${p['orden']}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                                <!-- Modal Fallida / Incidencia -->
+                                <div class="modal fade text-start" th:id="'modalFallida-' + ${p['orden']}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content rounded-4 border-0 shadow">
+                                        <div class="modal-content rounded-3 border">
                                             <form th:action="@{'/chofer/entregas/' + ${p['idDonacion']} + '/fallida'}" method="post">
                                                 <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
-                                                <div class="modal-header bg-danger text-white">
-                                                    <h5 class="modal-title fw-bold">
-                                                        <i class="fa-solid fa-triangle-exclamation me-2"></i>Registrar Fallo / Incidencia (DON-<span th:text="${p['idDonacion']}">1</span>)
+                                                <div class="modal-header border-bottom py-3">
+                                                    <h5 class="modal-title fw-semibold h6 mb-0">
+                                                        Registrar incidencia (DON-<span th:text="${p['idDonacion']}">1</span>)
                                                     </h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                                 </div>
                                                 <div class="modal-body p-4">
                                                     <div class="mb-3">
-                                                        <label class="form-label fw-semibold small">Etapa Operativa donde ocurrió el fallo</label>
+                                                        <label class="form-label">Etapa donde ocurrió la incidencia</label>
                                                         <select name="etapaFalla" class="form-select form-select-sm" required>
-                                                            <option value="EN_PUERTA_SEDE" selected>En Puerta de Sede (Llegada al Comedor)</option>
-                                                            <option value="INSPECCION_RECEPTOR">Inspección del Receptor (Rechazo en Mano)</option>
-                                                            <option value="EN_TRANSITO">En Tránsito (Percance Vial / Corte de Ruta)</option>
-                                                            <option value="RETIRO_DEPOSITO">En Retiro de Depósito (Faltante o Deterioro Previo)</option>
+                                                            <option value="EN_PUERTA_SEDE" selected>En puerta de sede</option>
+                                                            <option value="INSPECCION_RECEPTOR">Inspección del receptor</option>
+                                                            <option value="EN_TRANSITO">En tránsito</option>
+                                                            <option value="RETIRO_DEPOSITO">En retiro de depósito</option>
                                                         </select>
                                                     </div>
 
                                                     <div class="mb-3">
-                                                        <label class="form-label fw-semibold small">Motivo Justificado (Obligatorio CU-44)</label>
+                                                        <label class="form-label">Motivo</label>
                                                         <select name="motivo" class="form-select form-select-sm">
                                                             <option value="Sede cerrada / Sin receptor presente tras espera reglamentaria" selected>Sede cerrada / Sin receptor presente tras espera reglamentaria</option>
                                                             <option value="Rechazado por el receptor en sede (mercadería dañada o vencida)">Rechazado por el receptor en sede (mercadería dañada o vencida)</option>
@@ -410,17 +350,17 @@
                                                         </select>
                                                     </div>
 
-                                                    <div class="form-check bg-light border rounded-3 p-2 ps-4">
+                                                    <div class="form-check">
                                                         <input class="form-check-input" type="checkbox" name="replanificable" th:id="'checkReplan-' + ${p['orden']}" value="true" checked>
-                                                        <label class="form-check-label small fw-semibold" th:for="'checkReplan-' + ${p['orden']}">
-                                                            Los bienes regresan al Depósito Central para replanificación (CU-45)
+                                                        <label class="form-check-label small" th:for="'checkReplan-' + ${p['orden']}">
+                                                            Los bienes regresan al depósito para replanificación
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div class="modal-footer bg-light">
-                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                                                    <button type="submit" class="btn btn-danger btn-sm fw-semibold">
-                                                        <i class="fa-solid fa-ban me-1"></i>Registrar Incidencia y Notificar
+                                                <div class="modal-footer bg-light border-top py-2">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        Confirmar incidencia
                                                     </button>
                                                 </div>
                                             </form>
@@ -432,56 +372,52 @@
 
                         <!-- Fallback si las paradas están en 'entregas' -->
                         <tr th:if="${#lists.isEmpty(paradas) and !#lists.isEmpty(entregas)}" th:each="ent, iter : ${entregas}">
+                            <td class="fw-semibold text-muted" th:text="${iter.count}">1</td>
                             <td>
-                                <span class="badge bg-secondary-subtle text-dark fs-6" th:text="${iter.count}">1</span>
+                                <strong class="text-dark" th:text="${ent['nombreEntidad'] != null ? ent['nombreEntidad'] : 'Entidad Beneficiaria'}">Entidad</strong>
                             </td>
                             <td>
-                                <strong class="text-primary" th:text="${ent['nombreEntidad'] != null ? ent['nombreEntidad'] : 'Entidad Beneficiaria'}">Entidad</strong>
+                                <span class="text-muted small">Entrega programada</span>
                             </td>
                             <td>
-                                <span class="text-muted small">Entrega física programada</span>
+                                <span class="font-monospace small fw-semibold text-dark" th:text="'DON-' + ${ent['idDonacion']}">DON-1</span>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border font-monospace" th:text="'DON-' + ${ent['idDonacion']}">DON-1</span>
-                            </td>
-                            <td>
-                                <span class="badge"
-                                      th:classappend="${ent['estado'] == 'ENTREGADA' ? 'bg-success-subtle text-success' : (ent['estado'] == 'NO_RECIBIDA' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning')}"
+                                <span class="badge-status"
+                                      th:classappend="${ent['estado'] == 'ENTREGADA' ? 'status-ENTREGADA' : (ent['estado'] == 'NO_RECIBIDA' ? 'status-ENTREGA_FALLIDA' : 'status-EN_TRASLADO')}"
                                       th:text="${ent['estado']}">PENDIENTE</span>
                             </td>
                             <td class="text-end">
                                 <div th:if="${ent['estado'] != 'ENTREGADA' and ent['estado'] != 'NO_RECIBIDA'}" class="d-inline-flex gap-1">
                                     <form th:action="@{'/chofer/entregas/' + ${ent['idDonacion'] != null ? ent['idDonacion'] : ent['id']} + '/arribo'}" method="post" class="d-inline">
                                         <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
-                                        <button type="submit" class="btn btn-sm btn-outline-primary" title="Arribo en Puerta de Sede">
-                                            <i class="fa-solid fa-bell-concierge me-1"></i>En Puerta
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                            En puerta
                                         </button>
                                     </form>
                                     <form th:action="@{'/chofer/entregas/' + ${ent['idDonacion'] != null ? ent['idDonacion'] : ent['id']} + '/confirmar'}" method="post" class="d-inline">
                                         <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
-                                        <button type="submit" class="btn btn-sm btn-success">
-                                            <i class="fa-solid fa-check me-1"></i>Confirmar
+                                        <button type="submit" class="btn btn-sm btn-dt-primary">
+                                            Confirmar
                                         </button>
                                     </form>
                                     <form th:action="@{'/chofer/entregas/' + ${ent['idDonacion'] != null ? ent['idDonacion'] : ent['id']} + '/fallida'}" method="post" class="d-inline">
                                         <input type="hidden" name="rutaId" th:value="${rutaActiva['id']}">
                                         <input type="hidden" name="motivo" value="Sede cerrada">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="fa-solid fa-ban me-1"></i>Fallida
+                                            Incidencia
                                         </button>
                                     </form>
                                 </div>
                                 <div th:if="${ent['estado'] == 'ENTREGADA'}" class="d-inline-flex align-items-center gap-1">
-                                    <span class="text-success small fw-semibold me-2"><i class="fa-solid fa-circle-check me-1"></i>Entregada</span>
-                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                    <button type="button" class="btn btn-sm btn-outline-secondary"
                                             th:onclick="'abrirModalComprobantePorDonacion(' + ${ent['idDonacion'] != null ? ent['idDonacion'] : ent['id']} + ')'">
-                                        <i class="fa-solid fa-file-invoice me-1"></i>Comprobante
+                                        Comprobante
                                     </button>
                                 </div>
                             </td>
                         </tr>
 
-                        <!-- Si no hay paradas registradas aún -->
                         <tr th:if="${#lists.isEmpty(paradas) and #lists.isEmpty(entregas)}">
                             <td colspan="6" class="text-center py-4 text-muted">Esta ruta no posee paradas cargadas actualmente.</td>
                         </tr>
@@ -490,7 +426,6 @@
             </div>
         </div>
 
-        <!-- Script de Mapa Leaflet + API HTML5 navigator.geolocation -->
         <script th:inline="javascript">
             const paradasRuta = /*[[${paradas}]]*/ [];
             const idCamionActivo = /*[[${rutaActiva['idCamion'] != null ? rutaActiva['idCamion'] : 'CAM-01'}]]*/ 'CAM-01';
@@ -512,18 +447,15 @@
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(mapaChofer);
 
-                // Marcador del Depósito Central DonaTrack
                 L.marker([depositoLat, depositoLng])
                     .addTo(mapaChofer)
-                    .bindPopup('<strong>📦 Depósito Central DonaTrack</strong><br>Punto de partida y carga de camiones');
+                    .bindPopup('<strong>Depósito Central DonaTrack</strong><br>Punto de partida y carga');
 
-                // Marcador móvil del Camión
                 markerCamion = L.marker([depositoLat, depositoLng], {
-                    title: 'Camión ' + patenteActiva
+                    title: 'Unidad ' + patenteActiva
                 }).addTo(mapaChofer)
-                  .bindPopup('<strong>🚚 Camión ' + patenteActiva + '</strong><br>Posición GPS actual');
+                  .bindPopup('<strong>Unidad ' + patenteActiva + '</strong><br>Posición actual');
 
-                // Dibujar paradas y polilínea de ruta
                 const puntosRuta = [ [depositoLat, depositoLng] ];
                 if (Array.isArray(paradasRuta)) {
                     paradasRuta.forEach(function (p) {
@@ -533,31 +465,30 @@
                             puntosRuta.push([lat, lng]);
                             const estado = p.estadoParada || (p.completada ? 'ENTREGADA' : 'PENDIENTE');
                             L.circleMarker([lat, lng], {
-                                radius: 9,
-                                color: estado === 'ENTREGADA' ? '#16a34a' : (estado === 'FALLIDA' ? '#dc2626' : '#0284c7'),
-                                fillColor: estado === 'ENTREGADA' ? '#22c55e' : (estado === 'FALLIDA' ? '#ef4444' : '#38bdf8'),
+                                radius: 8,
+                                color: estado === 'ENTREGADA' ? '#15803d' : (estado === 'FALLIDA' ? '#b91c1c' : '#0f766e'),
+                                fillColor: estado === 'ENTREGADA' ? '#22c55e' : (estado === 'FALLIDA' ? '#ef4444' : '#14b8a6'),
                                 fillOpacity: 0.85
                             }).addTo(mapaChofer)
                               .bindPopup(
                                   '<strong>Parada #' + p.orden + ': ' + (p.nombreEntidad || 'Entidad') + '</strong><br>' +
                                   (p.direccion || '') + '<br>' +
-                                  'Donación: <code>DON-' + p.idDonacion + '</code> (' + estado + ')'
+                                  'Envío: <code>DON-' + p.idDonacion + '</code>'
                               );
                         }
                     });
                 }
 
                 if (puntosRuta.length > 1) {
-                    const polyline = L.polyline(puntosRuta, { color: '#0284c7', weight: 4, dashArray: '6, 8' }).addTo(mapaChofer);
+                    const polyline = L.polyline(puntosRuta, { color: '#0f766e', weight: 3, dashArray: '6, 8' }).addTo(mapaChofer);
                     mapaChofer.fitBounds(polyline.getBounds(), { padding: [30, 30] });
                 }
 
-                // Permitir hacer clic en cualquier punto del mapa para simular y transmitir el movimiento del camión
                 mapaChofer.on('click', function (e) {
                     const lat = parseFloat(e.latlng.lat.toFixed(5));
                     const lng = parseFloat(e.latlng.lng.toFixed(5));
                     actualizarInputsYMapa(lat, lng, 38);
-                    enviarTelemetriaAjax(lat, lng, 38, 'Posición seleccionada en mapa interactivo');
+                    enviarTelemetriaAjax(lat, lng, 38, 'Posición actualizada');
                 });
             });
 
@@ -571,7 +502,7 @@
 
                 if (markerCamion && mapaChofer) {
                     markerCamion.setLatLng([lat, lng]);
-                    markerCamion.bindPopup('<strong>🚚 Camión ' + patenteActiva + '</strong><br>Lat: ' + lat + ', Lng: ' + lng).openPopup();
+                    markerCamion.bindPopup('<strong>Unidad ' + patenteActiva + '</strong><br>Lat: ' + lat + ', Lng: ' + lng).openPopup();
                 }
             }
 
@@ -580,7 +511,7 @@
                 if (mapaChofer) {
                     mapaChofer.setView([lat, lng], 15);
                 }
-                enviarTelemetriaAjax(lat, lng, 0, 'Camión posicionado en coordenadas de la sede destino');
+                enviarTelemetriaAjax(lat, lng, 0, 'Unidad situada en destino');
             }
 
             function enviarTelemetriaAjax(lat, lng, velocidad, origenTexto) {
@@ -602,22 +533,22 @@
                     const badge = document.getElementById('gpsStatusBadge');
                     const hora = new Date().toLocaleTimeString();
                     if (feedback) {
-                        feedback.classList.remove('d-none', 'alert-danger');
+                        feedback.classList.remove('d-none', 'alert-warning');
                         feedback.classList.add('alert-success');
-                        feedback.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i><strong>' + origenTexto + ':</strong> [' + lat + ', ' + lng + '] transmitido a las ' + hora;
+                        feedback.innerHTML = '<strong>' + origenTexto + ':</strong> [' + lat + ', ' + lng + '] (' + hora + ')';
                     }
                     if (badge) {
-                        badge.className = 'badge bg-success text-white';
-                        badge.textContent = 'GPS Transmitido ' + hora;
+                        badge.className = 'badge-status status-ENTREGADA';
+                        badge.textContent = 'Actualizado ' + hora;
                     }
                 })
-                .catch(err => console.warn('Error enviando telemetría AJAX:', err));
+                .catch(err => console.warn('Error enviando telemetría:', err));
             }
 
             function tomarUbicacionNavegador(mostrarAlertaSiFalla) {
                 if (!navigator.geolocation) {
                     if (mostrarAlertaSiFalla) {
-                        alert('Tu navegador no soporta la API de Geolocalización HTML5.');
+                        alert('Tu navegador no soporta geolocalización.');
                     }
                     return;
                 }
@@ -630,14 +561,14 @@
                         if (mapaChofer) {
                             mapaChofer.setView([lat, lng], 14);
                         }
-                        enviarTelemetriaAjax(lat, lng, velKmh, 'GPS real del navegador (navigator.geolocation)');
+                        enviarTelemetriaAjax(lat, lng, velKmh, 'Ubicación GPS del dispositivo');
                     },
                     function (err) {
                         const feedback = document.getElementById('gpsLiveFeedback');
                         if (feedback) {
                             feedback.classList.remove('d-none', 'alert-success');
                             feedback.classList.add('alert-warning');
-                            feedback.innerHTML = '<i class="fa-solid fa-circle-exclamation me-1"></i>El navegador bloqueó o no pudo obtener la señal GPS (' + err.message + '). Puedes hacer clic en cualquier punto del mapa para simular el GPS.';
+                            feedback.innerHTML = 'No se pudo obtener la señal GPS del dispositivo. Puedes hacer clic en el mapa para indicar la posición.';
                         }
                     },
                     { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
@@ -652,8 +583,8 @@
                 }
                 if (activo) {
                     if (badge) {
-                        badge.className = 'badge bg-success text-white';
-                        badge.textContent = 'GPS En Vivo (15s)';
+                        badge.className = 'badge-status status-ENTREGADA';
+                        badge.textContent = 'En vivo (15s)';
                     }
                     tomarUbicacionNavegador(false);
                     autoGpsInterval = setInterval(function () {
@@ -661,8 +592,8 @@
                     }, 15000);
                 } else {
                     if (badge) {
-                        badge.className = 'badge bg-secondary-subtle text-secondary';
-                        badge.textContent = 'GPS Manual';
+                        badge.className = 'badge bg-light text-secondary border';
+                        badge.textContent = 'Manual';
                     }
                 }
             }
@@ -671,7 +602,7 @@
                 var modalEl = document.getElementById('modalComprobanteDigitalChofer');
                 var spinner = document.getElementById('comprobanteSpinnerChofer');
                 var contenido = document.getElementById('comprobanteContenidoChofer');
-                
+
                 spinner.classList.remove('d-none');
                 contenido.classList.add('d-none');
 
@@ -691,19 +622,19 @@
                         document.getElementById('compReceptorChofer').textContent = data.receptorNombre || 'Responsable en Sede';
                         document.getElementById('compDniChofer').textContent = data.receptorDni ? '(DNI: ' + data.receptorDni + ')' : '';
                         document.getElementById('compFechaChofer').textContent = data.fechaConfirmacion ? data.fechaConfirmacion.replace('T', ' ').substring(0, 16) : new Date().toLocaleString();
-                        
+
                         var fotoImg = document.getElementById('compFotoImgChofer');
                         if (data.fotosConfirmacionUrls && data.fotosConfirmacionUrls.length > 0) {
                             fotoImg.src = data.fotosConfirmacionUrls[0];
                         } else {
-                            fotoImg.src = 'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=600&q=80';
+                            fotoImg.src = '/images/placeholder-entrega.svg';
                         }
 
                         spinner.classList.add('d-none');
                         contenido.classList.remove('d-none');
                     })
                     .catch(function(err) {
-                        spinner.innerHTML = '<div class="alert alert-warning mb-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>El comprobante formal aún se encuentra en procesamiento o la entrega no fue registrada aún.</div>';
+                        spinner.innerHTML = '<div class="alert alert-warning mb-0 small">El comprobante aún se encuentra en procesamiento.</div>';
                     });
             }
         </script>
@@ -711,65 +642,60 @@
         <!-- Modal Comprobante Digital Chofer -->
         <div class="modal fade" id="modalComprobanteDigitalChofer" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
-                    <div class="modal-header bg-success text-white py-3">
-                        <h5 class="modal-title fw-bold">
-                            <i class="fa-solid fa-file-circle-check me-2"></i>Comprobante Digital de Entrega - DonaTrack
+                <div class="modal-content border rounded-3 overflow-hidden">
+                    <div class="modal-header bg-white border-bottom py-3">
+                        <h5 class="modal-title fw-semibold h6 mb-0">
+                            Comprobante digital de entrega
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body p-4">
                         <div class="text-center py-4" id="comprobanteSpinnerChofer">
-                            <div class="spinner-border text-success" role="status"></div>
-                            <div class="small text-muted mt-2">Cargando comprobante de entrega...</div>
+                            <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                            <div class="small text-muted mt-2">Cargando comprobante...</div>
                         </div>
                         <div id="comprobanteContenidoChofer" class="d-none">
-                            <div class="border rounded-4 p-4 bg-light mb-3">
-                                <div class="row g-3">
+                            <div class="border rounded-3 p-3 bg-light mb-3">
+                                <div class="row g-3 small">
                                     <div class="col-sm-6">
-                                        <small class="text-muted d-block">ID Donación:</small>
-                                        <strong class="font-monospace fs-5 text-dark" id="compDonacionIdChofer">DON-0001</strong>
+                                        <span class="text-muted d-block">Código de donación</span>
+                                        <strong class="font-monospace text-dark" id="compDonacionIdChofer">DON-0001</strong>
                                     </div>
                                     <div class="col-sm-6 text-sm-end">
-                                        <small class="text-muted d-block">Estado:</small>
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1" id="compEstadoChofer">ENTREGADA</span>
+                                        <span class="text-muted d-block">Estado</span>
+                                        <span class="badge-status status-ENTREGADA" id="compEstadoChofer">ENTREGADA</span>
                                     </div>
                                     <div class="col-sm-6">
-                                        <small class="text-muted d-block">Destino / Entidad:</small>
+                                        <span class="text-muted d-block">Entidad receptora</span>
                                         <strong class="text-dark" id="compEntidadNombreChofer">Comedor</strong>
                                     </div>
                                     <div class="col-sm-6 text-sm-end">
-                                        <small class="text-muted d-block">Camión:</small>
-                                        <span class="badge bg-dark font-monospace" id="compPatenteChofer">AE789XY</span>
+                                        <span class="text-muted d-block">Unidad</span>
+                                        <span class="font-monospace text-dark" id="compPatenteChofer">AE789XY</span>
                                     </div>
                                     <div class="col-sm-6">
-                                        <small class="text-muted d-block">Receptor en Sede:</small>
+                                        <span class="text-muted d-block">Receptor en sede</span>
                                         <strong class="text-dark" id="compReceptorChofer">Laura</strong>
-                                        <span class="text-muted small" id="compDniChofer">(DNI)</span>
+                                        <span class="text-muted" id="compDniChofer">(DNI)</span>
                                     </div>
                                     <div class="col-sm-6 text-sm-end">
-                                        <small class="text-muted d-block">Fecha y Hora:</small>
-                                        <strong class="text-dark font-monospace" id="compFechaChofer">2026-10-27</strong>
+                                        <span class="text-muted d-block">Fecha de recepción</span>
+                                        <span class="font-monospace text-dark" id="compFechaChofer">2026-10-27</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="mb-3 text-center">
-                                <h6 class="fw-bold text-dark text-start mb-2"><i class="fa-solid fa-camera text-primary me-1"></i>Fotografía del Remito y Bienes Recibidos</h6>
-                                <div class="p-2 border rounded-4 bg-white shadow-sm d-inline-block w-100" style="max-height: 280px; overflow: hidden;">
-                                    <img id="compFotoImgChofer" src="" alt="Comprobante de Entrega" class="img-fluid rounded-3" style="max-height: 260px; object-fit: contain;">
+                            <div class="text-center">
+                                <div class="p-2 border rounded-3 bg-white d-inline-block w-100">
+                                    <img id="compFotoImgChofer" src="" alt="Comprobante de Entrega" class="img-fluid rounded-2" style="max-height: 260px; object-fit: contain;">
                                 </div>
-                            </div>
-
-                            <div class="alert alert-success-subtle border border-success-subtle rounded-3 p-3 mb-0 text-center small text-success">
-                                <i class="fa-solid fa-shield-halved me-1"></i> Comprobante auditado por DonaTrack. Trazabilidad de origen y destino certificada.
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer border-0 bg-light">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                    <div class="modal-footer border-top bg-light py-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
                         <button type="button" class="btn btn-dt-primary btn-sm" onclick="window.print()">
-                            <i class="fa-solid fa-print me-1"></i>Imprimir / PDF
+                            Imprimir comprobante
                         </button>
                     </div>
                 </div>

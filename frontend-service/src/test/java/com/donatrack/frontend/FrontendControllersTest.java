@@ -46,6 +46,21 @@ class FrontendControllersTest {
     }
 
     @Test
+    @DisplayName("GET /comprobantes/donacion/{id} debe permitir acceso público sin sesión para ver fotos del comprobante")
+    void testComprobantePublicoPorDonacionSinSesion() throws Exception {
+        when(apiClientService.obtenerComprobanteEntregaPorDonacion(3L)).thenReturn(Map.of(
+                "idDonacion", 3L,
+                "nombreEntidad", "Comedor Armando",
+                "fotosConfirmacionUrls", List.of("/api/v1/donaciones/imagenes/foto.jpg")
+        ));
+
+        mockMvc.perform(get("/comprobantes/donacion/3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.idDonacion").value(3))
+                .andExpect(jsonPath("$.fotosConfirmacionUrls[0]").value("/api/v1/donaciones/imagenes/foto.jpg"));
+    }
+
+    @Test
     @DisplayName("GET /privacidad debe renderizar los términos y políticas")
     void testPrivacidadPage() throws Exception {
         mockMvc.perform(get("/privacidad"))
@@ -194,62 +209,42 @@ class FrontendControllersTest {
     }
 
     @Test
-    @DisplayName("GET /donante/nueva-donacion con sesión válida debe renderizar formulario")
-    void testDonanteNuevaDonacionForm() throws Exception {
-        UserSession session = new UserSession("donante1", "Juan Donante", "juan@test.com", "ROLE_DONANTE");
-        session.setDonanteId(1L);
+    @DisplayName("GET /admin/donaciones/nueva con sesión admin debe renderizar formulario de depósito")
+    void testAdminNuevaDonacionForm() throws Exception {
+        UserSession session = new UserSession("admin", "Administrador Central", "admin@donatrack.org", "ROLE_ADMIN");
 
-        when(apiClientService.listarEntidades()).thenReturn(List.of(
-                Map.of("id", 1L, "razonSocial", "Comedor Esperanza")
+        when(apiClientService.listarDonantes()).thenReturn(List.of(
+                Map.of("id", 1L, "nombreCompleto", "Juan Pérez", "emailPrincipal", "juan@test.com")
         ));
 
-        mockMvc.perform(get("/donante/nueva-donacion")
+        mockMvc.perform(get("/admin/donaciones/nueva")
                         .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, session))
                 .andExpect(status().isOk())
-                .andExpect(view().name("donante/nueva_donacion"))
-                .andExpect(model().attributeExists("entidades"));
+                .andExpect(view().name("admin/nueva_donacion"))
+                .andExpect(model().attributeExists("donantes"));
     }
 
     @Test
-    @DisplayName("POST /donante/donar debe crear donación y redirigir a /donante/donaciones")
-    void testDonanteDonarPost() throws Exception {
-        UserSession session = new UserSession("donante1", "Juan Donante", "juan@test.com", "ROLE_DONANTE");
-        session.setDonanteId(1L);
+    @DisplayName("POST /admin/donaciones/nueva con múltiples ítems, categorías y fotos registra lote en depósito")
+    void testAdminGuardarDonacionMultiplesItemsConCategoriaYFoto() throws Exception {
+        UserSession session = new UserSession("admin", "Administrador Central", "admin@donatrack.org", "ROLE_ADMIN");
 
-        when(apiClientService.crearDonacionSegmentada(any(), any())).thenReturn(true);
+        when(apiClientService.crearDonacionSegmentada(eq(1L), any())).thenReturn(true);
 
-        mockMvc.perform(post("/donante/donar")
+        mockMvc.perform(post("/admin/donaciones/nueva")
                         .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, session)
-                        .param("categoria", "Alimentos")
-                        .param("subcategoria", "arroz")
-                        .param("cantidad", "25.0")
-                        .param("unidadMedida", "kg")
-                        .param("condicion", "NUEVO")
-                        .param("descripcion", "25 kg de arroz de prueba"))
+                        .param("donanteId", "1")
+                        .param("descripcionGeneral", "Recepción turno mañana")
+                        .param("nombreBien", "Arroz grano largo", "Camperas de abrigo")
+                        .param("categoria", "Alimentos", "Vestimenta")
+                        .param("subcategoria", "arroz", "camperas")
+                        .param("cantidad", "25.0", "10.0")
+                        .param("unidadMedida", "KG", "UNIDADES")
+                        .param("esUsado", "false", "true")
+                        .param("fechaVencimiento", "2027-06-30", "")
+                        .param("fotoUrl", "https://ejemplo.com/arroz.jpg", "https://ejemplo.com/camperas.jpg"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/donante/donaciones"))
-                .andExpect(flash().attributeExists("mensajeExito"));
-    }
-
-    @Test
-    @DisplayName("POST /donante/donar con entidadId debe crear donación asignada directamente")
-    void testDonanteDonarPostConEntidadEspecifica() throws Exception {
-        UserSession session = new UserSession("donante1", "Juan Donante", "juan@test.com", "ROLE_DONANTE");
-        session.setDonanteId(1L);
-
-        when(apiClientService.crearDonacionSegmentada(any(), any(), org.mockito.ArgumentMatchers.eq(5L))).thenReturn(true);
-
-        mockMvc.perform(post("/donante/donar")
-                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, session)
-                        .param("entidadId", "5")
-                        .param("categoria", "Alimentos")
-                        .param("subcategoria", "fideos")
-                        .param("cantidad", "10.0")
-                        .param("unidadMedida", "kg")
-                        .param("condicion", "NUEVO")
-                        .param("descripcion", "10 kg de fideos para comedor"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/donante/donaciones"))
+                .andExpect(redirectedUrl("/admin"))
                 .andExpect(flash().attributeExists("mensajeExito"));
     }
 
@@ -581,126 +576,6 @@ class FrontendControllersTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/notificaciones"))
                 .andExpect(flash().attributeExists("mensajeExito"));
-    }
-
-    @Test
-    @DisplayName("GET /buzon sin sesión debe redirigir a /login por seguridad y privacidad")
-    void testBuzonUnauthenticatedRedirect() throws Exception {
-        mockMvc.perform(get("/buzon"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?unauthorized=true&redirect=/buzon"));
-    }
-
-    @Test
-    @DisplayName("GET /buzon con sesión admin renderiza la bandeja de auditoría de Mailpit")
-    void testBuzonMailpit() throws Exception {
-        UserSession adminSession = new UserSession("admin", "Administrador Central", "admin@donatrack.org", "ROLE_ADMIN");
-
-        when(apiClientService.listarMensajesMailpit(null, 50)).thenReturn(Map.of(
-                "total", 1,
-                "unread", 1,
-                "messages", List.of(
-                        Map.of(
-                                "ID", "msg-123",
-                                "Subject", "Donación Asignada",
-                                "Created", "2026-10-19T10:30:00Z",
-                                "From", Map.of("Name", "DonaTrack", "Address", "notificaciones@donatrack.org"),
-                                "To", List.of(Map.of("Address", "carlos@donatrack.org")),
-                                "Snippet", "Tu donación ha sido asignada"
-                        )
-                )
-        ));
-        when(apiClientService.obtenerMensajeMailpit("msg-123")).thenReturn(Map.of(
-                "ID", "msg-123",
-                "Subject", "Donación Asignada",
-                "HTML", "<h1>Donación Asignada</h1>",
-                "From", Map.of("Name", "DonaTrack", "Address", "notificaciones@donatrack.org"),
-                "To", List.of(Map.of("Address", "carlos@donatrack.org"))
-        ));
-
-        mockMvc.perform(get("/buzon")
-                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, adminSession))
-                .andExpect(status().isOk())
-                .andExpect(view().name("buzon"))
-                .andExpect(model().attributeExists("messages", "total", "mensajeSeleccionado"));
-
-        mockMvc.perform(get("/buzon/raw/msg-123")
-                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, adminSession))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(org.springframework.http.MediaType.TEXT_HTML))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Donación Asignada")));
-    }
-
-    @Test
-    @DisplayName("GET /buzon con sesión donante debe aislar mensajes con to:email")
-    void testBuzonFiltradoPorDonanteLogueado() throws Exception {
-        UserSession donanteSession = new UserSession("donante_juan", "Juan Pérez", "juan.donante@example.com", "ROLE_DONANTE");
-        donanteSession.setDonanteId(25L);
-
-        when(apiClientService.listarMensajesMailpit("to:juan.donante@example.com", 50)).thenReturn(Map.of(
-                "total", 1,
-                "unread", 0,
-                "messages", List.of(
-                        Map.of(
-                                "ID", "msg-juan",
-                                "Subject", "Bienvenido Juan",
-                                "From", Map.of("Name", "DonaTrack", "Address", "notif@donatrack.org"),
-                                "To", List.of(Map.of("Address", "juan.donante@example.com")),
-                                "Snippet", "Tu donación ha sido registrada"
-                        )
-                )
-        ));
-        when(apiClientService.obtenerMensajeMailpit("msg-juan")).thenReturn(Map.of(
-                "ID", "msg-juan",
-                "Subject", "Bienvenido Juan",
-                "HTML", "<p>Hola Juan</p>"
-        ));
-
-        mockMvc.perform(get("/buzon")
-                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, donanteSession))
-                .andExpect(status().isOk())
-                .andExpect(view().name("buzon"))
-                .andExpect(model().attribute("filtradoPorUsuario", true))
-                .andExpect(model().attribute("emailUsuario", "juan.donante@example.com"));
-    }
-
-    @Test
-    @DisplayName("GET /buzon?verTodos=true con sesión donante ignora verTodos y mantiene aislamiento obligatorio")
-    void testBuzonVerTodosPorDonante() throws Exception {
-        UserSession donanteSession = new UserSession("donante_juan", "Juan Pérez", "juan.donante@example.com", "ROLE_DONANTE");
-        donanteSession.setDonanteId(25L);
-
-        when(apiClientService.listarMensajesMailpit("to:juan.donante@example.com", 50)).thenReturn(Map.of(
-                "total", 1,
-                "unread", 0,
-                "messages", List.of()
-        ));
-
-        mockMvc.perform(get("/buzon?verTodos=true")
-                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, donanteSession))
-                .andExpect(status().isOk())
-                .andExpect(view().name("buzon"))
-                .andExpect(model().attribute("filtradoPorUsuario", true))
-                .andExpect(model().attribute("verTodos", false));
-    }
-
-    @Test
-    @DisplayName("GET /buzon?verTodos=true con sesión administrador permite ver todos los correos")
-    void testBuzonVerTodosAdmin() throws Exception {
-        UserSession adminSession = new UserSession("admin", "Administrador Central", "admin@donatrack.org", "ROLE_ADMIN");
-
-        when(apiClientService.listarMensajesMailpit(null, 50)).thenReturn(Map.of(
-                "total", 10,
-                "unread", 2,
-                "messages", List.of()
-        ));
-
-        mockMvc.perform(get("/buzon?verTodos=true")
-                        .sessionAttr(com.donatrack.frontend.security.AuthInterceptor.SESSION_USER_KEY, adminSession))
-                .andExpect(status().isOk())
-                .andExpect(view().name("buzon"))
-                .andExpect(model().attribute("filtradoPorUsuario", false))
-                .andExpect(model().attribute("verTodos", true));
     }
 
     @Test

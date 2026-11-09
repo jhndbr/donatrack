@@ -6,6 +6,7 @@ import com.donatrack.notificaciones.service.NotificacionesService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +36,7 @@ public class IncentivosNotificacionesConsumer {
             notificacionesService.notificarMisionCumplida(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de mision cumplida: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en mision.cumplida -> DLQ", e);
         }
     }
 
@@ -46,6 +48,7 @@ public class IncentivosNotificacionesConsumer {
             notificacionesService.notificarCategoriaAscendida(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de categoria ascendida: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en categoria.ascendida -> DLQ", e);
         }
     }
 

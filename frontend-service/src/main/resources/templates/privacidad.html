@@ -1,22 +1,32 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
 <head>
-    <title>Información Legal y Privacidad - DonaTrack</title>
+    <title>Privacidad y términos — DonaTrack</title>
 </head>
 <body>
 <div th:fragment="content">
-    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
-        <h2 class="fw-bold text-dark mb-4"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Términos, Condiciones y Privacidad</h2>
-        <p class="lead text-secondary">Transparencia y protección de datos en la iniciativa solidaria DonaTrack.</p>
-        
-        <h5 class="fw-bold mt-4 text-dark">1. Tratamiento de Datos Personales</h5>
-        <p class="text-muted">En cumplimiento de la Ley 25.326 de Protección de los Datos Personales de la República Argentina, los datos de contacto suministrados por donantes (correo electrónico, teléfono, WhatsApp) serán utilizados exclusivamente para informar novedades del estado de las donaciones y recompensas del sistema.</p>
+    <div class="page-header">
+        <div>
+            <h1>Términos de uso y privacidad</h1>
+            <p>Lineamientos sobre protección de datos personales y trazabilidad de donaciones.</p>
+        </div>
+    </div>
 
-        <h5 class="fw-bold mt-4 text-dark">2. Trazabilidad de Bienes y Alimentos</h5>
-        <p class="text-muted">DonaTrack garantiza que los bienes recibidos no serán comercializados bajo ninguna circunstancia, siendo destinados en su totalidad a comedores, hogares y entidades beneficiarias registradas.</p>
+    <div class="card p-4 p-md-5">
+        <h2 class="h6 fw-semibold text-dark">1. Tratamiento de datos personales</h2>
+        <p class="text-secondary small mb-4">
+            En cumplimiento de la Ley 25.326 de Protección de los Datos Personales de la República Argentina, la información de contacto suministrada por donantes y entidades se utiliza exclusivamente para gestionar los envíos, emitir comprobantes de recepción y enviar avisos sobre el estado de las entregas.
+        </p>
 
-        <h5 class="fw-bold mt-4 text-dark">3. Seguridad y Auditoría</h5>
-        <p class="text-muted">Todas las asignaciones y cambios de estado son registrados de manera inmutable mediante eventos de auditoría y almacenamiento transaccional.</p>
+        <h2 class="h6 fw-semibold text-dark">2. Destino de los bienes</h2>
+        <p class="text-secondary small mb-4">
+            Los recursos materiales registrados a través de DonaTrack se destinan íntegramente a comedores, hogares y centros comunitarios verificados, quedando prohibida su comercialización.
+        </p>
+
+        <h2 class="h6 fw-semibold text-dark">3. Auditoría de entregas</h2>
+        <p class="text-secondary small mb-0">
+            Todas las asignaciones, traslados y actas de recepción quedan registrados para garantizar la transparencia ante los donantes y las organizaciones participantes.
+        </p>
     </div>
 </div>
 </body>

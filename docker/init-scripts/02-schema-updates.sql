@@ -6,3 +6,4 @@
 ALTER TABLE IF EXISTS personas_donantes ADD COLUMN IF NOT EXISTS activo boolean NOT NULL DEFAULT true;
 ALTER TABLE IF EXISTS entidades_beneficiarias ADD COLUMN IF NOT EXISTS activo boolean NOT NULL DEFAULT true;
 ALTER TABLE IF EXISTS necesidades_materiales ADD COLUMN IF NOT EXISTS activa boolean NOT NULL DEFAULT true;
+ALTER TABLE IF EXISTS necesidades_materiales ADD COLUMN IF NOT EXISTS cantidad_recibida double precision NOT NULL DEFAULT 0.0;

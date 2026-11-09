@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -22,6 +24,7 @@ public class AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     private final ApiClientService apiClient;
     private final RestTemplate restTemplate;
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     private final Map<String, String> credencialesRegistradas = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.nio.file.Path credencialesFilePath = java.nio.file.Paths.get("data", "credenciales-locales.properties");
@@ -38,28 +41,51 @@ public class AuthService {
     public AuthService(ApiClientService apiClient, RestTemplate restTemplate) {
         this.apiClient = apiClient;
         this.restTemplate = restTemplate;
-        this.credencialesRegistradas.put("admin@donatrack.org", "admin123");
-        this.credencialesRegistradas.put("admin", "admin123");
-        this.credencialesRegistradas.put("juan.donante@example.com", "donante123");
-        this.credencialesRegistradas.put("donante_juan", "donante123");
-        this.credencialesRegistradas.put("35123456", "donante123");
-        this.credencialesRegistradas.put("rse@molinos.com.ar", "donante123");
-        this.credencialesRegistradas.put("30-11223344-9", "donante123");
-        this.credencialesRegistradas.put("esperanza@comedor.org", "comedor123");
-        this.credencialesRegistradas.put("comedor_esperanza", "comedor123");
-        this.credencialesRegistradas.put("contacto@comedor.los.chicos.felices.org", "comedor123");
-        this.credencialesRegistradas.put("chofer@donatrack.org", "chofer123");
-        this.credencialesRegistradas.put("chofer", "chofer123");
+        putDefaultCredencial("admin@donatrack.org", "admin123");
+        putDefaultCredencial("admin", "admin123");
+        putDefaultCredencial("juan.donante@example.com", "donante123");
+        putDefaultCredencial("donante_juan", "donante123");
+        putDefaultCredencial("donante", "donante123");
+        putDefaultCredencial("35123456", "donante123");
+        putDefaultCredencial("rse@molinos.com.ar", "empresa123");
+        putDefaultCredencial("30-11223344-9", "empresa123");
+        putDefaultCredencial("empresa_demo", "empresa123");
+        putDefaultCredencial("empresa", "empresa123");
+        putDefaultCredencial("esperanza@comedor.org", "comedor123");
+        putDefaultCredencial("comedor_esperanza", "comedor123");
+        putDefaultCredencial("comedor", "comedor123");
+        putDefaultCredencial("entidad", "comedor123");
+        putDefaultCredencial("contacto@comedor.los.chicos.felices.org", "comedor123");
+        putDefaultCredencial("chofer@donatrack.org", "chofer123");
+        putDefaultCredencial("chofer", "chofer123");
         cargarCredencialesLocales();
+    }
+
+    private void putDefaultCredencial(String user, String rawPassword) {
+        if (user != null && rawPassword != null) {
+            String key = user.trim().toLowerCase();
+            this.credencialesRegistradas.put(key, passwordEncoder.encode(rawPassword));
+        }
     }
 
     public void registrarCredencial(String email, String password) {
         if (email != null && password != null && !password.isBlank()) {
             String key = email.trim().toLowerCase();
-            credencialesRegistradas.put(key, password);
+            String hashed = passwordEncoder.encode(password);
+            credencialesRegistradas.put(key, hashed);
             guardarCredencialesLocales();
             log.info("Credencial registrada y persistida en AuthService para usuario: {}", key);
         }
+    }
+
+    public boolean verificarPassword(String rawPassword, String storedHashOrPlain) {
+        if (rawPassword == null || storedHashOrPlain == null) {
+            return false;
+        }
+        if (storedHashOrPlain.startsWith("$2a$") || storedHashOrPlain.startsWith("$2b$") || storedHashOrPlain.startsWith("$2y$")) {
+            return passwordEncoder.matches(rawPassword, storedHashOrPlain);
+        }
+        return rawPassword.equals(storedHashOrPlain);
     }
 
     private synchronized void cargarCredencialesLocales() {
@@ -69,8 +95,22 @@ public class AuthService {
                 try (java.io.InputStream in = java.nio.file.Files.newInputStream(credencialesFilePath)) {
                     props.load(in);
                 }
+                boolean needsRewrite = false;
                 for (String name : props.stringPropertyNames()) {
-                    credencialesRegistradas.put(name.trim().toLowerCase(), props.getProperty(name));
+                    String val = props.getProperty(name);
+                    String key = name.trim().toLowerCase();
+                    if (val != null) {
+                        if (val.startsWith("$2a$") || val.startsWith("$2b$") || val.startsWith("$2y$")) {
+                            credencialesRegistradas.put(key, val);
+                        } else {
+                            String hashed = passwordEncoder.encode(val);
+                            credencialesRegistradas.put(key, hashed);
+                            needsRewrite = true;
+                        }
+                    }
+                }
+                if (needsRewrite) {
+                    guardarCredencialesLocales();
                 }
             }
         } catch (Exception e) {
@@ -204,7 +244,8 @@ public class AuthService {
     private Optional<UserSession> autenticarLocalmente(String userClean, String password) {
         // 1. Verificación de Administrador
         if (("admin".equals(userClean) || "admin@donatrack.org".equals(userClean))) {
-            if ("admin123".equals(password)) {
+            String stored = credencialesRegistradas.get(userClean);
+            if (verificarPassword(password, stored != null ? stored : credencialesRegistradas.get("admin"))) {
                 UserSession adminSession = new UserSession("admin", "Administrador Central", "admin@donatrack.org", "ROLE_ADMIN");
                 log.info("Autenticación exitosa como ROLE_ADMIN para usuario: {}", userClean);
                 return Optional.of(adminSession);
@@ -216,7 +257,8 @@ public class AuthService {
 
         // 1.1 Verificación de Chofer
         if ("chofer".equals(userClean) || "chofer@donatrack.org".equals(userClean)) {
-            if ("chofer123".equals(password) || "admin123".equals(password)) {
+            String stored = credencialesRegistradas.get(userClean);
+            if (verificarPassword(password, stored != null ? stored : credencialesRegistradas.get("chofer"))) {
                 UserSession choferSession = new UserSession("chofer", "Chofer Flota", "chofer@donatrack.org", "ROLE_CHOFER");
                 log.info("Autenticación exitosa como ROLE_CHOFER para usuario: {}", userClean);
                 return Optional.of(choferSession);
@@ -274,7 +316,7 @@ public class AuthService {
         }
 
         // 4. Soporte para usuario demo de donante especificado en la documentación del TP
-        if ("juan.donante@example.com".equals(userClean) || "donante_juan".equals(userClean) || "35123456".equals(userClean)) {
+        if ("juan.donante@example.com".equals(userClean) || "donante_juan".equals(userClean) || "donante".equals(userClean) || "35123456".equals(userClean)) {
             if ("donante123".equals(password) || "admin123".equals(password)) {
                 Long juanId = obtenerOCrearDonanteDemo(donantes);
                 UserSession session = new UserSession(userClean, "Juan Pérez", "juan.donante@example.com", "ROLE_DONANTE");
@@ -284,7 +326,7 @@ public class AuthService {
         }
 
         // Soporte para usuario demo corporativo
-        if ("rse@molinos.com.ar".equals(userClean) || "30-11223344-9".equals(userClean) || "empresa_demo".equals(userClean)) {
+        if ("rse@molinos.com.ar".equals(userClean) || "30-11223344-9".equals(userClean) || "empresa_demo".equals(userClean) || "empresa".equals(userClean)) {
             if ("donante123".equals(password) || "admin123".equals(password) || "empresa123".equals(password)) {
                 Long molinosId = obtenerOCrearEmpresaDemo(donantes);
                 UserSession session = new UserSession(userClean, "Molinos Río de la Plata S.A.", "rse@molinos.com.ar", "ROLE_DONANTE");
@@ -293,7 +335,7 @@ public class AuthService {
             }
         }
 
-        if ("esperanza@comedor.org".equals(userClean) || "comedor_esperanza".equals(userClean) || "contacto@comedor.los.chicos.felices.org".equals(userClean)) {
+        if ("esperanza@comedor.org".equals(userClean) || "comedor_esperanza".equals(userClean) || "comedor".equals(userClean) || "entidad".equals(userClean) || "contacto@comedor.los.chicos.felices.org".equals(userClean)) {
             if ("comedor123".equals(password)) {
                 Long entId = obtenerOCrearEntidadDemo(entidades);
                 String emailSession = "contacto@comedor.los.chicos.felices.org".equalsIgnoreCase(userClean)
@@ -493,62 +535,87 @@ public class AuthService {
 
     @SuppressWarnings("unchecked")
     private boolean validarPasswordEntidad(Map<String, Object> entidad, String userClean, String password) {
-        if (password.equals(credencialesRegistradas.get(userClean))) {
-            return true;
+        boolean tieneCredencial = false;
+        if (credencialesRegistradas.containsKey(userClean)) {
+            tieneCredencial = true;
+            if (verificarPassword(password, credencialesRegistradas.get(userClean))) {
+                return true;
+            }
         }
-        boolean esDemo = "esperanza@comedor.org".equalsIgnoreCase(userClean)
-                || "comedor_esperanza".equalsIgnoreCase(userClean)
-                || "contacto@comedor.los.chicos.felices.org".equalsIgnoreCase(userClean);
         if (entidad.get("emailsRepresentantes") instanceof List) {
             List<String> emails = (List<String>) entidad.get("emailsRepresentantes");
             for (String em : emails) {
                 if (em != null) {
                     String emLow = em.trim().toLowerCase();
-                    if (password.equals(credencialesRegistradas.get(emLow))) {
-                        return true;
-                    }
-                    if ("esperanza@comedor.org".equals(emLow) || "contacto@comedor.los.chicos.felices.org".equals(emLow)) {
-                        esDemo = true;
+                    if (credencialesRegistradas.containsKey(emLow)) {
+                        tieneCredencial = true;
+                        if (verificarPassword(password, credencialesRegistradas.get(emLow))) {
+                            return true;
+                        }
                     }
                 }
             }
         }
-        if (esDemo && ("comedor123".equals(password) || "admin123".equals(password))) {
-            return true;
+        if (entidad.get("razonSocial") != null) {
+            String rzLow = entidad.get("razonSocial").toString().trim().toLowerCase();
+            if (credencialesRegistradas.containsKey(rzLow)) {
+                tieneCredencial = true;
+                if (verificarPassword(password, credencialesRegistradas.get(rzLow))) {
+                    return true;
+                }
+            }
+        }
+        if (!tieneCredencial) {
+            return "comedor123".equals(password);
         }
         return false;
     }
 
     @SuppressWarnings("unchecked")
     private boolean validarPasswordDonante(Map<String, Object> donante, String userClean, String password) {
-        if (password.equals(credencialesRegistradas.get(userClean))) {
-            return true;
-        }
-        if (donante.get("emailPrincipal") != null && password.equals(credencialesRegistradas.get(donante.get("emailPrincipal").toString().toLowerCase()))) {
-            return true;
-        }
-        if (donante.get("email") != null && password.equals(credencialesRegistradas.get(donante.get("email").toString().toLowerCase()))) {
-            return true;
-        }
-        if (donante.get("nroDocumento") != null && password.equals(credencialesRegistradas.get(donante.get("nroDocumento").toString().toLowerCase()))) {
-            return true;
-        }
-        if (donante.get("cuit") != null && password.equals(credencialesRegistradas.get(donante.get("cuit").toString().toLowerCase()))) {
-            return true;
-        }
-        if (donante.get("razonSocial") != null && password.equals(credencialesRegistradas.get(donante.get("razonSocial").toString().toLowerCase()))) {
-            return true;
-        }
+        boolean tieneCredencial = false;
+        java.util.List<String> clavesCandidatas = new java.util.ArrayList<>();
+        clavesCandidatas.add(userClean);
+        if (donante.get("emailPrincipal") != null) clavesCandidatas.add(donante.get("emailPrincipal").toString().trim().toLowerCase());
+        if (donante.get("email") != null) clavesCandidatas.add(donante.get("email").toString().trim().toLowerCase());
+        if (donante.get("nroDocumento") != null) clavesCandidatas.add(donante.get("nroDocumento").toString().trim().toLowerCase());
+        if (donante.get("cuit") != null) clavesCandidatas.add(donante.get("cuit").toString().trim().toLowerCase());
+        if (donante.get("razonSocial") != null) clavesCandidatas.add(donante.get("razonSocial").toString().trim().toLowerCase());
+        if (donante.get("nombreCompleto") != null) clavesCandidatas.add(donante.get("nombreCompleto").toString().trim().toLowerCase());
         if (donante.get("mediosContacto") instanceof List) {
             List<Map<String, Object>> medios = (List<Map<String, Object>>) donante.get("mediosContacto");
             for (Map<String, Object> m : medios) {
-                if (m.get("valor") != null && password.equals(credencialesRegistradas.get(m.get("valor").toString().toLowerCase()))) {
+                if (m.get("valor") != null) {
+                    clavesCandidatas.add(m.get("valor").toString().trim().toLowerCase());
+                }
+            }
+        }
+
+        for (String k : clavesCandidatas) {
+            if (credencialesRegistradas.containsKey(k)) {
+                tieneCredencial = true;
+                if (verificarPassword(password, credencialesRegistradas.get(k))) {
                     return true;
                 }
             }
         }
-        if ("donante123".equals(password) || "admin123".equals(password) || "empresa123".equals(password)) {
-            return true;
+
+        // Compatibilidad dual para la empresa demo Molinos (documentada con empresa123 y donante123)
+        if (clavesCandidatas.contains("rse@molinos.com.ar") || clavesCandidatas.contains("30-11223344-9")) {
+            if ("empresa123".equals(password) || "donante123".equals(password)) {
+                return true;
+            }
+        }
+
+        // Si el donante fue precargado por semilla o importación CSV sin contraseña personalizada registrada aún
+        if (!tieneCredencial) {
+            if (donante.get("nroDocumento") != null && donante.get("nroDocumento").toString().equals(password)) {
+                return true;
+            }
+            if (donante.get("cuit") != null && donante.get("cuit").toString().equalsIgnoreCase(password)) {
+                return true;
+            }
+            return "donante123".equals(password) || "empresa123".equals(password);
         }
         return false;
     }

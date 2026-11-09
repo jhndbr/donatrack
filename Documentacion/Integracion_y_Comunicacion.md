@@ -9,16 +9,17 @@ Este documento define la arquitectura integral de comunicación e integración e
 | Origen | Destino | Tipo de Comunicación | Protocolo / Canal | Propósito |
 | :--- | :--- | :--- | :--- | :--- |
 | **Cliente / Front** | **`api-gateway`** | Sincrónica | HTTP REST (JSON) | Todas las peticiones externas al sistema |
-| **`api-gateway`** | **`keycloak`** | Sincrónica | HTTP OIDC / JWKS | Validación de firmas JWT y autenticación |
+| **`api-gateway`** | **`keycloak`** | Sincrónica | HTTP OIDC / JWKS | Validación criptográfica de firmas JWT (HMAC-SHA256 / RSA JWKS) y rechazo de tokens forjados/alg:none |
 | **`api-gateway`** | **Microservicios** | Sincrónica | HTTP REST (Reverse Proxy)| Enrutamiento de peticiones autenticadas |
 | **`logistica-service`**| **`donaciones-service`**| Sincrónica | HTTP REST | Consultar donaciones asignadas y actualizar estados físicos |
 | **`logistica-service`**| **Optimizador Externo** | Sincrónica / Asíncrona | HTTP POST (Lotes $\le 100$) | Despacho de paquetes para cálculo de ruta |
 | **Optimizador Externo**| **`logistica-service`**| Asíncrona (Callback) | HTTP Webhook POST | Devolución de la ruta óptima calculada |
-| **`donaciones-service`**| **RabbitMQ** | Asíncrona (Outbox) | AMQP (`donatrack.events`) | Emisión de `donacion.asignada` y `donante.inactivo` |
+| **`donaciones-service`**| **RabbitMQ** | Asíncrona (Outbox) | AMQP (`donatrack.events`) | Emisión de `donacion.asignada` y `donante.inactivo` (Paginación Top-100) |
 | **`logistica-service`**| **RabbitMQ** | Asíncrona | AMQP (`donatrack.events`) | Emisión de `ruta.iniciada`, `entrega.confirmada`, `entrega.fallida` |
 | **`incentivos-service`**| **RabbitMQ** | Asíncrona | AMQP (`donatrack.events`) | Emisión de `mision.cumplida`, `categoria.ascendida` |
-| **RabbitMQ** | **`notificaciones-service`**| Asíncrona | AMQP (Listeners) | Entrega de mensajes para despacho de emails y alertas |
-| **RabbitMQ** | **`incentivos-service`**| Asíncrona | AMQP (Listeners) | Acumulación automática de puntos tras donación |
+| **RabbitMQ** | **`donaciones-service`**| Asíncrona (`LogisticaEventConsumer`)| AMQP (`q.donaciones.*`) | Consumo de `entrega.confirmada` y `entrega.fallida` para consistencia eventual distribuida |
+| **RabbitMQ** | **`notificaciones-service`**| Asíncrona | AMQP (Listeners + DLQ) | Despacho multicanal con redirección a Dead Letter Exchange (`donatrack.dlx`) ante errores |
+| **RabbitMQ** | **`incentivos-service`**| Asíncrona | AMQP (Listeners + DLQ) | Acumulación automática de puntos con soporte de reintentos y enrutamiento a DLQ |
 | **`incentivos-service`**| **n8n Automation** | Asíncrona (Webhook) | HTTP POST | Difusión de hitos e insignias en redes sociales |
 | **`notificaciones-service`**| **Mailpit** | Sincrónica | SMTP (`localhost:1025`) | Envío de correos electrónicos transaccionales |
 
@@ -155,12 +156,30 @@ Para garantizar que un mensaje **nunca se pierda** ni se publique un evento inv�
        outboxRepository.save(outbox);
    }
    ```
-2. **Despachador Programado**:
-   Un scheduler lee cada 2 segundos los eventos con `processed = false`, publica el payload a RabbitMQ y marca el registro como `processed = true`. Si RabbitMQ está caído temporalmente, la transacción de base de datos ya está segura y los eventos se publicarán en el siguiente ciclo sin pérdida de datos.
+2. **Despachador Programado con Paginación Limitada**:
+   Un scheduler (`OutboxPublisher`) lee periódicamente los eventos con status `PENDING` utilizando un tamaño de lote acotado (`PageRequest.of(0, batchSize)` con `batchSize = 100`), publica el payload al Exchange `donatrack.events` de RabbitMQ y marca el registro como `SENT`. Si RabbitMQ está caído temporalmente, la transacción de base de datos ya está segura y los eventos se publicarán en el siguiente ciclo sin saturar la memoria heap de la JVM.
 
 ---
 
-## 5. Webhooks Externos
+## 5. Resiliencia en Mensajería: Dead Letter Exchange (DLQ)
+
+Para evitar la pérdida silenciosa de mensajes mal formateados o errores irrecuperables durante el consumo:
+1. Las colas de consumidores en `notificaciones-service` e `incentivos-service` configuran `x-dead-letter-exchange: donatrack.dlx`.
+2. Ante excepciones no recuperables, los `@RabbitListener` relanzan `AmqpRejectAndDontRequeueException`.
+3. RabbitMQ realiza un `basic.reject(requeue=false)` y enruta automáticamente el payload a `donatrack.dlx` / `dlq.notificaciones`, permitiendo su auditoría y reprocesamiento posterior sin atascar la cola principal.
+
+---
+
+## 6. Consistencia Eventual: Logística hacia Donaciones (`LogisticaEventConsumer`)
+
+Para resolver el problema de dual-write entre MongoDB y PostgreSQL sin acoplamiento temporal síncrono:
+1. Al confirmar o fallar una entrega en `logistica-service`, se emite el evento correspondiente (`entrega.confirmada` o `entrega.fallida`) a RabbitMQ.
+2. `donaciones-service` escucha en las colas `q.donaciones.entregas-confirmadas` y `q.donaciones.entregas-fallidas` a través de `LogisticaEventConsumer`.
+3. La actualización de estado a `ENTREGADA` o `ENTREGA_FALLIDA` se realiza de manera **idempotente y transaccional**: si la donación ya se encontraba en el estado objetivo, la operación se reconoce sin efectos secundarios ni errores.
+
+---
+
+## 7. Webhooks Externos
 
 ### 5.1. Webhook Callback de Optimización de Rutas (VRP)
 * **Endpoint expuesto en DonaTrack**: `POST /api/v1/logistica/rutas/callback`

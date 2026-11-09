@@ -87,8 +87,9 @@ public class NormalizacionDireccionService {
 
         // 1. Intento primario con Georef AR Oficial
         try {
+            String dirConsultaGeoref = dirTrim.contains(",") ? dirTrim.split(",")[0].trim() : dirTrim;
             URI uri = UriComponentsBuilder.fromUriString(georefUrl)
-                    .queryParam("direccion", dirTrim)
+                    .queryParam("direccion", dirConsultaGeoref)
                     .queryParam("max", 5)
                     .build()
                     .toUri();

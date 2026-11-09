@@ -1,45 +1,41 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
 <head>
-    <title>Registro de Donante / Entidad - DonaTrack</title>
+    <title>Crear cuenta — DonaTrack</title>
 </head>
 <body>
 <div th:fragment="content">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
-                <div class="text-center mb-4">
-                    <div class="rounded-circle bg-primary-subtle text-primary p-3 d-inline-flex mb-2">
-                        <i class="fa-solid fa-user-plus fs-3"></i>
-                    </div>
-                    <h3 class="fw-bold text-dark">Únete a la Red Solidaria</h3>
-                    <p class="text-muted small">Regístrate como donante particular o como entidad comunitaria beneficiaria</p>
+    <div class="row justify-content-center py-2">
+        <div class="col-md-9 col-lg-7">
+            <div class="card p-4 p-md-5">
+                <div class="mb-4">
+                    <h1 class="h4 fw-bold mb-1">Crear una cuenta</h1>
+                    <p class="text-secondary small mb-0">Selecciona el tipo de perfil para registrarte en la plataforma.</p>
                 </div>
 
-                <!-- Alertas de error / éxito del servidor -->
-                <div th:if="${mensajeError}" class="alert alert-danger py-2 small rounded-3 mb-3" role="alert">
-                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                <div th:if="${mensajeError}" class="alert alert-danger py-2 small mb-3" role="alert">
+                    <i class="fa-solid fa-circle-exclamation me-1" aria-hidden="true"></i>
                     <span th:text="${mensajeError}">Error al registrar</span>
                 </div>
-                <div th:if="${mensajeExito}" class="alert alert-success py-2 small rounded-3 mb-3" role="alert">
-                    <i class="fa-solid fa-circle-check me-1"></i>
+                <div th:if="${mensajeExito}" class="alert alert-success py-2 small mb-3" role="alert">
+                    <i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>
                     <span th:text="${mensajeExito}">Mensaje exitoso</span>
                 </div>
 
-                <ul class="nav nav-pills nav-fill mb-4 p-1 bg-light rounded-pill" id="pills-tab" role="tablist">
+                <ul class="nav nav-pills nav-fill mb-4 p-1 bg-light rounded-3 border" id="pills-tab" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active rounded-pill fw-semibold py-2" id="tab-donante" data-bs-toggle="pill" data-bs-target="#content-donante" type="button">
-                            <i class="fa-solid fa-hand-holding-heart me-1"></i> Donante Particular
+                        <button class="nav-link active rounded-2 small fw-medium py-2" id="tab-donante" data-bs-toggle="pill" data-bs-target="#content-donante" type="button">
+                            Donante particular
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link rounded-pill fw-semibold py-2" id="tab-juridica" data-bs-toggle="pill" data-bs-target="#content-juridica" type="button">
-                            <i class="fa-solid fa-briefcase me-1"></i> Empresa / Donante Jurídica
+                        <button class="nav-link rounded-2 small fw-medium py-2" id="tab-juridica" data-bs-toggle="pill" data-bs-target="#content-juridica" type="button">
+                            Empresa / Institución
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link rounded-pill fw-semibold py-2" id="tab-entidad" data-bs-toggle="pill" data-bs-target="#content-entidad" type="button">
-                            <i class="fa-solid fa-building me-1"></i> Entidad Beneficiaria
+                        <button class="nav-link rounded-2 small fw-medium py-2" id="tab-entidad" data-bs-toggle="pill" data-bs-target="#content-entidad" type="button">
+                            Entidad beneficiaria
                         </button>
                     </li>
                 </ul>
@@ -50,61 +46,48 @@
                         <form action="/registro/donante" method="post" id="formDonante">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Nombre <span class="text-danger">*</span></label>
-                                    <input type="text" name="nombre" class="form-control" placeholder="Ej. Juan" required>
+                                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                                    <input type="text" name="nombre" class="form-control" placeholder="Juan" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Apellido <span class="text-danger">*</span></label>
-                                    <input type="text" name="apellido" class="form-control" placeholder="Ej. Perez" required>
+                                    <label class="form-label">Apellido <span class="text-danger">*</span></label>
+                                    <input type="text" name="apellido" class="form-control" placeholder="Pérez" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">DNI / Documento <span class="text-danger">*</span></label>
-                                    <input type="text" name="dni" class="form-control" placeholder="Ej. 35123456" required>
+                                    <label class="form-label">DNI / Documento <span class="text-danger">*</span></label>
+                                    <input type="text" name="dni" class="form-control" placeholder="35123456" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Edad</label>
-                                    <input type="number" name="edad" class="form-control" placeholder="Ej. 30" value="28">
+                                    <label class="form-label">Edad</label>
+                                    <input type="number" name="edad" class="form-control" placeholder="30" min="18" max="110">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Correo Electrónico <span class="text-danger">*</span></label>
-                                    <input type="email" name="email" class="form-control" placeholder="juan.perez@ejemplo.com" required>
+                                    <label class="form-label">Correo electrónico <span class="text-danger">*</span></label>
+                                    <input type="email" name="email" class="form-control" placeholder="nombre@ejemplo.com" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Contraseña de Acceso <span class="text-danger">*</span></label>
-                                    <input type="password" name="password" class="form-control" placeholder="••••••••" value="donante123" required minlength="4">
-                                    <small class="text-muted">Elige tu contraseña (o mantén la sugerida: <code>donante123</code>).</small>
+                                    <label class="form-label">Contraseña <span class="text-danger">*</span></label>
+                                    <input type="password" name="password" class="form-control" placeholder="Mínimo 4 caracteres" required minlength="4">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">WhatsApp (Opcional)</label>
+                                    <label class="form-label">Teléfono / WhatsApp</label>
                                     <input type="text" name="telefono" class="form-control" placeholder="+54 9 11 1234-5678">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">
-                                        <i class="fa-solid fa-location-dot text-primary me-1"></i> Dirección (Calle y Altura)
-                                        <span class="text-muted" style="font-size:0.75rem;">(Opcional / Retiro logístico)</span>
-                                    </label>
+                                    <label class="form-label">Dirección (Calle y altura)</label>
                                     <div class="input-group">
-                                        <input type="text" id="dirDonante" name="direccion" class="form-control" placeholder="Ej. Medrano 951, CABA"
+                                        <input type="text" id="dirDonante" name="direccion" class="form-control" placeholder="Av. Medrano 951, CABA"
                                                oninput="onInputDireccionDebounced('dirDonante', 'feedbackDonante')"
                                                onblur="validarDireccionFrontend('dirDonante', 'feedbackDonante')">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="validarDireccionFrontend('dirDonante', 'feedbackDonante')" title="Validar con Georef AR">
-                                            <i class="fa-solid fa-check-double"></i> Validar
+                                        <button class="btn btn-outline-secondary" type="button" onclick="validarDireccionFrontend('dirDonante', 'feedbackDonante')" title="Verificar domicilio">
+                                            Verificar
                                         </button>
-                                        <button class="btn btn-outline-primary" type="button" onclick="obtenerUbicacionGps('dirDonante', 'feedbackDonante')" title="Detectar mi ubicación actual">
-                                            <i class="fa-solid fa-crosshairs"></i>
-                                        </button>
-                                    </div>
-                                    <div class="mt-1 d-flex gap-1 flex-wrap">
-                                        <span class="text-muted" style="font-size:0.75rem;">Sugerencias:</span>
-                                        <a href="javascript:void(0)" onclick="usarSugerencia('dirDonante', 'feedbackDonante', 'Av. Medrano 951, CABA')" class="badge bg-light text-primary text-decoration-none border">Medrano 951, CABA</a>
-                                        <a href="javascript:void(0)" onclick="usarSugerencia('dirDonante', 'feedbackDonante', 'Mitre 456, CABA')" class="badge bg-light text-primary text-decoration-none border">Mitre 456, CABA</a>
-                                        <a href="javascript:void(0)" onclick="usarSugerencia('dirDonante', 'feedbackDonante', 'Av. Paseo Colón 746, CABA')" class="badge bg-light text-primary text-decoration-none border">Paseo Colón 746, CABA</a>
                                     </div>
                                     <div id="feedbackDonante" class="mt-1"></div>
                                 </div>
                                 <div class="col-12 mt-4">
-                                    <button type="submit" class="btn btn-dt-primary w-100 py-2 fw-semibold">
-                                        <i class="fa-solid fa-check me-1"></i> Completar Registro como Donante Particular
+                                    <button type="submit" class="btn btn-dt-primary w-100 py-2">
+                                        Registrarme como donante
                                     </button>
                                 </div>
                             </div>
@@ -116,69 +99,57 @@
                         <form action="/registro/juridica" method="post" id="formJuridica">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Razón Social <span class="text-danger">*</span></label>
-                                    <input type="text" name="razonSocial" class="form-control" placeholder="Ej. Molinos Río de la Plata S.A." required>
+                                    <label class="form-label">Razón social <span class="text-danger">*</span></label>
+                                    <input type="text" name="razonSocial" class="form-control" placeholder="Alimentos del Sur S.A." required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">CUIT <span class="text-danger">*</span></label>
-                                    <input type="text" name="cuit" class="form-control" placeholder="Ej. 30-11223344-9" required>
+                                    <label class="form-label">CUIT <span class="text-danger">*</span></label>
+                                    <input type="text" name="cuit" class="form-control" placeholder="30-11223344-9" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Tipo de Organización</label>
+                                    <label class="form-label">Tipo de organización</label>
                                     <select name="tipo" class="form-select">
-                                        <option value="Empresa" selected>Empresa Comercial / Corporativa</option>
-                                        <option value="ONG">Organización No Gubernamental (ONG)</option>
-                                        <option value="Institucion">Institución Educativa / Civil</option>
-                                        <option value="Gubernamental">Organismo Gubernamental</option>
+                                        <option value="Empresa" selected>Empresa comercial</option>
+                                        <option value="ONG">Organización sin fines de lucro (ONG)</option>
+                                        <option value="Institucion">Institución educativa / civil</option>
+                                        <option value="Gubernamental">Organismo público</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Rubro Principal</label>
-                                    <input type="text" name="rubro" class="form-control" placeholder="Ej. Alimentos y Bebidas, Indumentaria, Logística" value="Alimentos">
+                                    <label class="form-label">Rubro principal</label>
+                                    <input type="text" name="rubro" class="form-control" placeholder="Alimentos, logística, salud...">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Correo Electrónico Institucional <span class="text-danger">*</span></label>
-                                    <input type="email" name="email" class="form-control" placeholder="rse@molinos.com.ar" required>
+                                    <label class="form-label">Correo institucional <span class="text-danger">*</span></label>
+                                    <input type="email" name="email" class="form-control" placeholder="contacto@empresa.com.ar" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Contraseña de Acceso <span class="text-danger">*</span></label>
-                                    <input type="password" name="password" class="form-control" placeholder="••••••••" value="empresa123" required minlength="4">
-                                    <small class="text-muted">Elige tu contraseña (o mantén la sugerida: <code>empresa123</code>).</small>
+                                    <label class="form-label">Contraseña <span class="text-danger">*</span></label>
+                                    <input type="password" name="password" class="form-control" placeholder="Mínimo 4 caracteres" required minlength="4">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Teléfono de Contacto</label>
+                                    <label class="form-label">Teléfono de contacto</label>
                                     <input type="text" name="telefono" class="form-control" placeholder="+54 11 4000-0000">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Representante Institucional <span class="text-muted">(Opcional)</span></label>
-                                    <input type="text" name="representante" class="form-control" placeholder="Ej. María Gómez (Directora RSE)">
+                                    <label class="form-label">Representante</label>
+                                    <input type="text" name="representante" class="form-control" placeholder="Nombre y cargo">
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold small">
-                                        <i class="fa-solid fa-location-dot text-primary me-1"></i> Dirección Planta / Depósito
-                                        <span class="text-muted" style="font-size:0.75rem;">(Retiro de lotes)</span>
-                                    </label>
+                                    <label class="form-label">Dirección de planta o depósito</label>
                                     <div class="input-group">
-                                        <input type="text" id="dirJuridica" name="direccion" class="form-control" placeholder="Ej. Bouchard 680, CABA"
+                                        <input type="text" id="dirJuridica" name="direccion" class="form-control" placeholder="Bouchard 680, CABA"
                                                oninput="onInputDireccionDebounced('dirJuridica', 'feedbackJuridica')"
                                                onblur="validarDireccionFrontend('dirJuridica', 'feedbackJuridica')">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="validarDireccionFrontend('dirJuridica', 'feedbackJuridica')" title="Validar con Georef AR">
-                                            <i class="fa-solid fa-check-double"></i> Validar
+                                        <button class="btn btn-outline-secondary" type="button" onclick="validarDireccionFrontend('dirJuridica', 'feedbackJuridica')">
+                                            Verificar
                                         </button>
-                                        <button class="btn btn-outline-primary" type="button" onclick="obtenerUbicacionGps('dirJuridica', 'feedbackJuridica')" title="Detectar mi ubicación actual">
-                                            <i class="fa-solid fa-crosshairs"></i>
-                                        </button>
-                                    </div>
-                                    <div class="mt-1 d-flex gap-1 flex-wrap">
-                                        <span class="text-muted" style="font-size:0.75rem;">Sugerencias:</span>
-                                        <a href="javascript:void(0)" onclick="usarSugerencia('dirJuridica', 'feedbackJuridica', 'Bouchard 680, CABA')" class="badge bg-light text-primary text-decoration-none border">Bouchard 680, CABA</a>
-                                        <a href="javascript:void(0)" onclick="usarSugerencia('dirJuridica', 'feedbackJuridica', 'Av. Paseo Colón 746, CABA')" class="badge bg-light text-primary text-decoration-none border">Paseo Colón 746, CABA</a>
                                     </div>
                                     <div id="feedbackJuridica" class="mt-1"></div>
                                 </div>
                                 <div class="col-12 mt-4">
-                                    <button type="submit" class="btn btn-dt-primary w-100 py-2 fw-semibold">
-                                        <i class="fa-solid fa-building me-1"></i> Completar Registro como Donante Empresa
+                                    <button type="submit" class="btn btn-dt-primary w-100 py-2">
+                                        Registrar organización donante
                                     </button>
                                 </div>
                             </div>
@@ -190,49 +161,36 @@
                         <form action="/registro/entidad" method="post" id="formEntidad">
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold small">Razón Social de la Organización <span class="text-danger">*</span></label>
-                                    <input type="text" name="razonSocial" class="form-control" placeholder="Ej. Comedor Comunitario Corazones Solidarios" required>
+                                    <label class="form-label">Nombre de la entidad beneficiaria <span class="text-danger">*</span></label>
+                                    <input type="text" name="razonSocial" class="form-control" placeholder="Comedor Comunitario Esperanza" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">
-                                        <i class="fa-solid fa-building-location text-primary me-1"></i> Dirección Sede / Depósito <span class="text-danger">*</span>
-                                        <span class="text-muted" style="font-size:0.75rem;">(Destino de entregas)</span>
-                                    </label>
+                                    <label class="form-label">Dirección de sede (recepción de entregas) <span class="text-danger">*</span></label>
                                     <div class="input-group">
-                                        <input type="text" id="dirEntidad" name="direccion" class="form-control" placeholder="Ej. Av. Corrientes 4500, CABA" required
+                                        <input type="text" id="dirEntidad" name="direccion" class="form-control" placeholder="Av. Corrientes 4500, CABA" required
                                                oninput="onInputDireccionDebounced('dirEntidad', 'feedbackEntidad')"
                                                onblur="validarDireccionFrontend('dirEntidad', 'feedbackEntidad')">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="validarDireccionFrontend('dirEntidad', 'feedbackEntidad')" title="Validar con Georef AR">
-                                            <i class="fa-solid fa-check-double"></i> Validar
+                                        <button class="btn btn-outline-secondary" type="button" onclick="validarDireccionFrontend('dirEntidad', 'feedbackEntidad')">
+                                            Verificar
                                         </button>
-                                        <button class="btn btn-outline-primary" type="button" onclick="obtenerUbicacionGps('dirEntidad', 'feedbackEntidad')" title="Detectar mi ubicación actual">
-                                            <i class="fa-solid fa-crosshairs"></i>
-                                        </button>
-                                    </div>
-                                    <div class="mt-1 d-flex gap-1 flex-wrap">
-                                        <span class="text-muted" style="font-size:0.75rem;">Sugerencias:</span>
-                                        <a href="javascript:void(0)" onclick="usarSugerencia('dirEntidad', 'feedbackEntidad', 'Av. Corrientes 4500, CABA')" class="badge bg-light text-primary text-decoration-none border">Av. Corrientes 4500, CABA</a>
-                                        <a href="javascript:void(0)" onclick="usarSugerencia('dirEntidad', 'feedbackEntidad', 'Gorriti 3800, CABA')" class="badge bg-light text-primary text-decoration-none border">Gorriti 3800, CABA</a>
-                                        <a href="javascript:void(0)" onclick="usarSugerencia('dirEntidad', 'feedbackEntidad', 'Av. San Juan 2500, CABA')" class="badge bg-light text-primary text-decoration-none border">San Juan 2500, CABA</a>
                                     </div>
                                     <div id="feedbackEntidad" class="mt-1"></div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Teléfono Institucional <span class="text-danger">*</span></label>
+                                    <label class="form-label">Teléfono de la sede <span class="text-danger">*</span></label>
                                     <input type="text" name="telefono" class="form-control" placeholder="11-4444-5555" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Email Representante Principal <span class="text-danger">*</span></label>
-                                    <input type="email" name="email" class="form-control" placeholder="contacto@comedor.org" required>
+                                    <label class="form-label">Correo electrónico del responsable <span class="text-danger">*</span></label>
+                                    <input type="email" name="email" class="form-control" placeholder="responsable@entidad.org" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Contraseña de Acceso <span class="text-danger">*</span></label>
-                                    <input type="password" name="password" class="form-control" placeholder="••••••••" value="comedor123" required minlength="4">
-                                    <small class="text-muted">Elige tu contraseña (o mantén la sugerida: <code>comedor123</code>).</small>
+                                    <label class="form-label">Contraseña <span class="text-danger">*</span></label>
+                                    <input type="password" name="password" class="form-control" placeholder="Mínimo 4 caracteres" required minlength="4">
                                 </div>
                                 <div class="col-12 mt-4">
-                                    <button type="submit" class="btn btn-dt-secondary w-100 py-2 fw-semibold">
-                                        <i class="fa-solid fa-building-check me-1"></i> Registrar Entidad Beneficiaria
+                                    <button type="submit" class="btn btn-dt-primary w-100 py-2">
+                                        Registrar entidad beneficiaria
                                     </button>
                                 </div>
                             </div>
@@ -240,14 +198,24 @@
                     </div>
                 </div>
 
-                <div class="text-center mt-4">
-                    <span class="text-muted small">¿Ya tienes cuenta activa? <a href="/login" class="fw-semibold text-primary">Ingresar al sistema</a></span>
+                <div class="text-center mt-4 pt-3 border-top">
+                    <span class="text-muted small">¿Ya tienes una cuenta? <a href="/login" class="fw-medium text-decoration-none" style="color: var(--color-primary);">Iniciar sesión</a></span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Script de Validación Geográfica Oficial de Direcciones (Georef AR) -->
+    <style>
+        #pills-tab .nav-link {
+            color: var(--color-text-secondary);
+        }
+        #pills-tab .nav-link.active {
+            background-color: var(--color-surface);
+            color: var(--color-text);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        }
+    </style>
+
     <script>
     let debounceTimers = {};
 
@@ -262,51 +230,9 @@
             if (input) input.classList.remove('is-valid', 'is-invalid');
             return;
         }
-        if (feedback) {
-            feedback.innerHTML = '<span class="text-muted small"><i class="fa-solid fa-spinner fa-spin me-1"></i> Verificando domicilio...</span>';
-        }
         debounceTimers[inputId] = setTimeout(() => {
             validarDireccionFrontend(inputId, feedbackId);
-        }, 500);
-    }
-
-    function usarSugerencia(inputId, feedbackId, direccion) {
-        const input = document.getElementById(inputId);
-        if (input) {
-            input.value = direccion;
-            validarDireccionFrontend(inputId, feedbackId);
-        }
-    }
-
-    function obtenerUbicacionGps(inputId, feedbackId) {
-        const feedback = document.getElementById(feedbackId);
-        const input = document.getElementById(inputId);
-        if (!navigator.geolocation) {
-            if (feedback) {
-                feedback.innerHTML = '<span class="text-warning small"><i class="fa-solid fa-triangle-exclamation me-1"></i> Tu navegador no soporta geolocalización GPS.</span>';
-            }
-            return;
-        }
-        if (feedback) {
-            feedback.innerHTML = '<span class="text-primary small"><i class="fa-solid fa-spinner fa-spin me-1"></i> Obteniendo coordenadas GPS de tu dispositivo...</span>';
-        }
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const lat = pos.coords.latitude;
-                const lon = pos.coords.longitude;
-                // Si estamos en CABA/AMBA o simulado
-                if (input && (!input.value || input.value.trim().length < 4)) {
-                    input.value = "Av. Medrano 951, CABA";
-                }
-                validarDireccionFrontend(inputId, feedbackId);
-            },
-            (err) => {
-                if (feedback) {
-                    feedback.innerHTML = '<span class="text-muted small"><i class="fa-solid fa-location-slash me-1"></i> Permiso de ubicación denegado. Ingrese calle y altura manualmente.</span>';
-                }
-            },
-            { timeout: 8000 }
-        );
+        }, 600);
     }
 
     async function validarDireccionFrontend(inputId, feedbackId) {
@@ -321,12 +247,12 @@
             return;
         }
 
-        feedback.innerHTML = '<span class="text-muted small"><i class="fa-solid fa-spinner fa-spin me-1"></i> Verificando con Registro Geográfico Oficial (Georef AR)...</span>';
+        feedback.innerHTML = '<span class="text-muted small">Verificando dirección...</span>';
 
         try {
             const resp = await fetch('/api/direcciones/validar?direccion=' + encodeURIComponent(dir));
             if (!resp.ok) {
-                feedback.innerHTML = '<div class="alert alert-warning py-1 px-2 my-1 small rounded-3"><i class="fa-solid fa-triangle-exclamation me-1"></i> No se pudo verificar la dirección en este momento.</div>';
+                feedback.innerHTML = '<span class="text-muted small">No se pudo verificar la dirección en este momento.</span>';
                 return;
             }
             const data = await resp.json();
@@ -337,35 +263,14 @@
                 if (data.nomenclatura) {
                     input.value = data.nomenclatura;
                 }
-                const coordsText = (data.latitud && data.longitud) 
-                    ? ` • <i class="fa-solid fa-location-crosshairs me-1"></i>GPS: [${Number(data.latitud).toFixed(4)}, ${Number(data.longitud).toFixed(4)}]` 
-                    : '';
-                const locText = data.provincia ? ` • ${data.provincia}` : '';
-
-                feedback.innerHTML = `
-                    <div class="alert alert-success py-1 px-2 my-1 small d-flex align-items-center rounded-3 shadow-sm border border-success-subtle">
-                        <i class="fa-solid fa-circle-check text-success fs-5 me-2 flex-shrink-0"></i>
-                        <div>
-                            <strong>Domicilio Oficial Validado:</strong> ${data.nomenclatura || dir}
-                            <div class="text-muted" style="font-size:0.75rem;">
-                                <span class="badge bg-success-subtle text-success me-1">Georef AR Catastral</span>${locText}${coordsText}
-                            </div>
-                        </div>
-                    </div>`;
+                feedback.innerHTML = `<div class="small text-success mt-1"><i class="fa-solid fa-check me-1"></i>Dirección verificada: ${data.nomenclatura || dir}</div>`;
             } else {
                 input.classList.remove('is-valid');
                 input.classList.add('is-invalid');
-                feedback.innerHTML = `
-                    <div class="alert alert-danger py-1 px-2 my-1 small d-flex align-items-center rounded-3">
-                        <i class="fa-solid fa-triangle-exclamation text-danger fs-5 me-2 flex-shrink-0"></i>
-                        <div>
-                            <strong>Dirección Incompleta o Inválida:</strong> ${data.mensajeValidacion}
-                            <div class="text-muted" style="font-size:0.72rem;">Indique calle y altura catastral real en Argentina (ej: Av. Medrano 951, CABA).</div>
-                        </div>
-                    </div>`;
+                feedback.innerHTML = `<div class="small text-danger mt-1"><i class="fa-solid fa-circle-exclamation me-1"></i>${data.mensajeValidacion || 'Indique calle y altura válidas.'}</div>`;
             }
         } catch (err) {
-            feedback.innerHTML = '<span class="text-warning small"><i class="fa-solid fa-triangle-exclamation me-1"></i> Error de conexión con el validador geográfico.</span>';
+            feedback.innerHTML = '';
         }
     }
     </script>

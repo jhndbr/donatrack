@@ -77,11 +77,77 @@ public class HomeController {
     }
 
     @GetMapping("/comprobantes")
+    @SuppressWarnings("unchecked")
     public String comprobantes(Model model, HttpSession session) {
-        List<Map<String, Object>> entregadas = apiClient.listarDonaciones("ENTREGADA");
+        List<Map<String, Object>> entregadasRaw = apiClient.listarDonaciones("ENTREGADA");
+        List<Map<String, Object>> entregasLogistica = apiClient.listarEntregas();
+
+        java.util.Map<Long, String> fotoPorDonacion = new java.util.HashMap<>();
+        if (entregasLogistica != null) {
+            for (Map<String, Object> entLog : entregasLogistica) {
+                if (entLog.get("idDonacion") instanceof Number donNum && entLog.get("fotosConfirmacionUrls") instanceof List<?> fotos && !fotos.isEmpty()) {
+                    Object primera = fotos.get(0);
+                    if (primera != null && !primera.toString().isBlank()) {
+                        fotoPorDonacion.put(donNum.longValue(), primera.toString().trim());
+                    }
+                }
+            }
+        }
+
+        List<Map<String, Object>> entregadas = new java.util.ArrayList<>();
+        if (entregadasRaw != null) {
+            for (Map<String, Object> orig : entregadasRaw) {
+                Map<String, Object> d = new java.util.HashMap<>(orig);
+                Long donId = (d.get("id") instanceof Number n) ? n.longValue() : null;
+                String fotoLogistica = (donId != null) ? fotoPorDonacion.get(donId) : null;
+
+                // Determinar foto válida para la tarjeta y el comprobante público
+                String fotoResuelta = null;
+                if (fotoLogistica != null && esUrlImagenValida(fotoLogistica)) {
+                    fotoResuelta = fotoLogistica;
+                }
+                if (d.get("bienes") instanceof List<?> bienesList && !bienesList.isEmpty()) {
+                    List<Map<String, Object>> bienesCopia = new java.util.ArrayList<>();
+                    for (Object bObj : bienesList) {
+                        if (bObj instanceof Map<?, ?> bMap) {
+                            Map<String, Object> bCopia = new java.util.HashMap<>((Map<String, Object>) bMap);
+                            String bFoto = bCopia.get("fotoUrl") != null ? bCopia.get("fotoUrl").toString() : null;
+                            if (bFoto != null && !esUrlImagenValida(bFoto)) {
+                                bCopia.put("fotoUrl", fotoResuelta);
+                            } else if (fotoResuelta == null && bFoto != null && esUrlImagenValida(bFoto)) {
+                                fotoResuelta = bFoto;
+                            } else if (bFoto == null && fotoResuelta != null) {
+                                bCopia.put("fotoUrl", fotoResuelta);
+                            }
+                            bienesCopia.add(bCopia);
+                        }
+                    }
+                    d.put("bienes", bienesCopia);
+                }
+                if (fotoResuelta != null) {
+                    d.put("fotoUrl", fotoResuelta);
+                } else if (d.get("fotoUrl") != null && !esUrlImagenValida(d.get("fotoUrl").toString())) {
+                    d.put("fotoUrl", "/images/placeholder-entrega.svg");
+                }
+                entregadas.add(d);
+            }
+        }
+
         model.addAttribute("entregadas", entregadas);
         model.addAttribute("userSession", session.getAttribute(AuthInterceptor.SESSION_USER_KEY));
         return "comprobantes";
+    }
+
+    private boolean esUrlImagenValida(String url) {
+        if (url == null || url.isBlank()) return false;
+        String lower = url.trim().toLowerCase();
+        return !lower.contains("/notificaciones") && !lower.endsWith("/comprobantes") && !lower.contains("/login");
+    }
+
+    @GetMapping("/comprobantes/donacion/{idDonacion}")
+    @ResponseBody
+    public Map<String, Object> obtenerComprobantePublicoPorDonacion(@org.springframework.web.bind.annotation.PathVariable("idDonacion") Long idDonacion) {
+        return apiClient.obtenerComprobanteEntregaPorDonacion(idDonacion);
     }
 
     @GetMapping("/privacidad")
@@ -221,14 +287,23 @@ public class HomeController {
         );
 
         Map<String, Object> nuevoDonante = apiClient.crearDonanteHumana(body);
+        if (nuevoDonante == null) {
+            nuevoDonante = apiClient.buscarDonantePorDocumento(dni);
+            if (nuevoDonante == null) {
+                nuevoDonante = apiClient.buscarDonantePorEmail(email);
+            }
+        }
         if (nuevoDonante != null) {
             authService.registrarCredencial(email, password);
             if (dni != null && !dni.isBlank()) {
                 authService.registrarCredencial(dni, password);
             }
-            redirectAttrs.addFlashAttribute("mensajeExito", "¡Registro exitoso como Donante! Inicia sesión con tu correo (" + email + ") y la contraseña elegida.");
+            if (nombre != null && apellido != null) {
+                authService.registrarCredencial((nombre.trim() + " " + apellido.trim()), password);
+            }
+            redirectAttrs.addFlashAttribute("mensajeExito", "¡Registro exitoso como Donante! Inicia sesión con tu correo (" + email + ") o DNI (" + dni + ") y la contraseña elegida.");
         } else {
-            redirectAttrs.addFlashAttribute("mensajeError", "No se pudo completar el registro. Verifique que el DNI no se encuentre registrado.");
+            redirectAttrs.addFlashAttribute("mensajeError", "No se pudo completar el registro. Verifique que el servicio de donaciones se encuentre activo.");
         }
         return "redirect:/login";
     }
@@ -279,6 +354,12 @@ public class HomeController {
         }
 
         Map<String, Object> nuevoDonante = apiClient.crearDonanteJuridica(body);
+        if (nuevoDonante == null) {
+            nuevoDonante = apiClient.buscarDonantePorDocumento(cuit);
+            if (nuevoDonante == null) {
+                nuevoDonante = apiClient.buscarDonantePorEmail(email);
+            }
+        }
         if (nuevoDonante != null) {
             authService.registrarCredencial(email, password);
             if (cuit != null && !cuit.isBlank()) {
@@ -289,7 +370,7 @@ public class HomeController {
             }
             redirectAttrs.addFlashAttribute("mensajeExito", "¡Registro exitoso como Empresa/Institución donante! Inicia sesión con tu correo (" + email + ") o CUIT.");
         } else {
-            redirectAttrs.addFlashAttribute("mensajeError", "No se pudo completar el registro. Verifique que el CUIT no se encuentre registrado.");
+            redirectAttrs.addFlashAttribute("mensajeError", "No se pudo completar el registro. Verifique que el CUIT sea válido (11 dígitos).");
         }
         return "redirect:/login";
     }
@@ -325,8 +406,14 @@ public class HomeController {
         );
 
         Map<String, Object> nuevaEntidad = apiClient.crearEntidad(body);
+        if (nuevaEntidad == null) {
+            nuevaEntidad = apiClient.buscarEntidadPorEmail(email);
+        }
         if (nuevaEntidad != null) {
             authService.registrarCredencial(email, password);
+            if (razonSocial != null && !razonSocial.isBlank()) {
+                authService.registrarCredencial(razonSocial, password);
+            }
             redirectAttrs.addFlashAttribute("mensajeExito", "¡Registro exitoso para " + razonSocial + "! Inicia sesión con el email (" + email + ") y la contraseña elegida.");
         } else {
             redirectAttrs.addFlashAttribute("mensajeError", "No se pudo registrar la entidad beneficiaria. Intente nuevamente.");

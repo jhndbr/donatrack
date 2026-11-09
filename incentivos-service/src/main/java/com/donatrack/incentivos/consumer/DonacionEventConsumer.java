@@ -6,6 +6,7 @@ import com.donatrack.incentivos.service.IncentivosService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -70,6 +71,7 @@ public class DonacionEventConsumer {
             eventoRepo.save(new com.donatrack.incentivos.domain.RegistroEventoProcesado(claveEvento, "DONACION_ASIGNADA"));
         } catch (Exception e) {
             log.error("Error al procesar donacion.asignada en incentivos: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error procesando donacion.asignada -> DLQ", e);
         }
     }
 
@@ -96,6 +98,7 @@ public class DonacionEventConsumer {
             eventoRepo.save(new com.donatrack.incentivos.domain.RegistroEventoProcesado(claveEvento, "ENTREGA_CONFIRMADA"));
         } catch (Exception e) {
             log.error("Error al procesar entrega.confirmada en incentivos: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error procesando entrega.confirmada -> DLQ", e);
         }
     }
 
@@ -129,6 +132,7 @@ public class DonacionEventConsumer {
             eventoRepo.save(new com.donatrack.incentivos.domain.RegistroEventoProcesado(claveEvento, "DONACION_REGISTRADA"));
         } catch (Exception e) {
             log.error("Error al procesar donacion.registrada en incentivos: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error procesando donacion.registrada -> DLQ", e);
         }
     }
 

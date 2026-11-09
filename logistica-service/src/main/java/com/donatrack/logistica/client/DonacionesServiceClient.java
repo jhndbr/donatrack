@@ -32,6 +32,17 @@ public class DonacionesServiceClient {
         this.restClient = RestClient.builder()
                 .baseUrl(donacionesUrl)
                 .requestFactory(factory)
+                .requestInterceptor((request, body, execution) -> {
+                    String correlationId = org.slf4j.MDC.get("correlationId");
+                    String traceId = org.slf4j.MDC.get("traceId");
+                    if (correlationId != null && !correlationId.isBlank()) {
+                        request.getHeaders().set("X-Correlation-Id", correlationId);
+                    }
+                    if (traceId != null && !traceId.isBlank()) {
+                        request.getHeaders().set("X-Trace-Id", traceId);
+                    }
+                    return execution.execute(request, body);
+                })
                 .build();
     }
 

@@ -1,68 +1,73 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::content})}">
 <head>
-    <title>Tracking de Camión - Entidad Beneficiaria</title>
+    <title>Seguimiento de envíos — Entidad Beneficiaria</title>
 </head>
 <body>
 <div th:fragment="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-header">
         <div>
-            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Monitoreo de Camión en Aproximación</h2>
-            <p class="text-secondary">Ubicación satelital del camión logístico en viaje hacia <strong th:text="${entidadActual != null and entidadActual['razonSocial'] != null ? entidadActual['razonSocial'] : 'tu sede'}">tu sede</strong>.</p>
+            <h1>Seguimiento de unidades</h1>
+            <p>Ubicación de los vehículos logísticos en ruta hacia <strong class="text-dark" th:text="${entidadActual != null and entidadActual['razonSocial'] != null ? entidadActual['razonSocial'] : 'tu sede'}">tu sede</strong>.</p>
         </div>
-        <a href="/beneficiaria" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i>Volver</a>
+        <a href="/beneficiaria" class="btn btn-outline-secondary btn-sm">Volver</a>
     </div>
 
-    <!-- Donaciones Asignadas a la Entidad -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white" th:if="${!#lists.isEmpty(misDonaciones)}">
-        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-boxes-stacked text-primary me-2"></i>Envíos Asignados a tu Sede</h5>
-        <div class="row g-3">
-            <div th:each="d : ${misDonaciones}" class="col-md-6 col-lg-4">
-                <div class="p-3 rounded-3 border bg-light h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="badge bg-primary-subtle text-primary font-monospace fw-bold"
-                              th:text="${d.id != null ? 'DON-' + #numbers.formatInteger(d.id, 4) : 'DON-0000'}">DON-0001</span>
-                        <span th:class="'badge badge-status status-' + ${d.estado}" th:text="${d.estado}">EN_TRASLADO</span>
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4" th:if="${!#lists.isEmpty(misDonaciones)}">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h2 class="h6 fw-semibold mb-0">Envíos asignados</h2>
+                </div>
+                <div class="list-group list-group-flush" style="max-height: 420px; overflow-y: auto;">
+                    <div th:each="d : ${misDonaciones}" class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="font-monospace small fw-semibold text-dark"
+                                  th:text="${d.id != null ? 'DON-' + #numbers.formatInteger(d.id, 4) : 'DON-0000'}">DON-0001</span>
+                            <span th:class="'badge-status status-' + ${d.estado}"
+                                  th:text="${d.estado == 'EN_TRASLADO' ? 'En traslado' : (d.estado == 'ENTREGADA' ? 'Entregada' : d.estado)}">En traslado</span>
+                        </div>
+                        <div class="fw-medium small text-dark" th:text="${d.subcategoria + ' (' + d.cantidad + ' ' + d.unidadMedida + ')'}">Alimentos</div>
+                        <div class="small text-muted mt-1" th:if="${d.descripcion != null}" th:text="${d.descripcion}">Detalle</div>
                     </div>
-                    <div class="fw-semibold text-dark" th:text="${d.subcategoria + ' (' + d.cantidad + ' ' + d.unidadMedida + ')'}">Alimentos</div>
-                    <div class="small text-muted mt-1" th:text="${d.descripcion != null ? d.descripcion : ''}">Detalle</div>
+                </div>
+            </div>
+        </div>
+
+        <div th:class="${!#lists.isEmpty(misDonaciones) ? 'col-lg-8' : 'col-12'}">
+            <div class="card overflow-hidden h-100">
+                <div class="card-body p-0">
+                    <div id="beneficiariaMap" class="map-container" style="height: 440px; border-radius: 0;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
-        <div class="card-body p-0">
-            <div id="beneficiariaMap" class="map-container" style="height: 480px;"></div>
+    <div class="card overflow-hidden">
+        <div class="card-header">
+            <h2 class="h6 fw-semibold mb-0">Unidades activas</h2>
         </div>
-    </div>
-
-    <!-- Tabla de Telemetría y Última Actualización -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-truck-fast text-secondary me-2"></i>Unidades Activas en Flota</h5>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
-                        <th>Patente</th>
-                        <th>Coordenadas GPS</th>
+                        <th>Dominio</th>
+                        <th>Coordenadas</th>
                         <th>Velocidad</th>
-                        <th>Última Actualización</th>
+                        <th>Último reporte</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:if="${#lists.isEmpty(flotaEnVivo) and #lists.isEmpty(camiones)}">
-                        <td colspan="4" class="text-center text-muted py-3">No hay unidades con telemetría activa en este momento.</td>
+                        <td colspan="4" class="text-center text-muted py-4">No hay unidades con telemetría activa en este momento.</td>
                     </tr>
                     <tr th:each="f : ${!#lists.isEmpty(flotaEnVivo) ? flotaEnVivo : camiones}">
-                        <td class="fw-bold text-primary font-monospace" th:text="${f['patente'] != null ? f['patente'] : 'AE789XY'}">AE789XY</td>
+                        <td class="fw-semibold font-monospace" th:text="${f['patente'] != null ? f['patente'] : 'AE789XY'}">AE789XY</td>
                         <td class="small font-monospace"
                             th:text="${(f['latitud'] != null ? f['latitud'] : '-34.6037') + ', ' + (f['longitud'] != null ? f['longitud'] : '-58.3816')}">-34.6037, -58.3816</td>
                         <td th:text="${(f['velocidadKmh'] != null ? f['velocidadKmh'] : (f['velocidadKmH'] != null ? f['velocidadKmH'] : (f['velocidad'] != null ? f['velocidad'] : '35'))) + ' km/h'}">35 km/h</td>
-                        <td class="small text-muted">
-                            <i class="fa-regular fa-clock me-1"></i>
-                            <span th:text="${f['ultimaActualizacion'] != null ? f['ultimaActualizacion'] : (f['timestamp'] != null ? f['timestamp'] : 'En tiempo real')}">En tiempo real</span>
-                        </td>
+                        <td class="small text-muted font-monospace"
+                            th:text="${f['ultimaActualizacion'] != null ? f['ultimaActualizacion'] : (f['timestamp'] != null ? f['timestamp'] : 'Reciente')}">Reciente</td>
                     </tr>
                 </tbody>
             </table>
@@ -74,8 +79,8 @@
             var entidadActual = /*[[${entidadActual}]]*/ {};
             var sedeLat = (entidadActual && entidadActual.latitud) ? entidadActual.latitud : -34.6037;
             var sedeLng = (entidadActual && entidadActual.longitud) ? entidadActual.longitud : -58.3816;
-            var sedeNombre = (entidadActual && entidadActual.razonSocial) ? entidadActual.razonSocial : "Tu Sede (Entidad Beneficiaria)";
-            var sedeDir = (entidadActual && entidadActual.direccion) ? entidadActual.direccion : "Destino final de entrega";
+            var sedeNombre = (entidadActual && entidadActual.razonSocial) ? entidadActual.razonSocial : "Sede Beneficiaria";
+            var sedeDir = (entidadActual && entidadActual.direccion) ? entidadActual.direccion : "Punto de recepción";
 
             var map = L.map('beneficiariaMap').setView([sedeLat, sedeLng], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -87,9 +92,9 @@
 
             var camionIcon = L.divIcon({
                 className: 'custom-div-icon',
-                html: "<div style='background-color:#0d9488;color:white;padding:6px;border-radius:50%;text-align:center;width:32px;height:32px;box-shadow:0 2px 4px rgba(0,0,0,0.3);'><i class='fa-solid fa-truck'></i></div>",
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
+                html: "<div style='background-color:#0f766e;color:white;padding:6px;border-radius:50%;text-align:center;width:30px;height:30px;font-size:12px;'><i class='fa-solid fa-truck'></i></div>",
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
             });
 
             var flota = /*[[${flotaEnVivo}]]*/ [];
@@ -97,11 +102,10 @@
                 flota.forEach(function(c) {
                     var lat = c.latitud || (c.ubicacionActual && c.ubicacionActual.latitud) || -34.5990;
                     var lng = c.longitud || (c.ubicacionActual && c.ubicacionActual.longitud) || -58.4100;
-                    var patente = c.patente || "Camión en Ruta";
-                    var vel = (c.velocidadKmh || c.velocidadKmH || c.velocidad) ? ((c.velocidadKmh || c.velocidadKmH || c.velocidad) + " km/h") : "En movimiento";
-                    var ultimaAct = c.ultimaActualizacion || c.timestamp || (c.ubicacionActual && c.ubicacionActual.timestamp) || "En tiempo real";
+                    var patente = c.patente || "Unidad";
+                    var vel = (c.velocidadKmh || c.velocidadKmH || c.velocidad) ? ((c.velocidadKmh || c.velocidadKmH || c.velocidad) + " km/h") : "En tránsito";
                     L.marker([lat, lng], { icon: camionIcon }).addTo(map)
-                        .bindPopup("<b>Camión " + patente + "</b><br>Coordenadas: [" + lat + ", " + lng + "]<br>Velocidad: " + vel + "<br><small>Última actualización: " + ultimaAct + "</small>");
+                        .bindPopup("<b>Unidad " + patente + "</b><br>Velocidad: " + vel);
                 });
             }
         });

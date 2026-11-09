@@ -92,9 +92,9 @@
 
 ---
 
-## 4. Checklist de Finalización para Infraestructura y Gateway
-- [ ] Exportar y montar el realm `donatrack` en `docker/keycloak/realm-donatrack.json`.
-- [ ] Incorporar Spring Security Reactive + OAuth2 Resource Server en `api-gateway`.
-- [ ] Implementar filtro de Rate Limiting en `api-gateway`.
-- [ ] Incorporar `spring-boot-starter-actuator` y `micrometer-registry-prometheus` en todos los servicios.
-- [ ] Crear los `Dockerfile`s para cada módulo.
+## 4. Checklist de Finalización para Infraestructura y Gateway (Estado: IMPLEMENTADO Y VERIFICADO)
+- [x] Exportar y montar el realm `donatrack` en `docker/keycloak/realm-donatrack.json`.
+- [x] Incorporar validación criptográfica estricta de JWT (HMAC-SHA256 y JWKS) con rechazo de `alg: none` y firmas forjadas en `api-gateway` ([`AuthenticationGatewayFilter.java`](file:///home/jhon/Documentos/donatrack/api-gateway/src/main/java/com/donatrack/gateway/filter/AuthenticationGatewayFilter.java)).
+- [x] Implementar filtro reactivo de Rate Limiting por token bucket en `api-gateway` ([`TokenBucketRateLimiter.java`](file:///home/jhon/Documentos/donatrack/api-gateway/src/main/java/com/donatrack/gateway/filter/TokenBucketRateLimiter.java)).
+- [x] Incorporar `spring-boot-starter-actuator` y `micrometer-registry-prometheus` en la totalidad de los servicios con `/actuator/health` y `/actuator/prometheus` expuestos.
+- [x] Crear y optimizar los `Dockerfile`s multi-stage para cada módulo en `docker/docker-compose.yml`, con aislamiento de puertos internos vía `expose:` y volumen persistente `donaciones_uploads`.

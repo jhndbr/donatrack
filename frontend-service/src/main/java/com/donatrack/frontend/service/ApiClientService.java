@@ -84,9 +84,6 @@ public class ApiClientService {
     @Value("${donatrack.api-gateway.url:http://localhost:8080}")
     private String gatewayUrl;
 
-    @Value("${donatrack.mailpit.url:http://localhost:8025}")
-    private String mailpitUrl;
-
     public ApiClientService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
@@ -95,19 +92,27 @@ public class ApiClientService {
         return gatewayUrl;
     }
 
-    public String getMailpitUrl() {
-        return mailpitUrl;
-    }
-
     /**
-     * Construye HttpHeaders con Bearer token JWT si existe en la sesión activa del usuario
+     * Construye HttpHeaders con Bearer token JWT y cabeceras de trazabilidad (X-Correlation-Id / X-Trace-Id)
      */
     public HttpHeaders buildAuthHeaders() {
         HttpHeaders headers = new HttpHeaders();
         try {
+            String correlationId = org.slf4j.MDC.get("correlationId");
+            String traceId = org.slf4j.MDC.get("traceId");
+            if (correlationId != null && !correlationId.isBlank()) {
+                headers.set("X-Correlation-Id", correlationId);
+            }
+            if (traceId != null && !traceId.isBlank()) {
+                headers.set("X-Trace-Id", traceId);
+            }
             ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attrs != null) {
                 HttpServletRequest req = attrs.getRequest();
+                if (!headers.containsKey("X-Correlation-Id")) {
+                    String reqCorr = req.getHeader("X-Correlation-Id");
+                    headers.set("X-Correlation-Id", (reqCorr != null && !reqCorr.isBlank()) ? reqCorr : java.util.UUID.randomUUID().toString());
+                }
                 HttpSession session = req.getSession(false);
                 if (session != null) {
                     UserSession userSession = (UserSession) session.getAttribute(AuthInterceptor.SESSION_USER_KEY);
@@ -322,11 +327,14 @@ public class ApiClientService {
         if (m.find() && dirTrim.length() >= 5) {
             try {
                 String altura = m.group(1);
-                String nomenclatura = dirTrim.toUpperCase() + ", CIUDAD AUTÓNOMA DE BUENOS AIRES";
+                String upper = dirTrim.toUpperCase();
+                String nomenclatura = (upper.contains("BUENOS AIRES") || upper.contains("CABA") || upper.contains("ARGENTINA"))
+                        ? upper
+                        : upper + ", CIUDAD AUTÓNOMA DE BUENOS AIRES";
                 return Map.of(
                         "esValida", true,
                         "nomenclatura", nomenclatura,
-                        "nombreCalle", dirTrim.replaceAll("\\b" + altura + "\\b", "").replaceAll("[,]+", "").trim(),
+                        "nombreCalle", dirTrim.split(",")[0].replaceAll("\\b" + altura + "\\b", "").replaceAll("[,]+", "").trim(),
                         "altura", Integer.parseInt(altura),
                         "localidad", "Buenos Aires",
                         "provincia", "Ciudad Autónoma de Buenos Aires",
@@ -1229,73 +1237,6 @@ public class ApiClientService {
         } catch (Exception e) {
             log.warn("Fallo obteniendo donante id={}: {}", id, e.getMessage());
             return Collections.emptyMap();
-        }
-    }
-
-    // --- Mailpit REST Integration ---
-
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> listarMensajesMailpit(String query, int limit) {
-        try {
-            int max = (limit > 0) ? limit : 50;
-            java.net.URI uri;
-            if (query != null && !query.trim().isBlank()) {
-                uri = org.springframework.web.util.UriComponentsBuilder
-                        .fromHttpUrl(mailpitUrl)
-                        .path("/api/v1/search")
-                        .queryParam("query", query.trim())
-                        .queryParam("limit", max)
-                        .build()
-                        .toUri();
-            } else {
-                uri = org.springframework.web.util.UriComponentsBuilder
-                        .fromHttpUrl(mailpitUrl)
-                        .path("/api/v1/messages")
-                        .queryParam("limit", max)
-                        .build()
-                        .toUri();
-            }
-            Map<String, Object> res = restTemplate.getForObject(uri, Map.class);
-            return res != null ? res : Collections.emptyMap();
-        } catch (Exception e) {
-            log.warn("Fallo consultando mensajes de Mailpit: {}", e.getMessage());
-            return Collections.emptyMap();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> obtenerMensajeMailpit(String id) {
-        if (id == null || id.isBlank()) return Collections.emptyMap();
-        try {
-            Map<String, Object> res = restTemplate.getForObject(mailpitUrl + "/api/v1/message/" + id, Map.class);
-            return res != null ? res : Collections.emptyMap();
-        } catch (Exception e) {
-            log.warn("Fallo obteniendo mensaje de Mailpit id={}: {}", id, e.getMessage());
-            return Collections.emptyMap();
-        }
-    }
-
-    public boolean eliminarMensajeMailpit(String id) {
-        if (id == null || id.isBlank()) return false;
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(Map.of("ids", List.of(id)), headers);
-            restTemplate.exchange(mailpitUrl + "/api/v1/messages", HttpMethod.DELETE, entity, String.class);
-            return true;
-        } catch (Exception e) {
-            log.warn("Fallo eliminando mensaje de Mailpit id={}: {}", id, e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean vaciarBuzonMailpit() {
-        try {
-            restTemplate.delete(mailpitUrl + "/api/v1/messages");
-            return true;
-        } catch (Exception e) {
-            log.warn("Fallo vaciando buzon de Mailpit: {}", e.getMessage());
-            return false;
         }
     }
 }

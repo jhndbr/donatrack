@@ -28,5 +28,16 @@ donatrack:
     url: ${KEYCLOAK_URL:http://localhost:8081}
     realm: ${KEYCLOAK_REALM:donatrack}
     client-id: ${KEYCLOAK_CLIENT_ID:donatrack-client}
-  mailpit:
-    url: ${MAILPIT_URL:http://localhost:8025}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [frontend-service] [%X{correlationId:-}] [%X{traceId:-}] %logger{36} - %msg%n"

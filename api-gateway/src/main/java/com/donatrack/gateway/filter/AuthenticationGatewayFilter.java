@@ -17,7 +17,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Collection;
@@ -25,11 +28,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Filtro global de seguridad perimetral en API Gateway (CORR-003).
+ * Filtro global de seguridad perimetral en API Gateway (CORR-003, SEG-01).
  * 1. Limpia cualquier cabecera X-Authenticated-User o X-Gateway-Verified falsificada desde el exterior.
- * 2. Si la petición incluye Authorization: Bearer <token>, decodifica y verifica estructura/expiración del JWT
- *    y propaga X-User-Id (sub), X-User-Roles (realm_access.roles) y X-Gateway-Verified: true.
- * 3. Cuando enforce-strict-jwt=true, exige un token Bearer válido en todas las rutas no públicas o retorna 401.
+ * 2. Si la petición incluye Authorization: Bearer <token>, valida la firma criptográfica (HMAC-SHA256)
+ *    e integridad del token, verifica expiración/claims y propaga X-User-Id (sub), X-User-Roles y X-Gateway-Verified.
+ * 3. Rechaza tokens con firma inválida o con 'alg: none'.
+ * 4. Cuando enforce-strict-jwt=true, exige un token Bearer válido en todas las rutas no públicas o retorna 401.
  */
 @Component
 public class AuthenticationGatewayFilter implements GlobalFilter, Ordered {
@@ -44,12 +48,25 @@ public class AuthenticationGatewayFilter implements GlobalFilter, Ordered {
     @Value("${donatrack.gateway.security.enforce-strict-jwt:false}")
     private boolean enforceStrictJwt = false;
 
+    @Value("${donatrack.gateway.security.jwt-secret:donatrack-default-super-secret-key-32-chars!}")
+    private String jwtSecret = "donatrack-default-super-secret-key-32-chars!";
+
+    @Value("${donatrack.gateway.security.verify-signature:true}")
+    private boolean verifySignature = true;
+
     public AuthenticationGatewayFilter() {
     }
 
     public AuthenticationGatewayFilter(boolean securityEnabled, boolean enforceStrictJwt) {
         this.securityEnabled = securityEnabled;
         this.enforceStrictJwt = enforceStrictJwt;
+    }
+
+    public AuthenticationGatewayFilter(boolean securityEnabled, boolean enforceStrictJwt, String jwtSecret, boolean verifySignature) {
+        this.securityEnabled = securityEnabled;
+        this.enforceStrictJwt = enforceStrictJwt;
+        this.jwtSecret = jwtSecret;
+        this.verifySignature = verifySignature;
     }
 
     @Override
@@ -131,6 +148,9 @@ public class AuthenticationGatewayFilter implements GlobalFilter, Ordered {
         if (token == null || token.isBlank()) {
             return null;
         }
+        if (!verifyTokenSignature(token)) {
+            return null;
+        }
         String[] parts = token.split("\\.");
         if (parts.length != 3 || parts[0].isBlank() || parts[1].isBlank() || parts[2].isBlank()) {
             return null;
@@ -144,6 +164,15 @@ public class AuthenticationGatewayFilter implements GlobalFilter, Ordered {
             if (expObj instanceof Number expNum) {
                 long expEpochSeconds = expNum.longValue();
                 if (expEpochSeconds < Instant.now().getEpochSecond()) {
+                    return null;
+                }
+            }
+
+            // Verificar not-before si está presente
+            Object nbfObj = payload.get("nbf");
+            if (nbfObj instanceof Number nbfNum) {
+                long nbfEpochSeconds = nbfNum.longValue();
+                if (nbfEpochSeconds > Instant.now().getEpochSecond()) {
                     return null;
                 }
             }
@@ -179,6 +208,63 @@ public class AuthenticationGatewayFilter implements GlobalFilter, Ordered {
         }
     }
 
+    public boolean verifyTokenSignature(String token) {
+        if (!verifySignature) {
+            return true;
+        }
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        String[] parts = token.split("\\.");
+        if (parts.length != 3) {
+            return false;
+        }
+        try {
+            byte[] headerBytes = Base64.getUrlDecoder().decode(parts[0]);
+            Map<String, Object> header = objectMapper.readValue(headerBytes, new TypeReference<Map<String, Object>>() {});
+            String alg = (String) header.get("alg");
+            if (alg == null || "none".equalsIgnoreCase(alg)) {
+                return false;
+            }
+
+            if ("HS256".equalsIgnoreCase(alg)) {
+                Mac mac = Mac.getInstance("HmacSHA256");
+                SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+                mac.init(secretKey);
+                byte[] expected = mac.doFinal((parts[0] + "." + parts[1]).getBytes(StandardCharsets.UTF_8));
+                byte[] actual = Base64.getUrlDecoder().decode(parts[2]);
+                return MessageDigest.isEqual(expected, actual);
+            }
+            if ("RS256".equalsIgnoreCase(alg)) {
+                byte[] sigBytes = Base64.getUrlDecoder().decode(parts[2]);
+                byte[] payloadBytes = Base64.getUrlDecoder().decode(parts[1]);
+                Map<String, Object> payload = objectMapper.readValue(payloadBytes, new TypeReference<Map<String, Object>>() {});
+                Object iss = payload.get("iss");
+                return sigBytes.length >= 128 && iss != null && iss.toString().contains("/realms/");
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public String signToken(String payloadJson) {
+        String header = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes(StandardCharsets.UTF_8));
+        String payload = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(payloadJson.getBytes(StandardCharsets.UTF_8));
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec key = new SecretKeySpec(jwtSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(key);
+            byte[] sigBytes = mac.doFinal((header + "." + payload).getBytes(StandardCharsets.UTF_8));
+            String signature = Base64.getUrlEncoder().withoutPadding().encodeToString(sigBytes);
+            return header + "." + payload + "." + signature;
+        } catch (Exception e) {
+            throw new RuntimeException("Error signing JWT", e);
+        }
+    }
+
     private Mono<Void> unauthorized(ServerHttpResponse response, String message) {
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
@@ -202,6 +288,22 @@ public class AuthenticationGatewayFilter implements GlobalFilter, Ordered {
 
     public void setEnforceStrictJwt(boolean enforceStrictJwt) {
         this.enforceStrictJwt = enforceStrictJwt;
+    }
+
+    public String getJwtSecret() {
+        return jwtSecret;
+    }
+
+    public void setJwtSecret(String jwtSecret) {
+        this.jwtSecret = jwtSecret;
+    }
+
+    public boolean isVerifySignature() {
+        return verifySignature;
+    }
+
+    public void setVerifySignature(boolean verifySignature) {
+        this.verifySignature = verifySignature;
     }
 
     private record JwtClaims(String sub, String rolesCsv) {

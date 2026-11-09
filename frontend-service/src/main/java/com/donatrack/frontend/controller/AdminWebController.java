@@ -273,22 +273,28 @@ public class AdminWebController {
     @PostMapping("/donaciones/nueva")
     public String guardarDonacionSegmentada(@RequestParam("donanteId") Long donanteId,
                                             @RequestParam("nombreBien") List<String> nombresBien,
+                                            @RequestParam(value = "categoria", required = false) List<String> categorias,
                                             @RequestParam("subcategoria") List<String> subcategorias,
                                             @RequestParam("cantidad") List<Double> cantidades,
                                             @RequestParam("unidadMedida") List<String> unidadesMedida,
                                             @RequestParam(value = "esUsado", required = false) List<Boolean> esUsados,
                                             @RequestParam(value = "fechaVencimiento", required = false) List<String> fechasVencimiento,
+                                            @RequestParam(value = "fotoUrl", required = false) List<String> fotosUrl,
                                             @RequestParam(value = "descripcionGeneral", required = false) String descripcionGeneral,
                                             RedirectAttributes redirectAttrs) {
         java.util.List<Map<String, Object>> listaBienes = new java.util.ArrayList<>();
         int totalItems = subcategorias != null ? subcategorias.size() : 0;
         for (int i = 0; i < totalItems; i++) {
             String subcat = subcategorias.get(i);
+            String cat = (categorias != null && i < categorias.size() && categorias.get(i) != null && !categorias.get(i).isBlank())
+                    ? categorias.get(i).trim()
+                    : "Bienes Generales";
             String nombre = (nombresBien != null && i < nombresBien.size()) ? nombresBien.get(i) : "";
             double cant = (cantidades != null && i < cantidades.size() && cantidades.get(i) != null) ? cantidades.get(i) : 1.0;
             String unidad = (unidadesMedida != null && i < unidadesMedida.size()) ? unidadesMedida.get(i) : "UNIDADES";
             boolean usado = (esUsados != null && i < esUsados.size() && Boolean.TRUE.equals(esUsados.get(i)));
             String fechaVenc = (fechasVencimiento != null && i < fechasVencimiento.size()) ? fechasVencimiento.get(i) : null;
+            String foto = (fotosUrl != null && i < fotosUrl.size()) ? fotosUrl.get(i) : null;
 
             String descItem = (nombre != null && !nombre.isBlank()) ? nombre : (subcat + " (" + cant + " " + unidad + ")");
             if (descripcionGeneral != null && !descripcionGeneral.isBlank() && !descItem.contains(descripcionGeneral)) {
@@ -297,13 +303,16 @@ public class AdminWebController {
 
             Map<String, Object> bien = new java.util.HashMap<>();
             bien.put("descripcion", descItem);
-            bien.put("categoria", "Bienes Generales");
+            bien.put("categoria", cat);
             bien.put("subcategoria", subcat);
             bien.put("cantidad", cant);
             bien.put("unidadMedida", unidad);
             bien.put("esUsado", usado);
             if (fechaVenc != null && !fechaVenc.isBlank()) {
                 bien.put("fechaVencimiento", fechaVenc.trim());
+            }
+            if (foto != null && !foto.isBlank()) {
+                bien.put("fotoUrl", foto.trim());
             }
             listaBienes.add(bien);
         }

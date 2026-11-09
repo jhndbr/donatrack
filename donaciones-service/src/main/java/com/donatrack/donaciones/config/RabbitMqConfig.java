@@ -1,6 +1,9 @@
 package com.donatrack.donaciones.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +26,15 @@ public class RabbitMqConfig {
     @Value("${donatrack.rabbitmq.routing-key.donante-inactivo:donante.inactivo}")
     private String routingKeyDonanteInactivo;
 
+    public static final String DLX_NAME = "donatrack.dlx";
+    public static final String DLQ_ROUTING_KEY = "notificaciones.dlq";
+
+    @Bean
+    public MessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
+        objectMapper.findAndRegisterModules();
+        return new Jackson2JsonMessageConverter(objectMapper);
+    }
+
     @Bean
     public TopicExchange eventsExchange() {
         return new TopicExchange(exchangeName, true, false);
@@ -30,12 +42,18 @@ public class RabbitMqConfig {
 
     @Bean
     public Queue donacionAsignadaQueue() {
-        return new Queue(queueDonacionAsignada, true);
+        return QueueBuilder.durable(queueDonacionAsignada)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .withArgument("x-dead-letter-routing-key", DLQ_ROUTING_KEY)
+                .build();
     }
 
     @Bean
     public Queue donanteInactivoQueue() {
-        return new Queue(queueDonanteInactivo, true);
+        return QueueBuilder.durable(queueDonanteInactivo)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .withArgument("x-dead-letter-routing-key", DLQ_ROUTING_KEY)
+                .build();
     }
 
     @Bean

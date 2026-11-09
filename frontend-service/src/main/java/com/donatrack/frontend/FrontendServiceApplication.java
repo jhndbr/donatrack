@@ -14,6 +14,21 @@ public class FrontendServiceApplication {
 
     @Bean
     public RestTemplate restTemplate() {
-        return new RestTemplate(new org.springframework.http.client.JdkClientHttpRequestFactory());
+        org.springframework.http.client.JdkClientHttpRequestFactory factory =
+                new org.springframework.http.client.JdkClientHttpRequestFactory();
+        factory.setReadTimeout(java.time.Duration.ofSeconds(8));
+        RestTemplate rt = new RestTemplate(factory);
+        rt.getInterceptors().add((request, body, execution) -> {
+            String correlationId = org.slf4j.MDC.get("correlationId");
+            String traceId = org.slf4j.MDC.get("traceId");
+            if (correlationId != null && !correlationId.isBlank() && !request.getHeaders().containsKey("X-Correlation-Id")) {
+                request.getHeaders().set("X-Correlation-Id", correlationId);
+            }
+            if (traceId != null && !traceId.isBlank() && !request.getHeaders().containsKey("X-Trace-Id")) {
+                request.getHeaders().set("X-Trace-Id", traceId);
+            }
+            return execution.execute(request, body);
+        });
+        return rt;
     }
 }

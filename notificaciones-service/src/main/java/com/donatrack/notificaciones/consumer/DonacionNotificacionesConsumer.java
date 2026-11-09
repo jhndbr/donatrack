@@ -8,6 +8,7 @@ import com.donatrack.notificaciones.service.NotificacionesService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +38,7 @@ public class DonacionNotificacionesConsumer {
             notificacionesService.notificarDonacionRegistrada(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de donacion registrada: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en donacion.registrada -> DLQ", e);
         }
     }
 
@@ -48,6 +50,7 @@ public class DonacionNotificacionesConsumer {
             notificacionesService.notificarDonacionAsignada(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de donacion asignada: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en donacion.asignada -> DLQ", e);
         }
     }
 
@@ -59,6 +62,7 @@ public class DonacionNotificacionesConsumer {
             notificacionesService.notificarDonanteInactivo(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de donante inactivo: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en donante.inactivo -> DLQ", e);
         }
     }
 
@@ -70,6 +74,7 @@ public class DonacionNotificacionesConsumer {
             notificacionesService.notificarBienvenidaDonante(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de donante registrado: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en donante.registrado -> DLQ", e);
         }
     }
 

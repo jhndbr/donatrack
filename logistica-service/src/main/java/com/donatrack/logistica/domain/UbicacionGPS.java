@@ -1,10 +1,16 @@
 package com.donatrack.logistica.domain;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 
 @Document(collection = "telemetria_gps")
+@CompoundIndexes({
+        @CompoundIndex(name = "idx_camion_timestamp", def = "{'idCamion': 1, 'timestamp': -1}"),
+        @CompoundIndex(name = "idx_patente_timestamp", def = "{'patente': 1, 'timestamp': -1}")
+})
 public class UbicacionGPS {
 
     @Id

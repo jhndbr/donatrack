@@ -5,88 +5,110 @@
 </head>
 <body>
 <div th:fragment="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-header">
         <div>
-            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-shield-halved text-dark me-2"></i>Consola de Administración Central</h2>
-            <p class="text-secondary">Monitoreo de operaciones, flota logística, asignaciones por algoritmo y carga de datos masiva.</p>
+            <h1>Consola de Administración</h1>
+            <p class="page-subtitle">Monitoreo operativo, gestión de flota, asignaciones e ingreso de donaciones.</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="/admin/donaciones/nueva" class="btn btn-dt-primary btn-sm"><i class="fa-solid fa-box me-1"></i>Registrar Donación</a>
-            <a href="/admin/importar-csv" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-file-csv me-1"></i>Importar CSV</a>
+            <a href="/admin/donaciones/nueva" class="btn btn-dt-primary btn-sm">
+                <i class="fa-solid fa-plus me-1"></i>Registrar Donación
+            </a>
+            <a href="/admin/importar-csv" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-file-csv me-1"></i>Importar CSV
+            </a>
         </div>
     </div>
 
     <!-- Métricas del Sistema -->
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-primary border-4">
-                <small class="text-muted fw-bold">DONACIONES TOTALES</small>
-                <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalDonaciones}">0</div>
-                <small class="text-muted">Registradas en la red</small>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card">
+                <div class="kpi-label">Donaciones totales</div>
+                <div class="kpi-value" th:text="${totalDonaciones}">0</div>
+                <div class="kpi-meta">Registradas en la red</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-success border-4">
-                <small class="text-muted fw-bold">CAMIONES EN FLOTA</small>
-                <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalCamiones}">0</div>
-                <small class="text-muted">Unidades operativas</small>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card">
+                <div class="kpi-label">Camiones en flota</div>
+                <div class="kpi-value" th:text="${totalCamiones}">0</div>
+                <div class="kpi-meta">Unidades operativas</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-warning border-4">
-                <small class="text-muted fw-bold">ENTIDADES ASOCIADAS</small>
-                <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalEntidades}">0</div>
-                <small class="text-muted">Comedores y hospitales</small>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card">
+                <div class="kpi-label">Entidades asociadas</div>
+                <div class="kpi-value" th:text="${totalEntidades}">0</div>
+                <div class="kpi-meta">Comedores e instituciones</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-info border-4">
-                <small class="text-muted fw-bold">DONANTES REGISTRADOS</small>
-                <div class="fs-3 fw-bold text-dark mt-1" th:text="${totalDonantes}">0</div>
-                <small class="text-muted">Humanos y jurídicos</small>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card">
+                <div class="kpi-label">Donantes registrados</div>
+                <div class="kpi-value" th:text="${totalDonantes}">0</div>
+                <div class="kpi-meta">Personas y organizaciones</div>
             </div>
         </div>
     </div>
 
     <!-- Módulos de Gestión -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <i class="fa-solid fa-brain text-primary fs-2 mb-2"></i>
-                <h5 class="fw-bold text-dark">Matchmaking Inteligente</h5>
-                <p class="text-muted small">Ejecuta y audita la asignación semántica y por subatendidos hacia comedores.</p>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card p-4 h-100 d-flex flex-column">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-2 bg-light text-primary" style="width: 34px; height: 34px;">
+                        <i class="fa-solid fa-diagram-project"></i>
+                    </span>
+                    <h6 class="fw-bold text-dark mb-0">Asignación y Matchmaking</h6>
+                </div>
+                <p class="text-muted small mb-3">Evalúa compatibilidad de donaciones en depósito y asigna lotes a comedores.</p>
                 <div class="mt-auto d-flex gap-2">
-                    <a href="/admin/matchmaking" class="btn btn-outline-primary btn-sm">Revisar</a>
+                    <a href="/admin/matchmaking" class="btn btn-outline-secondary btn-sm flex-grow-1">Revisar</a>
                     <form action="/admin/matchmaking/ejecutar" method="post" class="d-inline">
-                        <button type="submit" class="btn btn-primary btn-sm" title="Ejecuta la asignación algorítmica de todas las donaciones en depósito"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Batch</button>
+                        <button type="submit" class="btn btn-dt-primary btn-sm" title="Ejecutar asignación automática de lotes en depósito">
+                            Ejecutar lote
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <i class="fa-solid fa-truck text-success fs-2 mb-2"></i>
-                <h5 class="fw-bold text-dark">Flota de Camiones</h5>
-                <p class="text-muted small">Registra nuevos vehículos, capacidades de volumen m³ y carga máxima kg.</p>
-                <a href="/admin/camiones" class="btn btn-outline-success btn-sm mt-auto">Administrar Camiones</a>
+        <div class="col-md-6 col-lg-3">
+            <div class="card p-4 h-100 d-flex flex-column">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-2 bg-light text-dark" style="width: 34px; height: 34px;">
+                        <i class="fa-solid fa-truck"></i>
+                    </span>
+                    <h6 class="fw-bold text-dark mb-0">Flota de Camiones</h6>
+                </div>
+                <p class="text-muted small mb-3">Registra vehículos logísticos, capacidades de volumen (m³) y carga máxima (kg).</p>
+                <a href="/admin/camiones" class="btn btn-outline-secondary btn-sm mt-auto">Administrar flota</a>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <i class="fa-solid fa-ranking-star text-warning fs-2 mb-2"></i>
-                <h5 class="fw-bold text-dark">Rankings Mensuales</h5>
-                <p class="text-muted small">Consulta el ranking mensual y el historial de donantes más activos.</p>
-                <a href="/admin/rankings" class="btn btn-outline-warning btn-sm mt-auto">Ver Clasificación</a>
+        <div class="col-md-6 col-lg-3">
+            <div class="card p-4 h-100 d-flex flex-column">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-2 bg-light text-dark" style="width: 34px; height: 34px;">
+                        <i class="fa-solid fa-ranking-star"></i>
+                    </span>
+                    <h6 class="fw-bold text-dark mb-0">Rankings Mensuales</h6>
+                </div>
+                <p class="text-muted small mb-3">Consulta la tabla mensual y el historial de participación de donantes activos.</p>
+                <a href="/admin/rankings" class="btn btn-outline-secondary btn-sm mt-auto">Ver clasificación</a>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <i class="fa-solid fa-satellite-dish text-info fs-2 mb-2"></i>
-                <h5 class="fw-bold text-dark">Centro de Notificaciones</h5>
-                <p class="text-muted small">Audita envíos RabbitMQ/Mailpit, pruebas multicanal y donantes inactivos.</p>
-                <a href="/admin/notificaciones" class="btn btn-outline-info btn-sm mt-auto position-relative">
-                    Auditar Notificaciones
-                    <span class="badge rounded-pill bg-danger ms-1"
+        <div class="col-md-6 col-lg-3">
+            <div class="card p-4 h-100 d-flex flex-column">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-2 bg-light text-dark" style="width: 34px; height: 34px;">
+                        <i class="fa-regular fa-bell"></i>
+                    </span>
+                    <h6 class="fw-bold text-dark mb-0">Comunicaciones</h6>
+                </div>
+                <p class="text-muted small mb-3">Audita el historial de envíos, avisos operativos y seguimiento de donantes inactivos.</p>
+                <a href="/admin/notificaciones" class="btn btn-outline-secondary btn-sm mt-auto d-flex align-items-center justify-content-center gap-2">
+                    <span>Centro de envíos</span>
+                    <span class="badge rounded-pill bg-danger"
                           th:if="${notificacionesNoLeidasCount != null and notificacionesNoLeidasCount > 0}"
                           th:text="${notificacionesNoLeidasCount}">0</span>
                 </a>
@@ -94,83 +116,50 @@
         </div>
     </div>
 
-    <!-- Gestión de Bajas Lógicas (CU-11, CU-25) -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-user-xmark text-danger me-2"></i>Bajas Lógicas del Sistema (CU-11 & CU-25)</h5>
-        <div class="row g-3">
-            <div class="col-md-6">
-                <div class="p-3 bg-light rounded-3 border">
-                    <h6 class="fw-bold text-dark mb-2">Baja de Donante (CU-11)</h6>
-                    <form action="/admin/donantes/1/baja" method="post" id="formBajaDonante">
-                        <div class="input-group mb-2">
-                            <span class="input-group-text bg-white small">ID Donante</span>
-                            <input type="number" id="donanteBajaId" class="form-control" placeholder="Ej. 1" required
-                                   oninput="document.getElementById('formBajaDonante').action='/admin/donantes/' + this.value + '/baja'">
-                        </div>
-                        <input type="text" name="motivo" class="form-control form-control-sm mb-2" placeholder="Motivo de la baja..." required>
-                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">Aplicar Baja Lógica a Donante</button>
-                    </form>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="p-3 bg-light rounded-3 border">
-                    <h6 class="fw-bold text-dark mb-2">Baja de Entidad Beneficiaria (CU-25)</h6>
-                    <form action="/admin/entidades/1/baja" method="post" id="formBajaEntidad">
-                        <div class="input-group mb-2">
-                            <span class="input-group-text bg-white small">ID Entidad</span>
-                            <input type="number" id="entidadBajaId" class="form-control" placeholder="Ej. 1" required
-                                   oninput="document.getElementById('formBajaEntidad').action='/admin/entidades/' + this.value + '/baja'">
-                        </div>
-                        <input type="text" name="motivo" class="form-control form-control-sm mb-2" placeholder="Motivo de la baja..." required>
-                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">Aplicar Baja Lógica a Entidad</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Gestión de Entregas Fallidas e Incidencias Logísticas (CU-44, CU-45) -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+    <!-- Entregas Fallidas e Incidencias Logísticas -->
+    <div class="card mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
             <div>
-                <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Entregas Fallidas e Incidencias Logísticas (CU-44 & CU-45)</h5>
-                <small class="text-muted">Donaciones no recibidas en destino por rechazo o fuerza mayor. Permite reingreso físico a depósito para nueva asignación o replanificación.</small>
+                <h6 class="fw-bold text-dark mb-0">Entregas fallidas e incidencias logísticas</h6>
+                <small class="text-muted">Donaciones no entregadas en destino. Permite reingresarlas a depósito para nueva asignación.</small>
             </div>
-            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fw-semibold"
-                  th:text="${#lists.size(donacionesFallidas)} + ' Incidencias Registradas'">0 Incidencias</span>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"
+                  th:text="${#lists.size(donacionesFallidas)} + ' registradas'">0 registradas</span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
-                        <th>Código</th>
+                        <th class="ps-4">Código</th>
                         <th>Subcategoría</th>
                         <th>Cantidad</th>
-                        <th>Entidad Asignada</th>
-                        <th>Motivo / Justificación de Falla</th>
-                        <th>Acción de Recuperación</th>
+                        <th>Entidad asignada</th>
+                        <th>Motivo reportado</th>
+                        <th class="text-end pe-4">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:if="${#lists.isEmpty(donacionesFallidas)}">
-                        <td colspan="6" class="text-center py-4 text-muted"><i class="fa-solid fa-circle-check text-success me-2"></i>No hay incidencias de entrega fallida pendientes de resolución.</td>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            No hay incidencias de entrega pendientes de resolución.
+                        </td>
                     </tr>
                     <tr th:each="d : ${donacionesFallidas}">
-                        <td>
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace px-2 py-1"
+                        <td class="ps-4">
+                            <span class="font-monospace fw-semibold text-danger small"
                                   th:text="${d['id'] != null ? 'DON-' + #numbers.formatInteger(d['id'], 4) : 'DON-0000'}">DON-0001</span>
                         </td>
                         <td><span class="badge bg-light text-dark border" th:text="${d['subcategoria']}">Alimentos</span></td>
                         <td th:text="${d['cantidad']} + ' ' + ${d['unidadMedida']}">10.0 kg</td>
-                        <td th:text="${d['entidadAsignada'] != null ? d['entidadAsignada']['razonSocial'] : 'No asignada'}">Comedor Los Chicos Felices</td>
+                        <td th:text="${d['entidadAsignada'] != null ? d['entidadAsignada']['razonSocial'] : 'No asignada'}">Comedor</td>
                         <td>
-                            <span class="text-danger fw-semibold" th:text="${d['justificacionFalla'] != null ? d['justificacionFalla'] : 'Rechazo / Sede cerrada'}">Entrega fallida reportada</span>
+                            <span class="text-danger small fw-medium" th:text="${d['justificacionFalla'] != null ? d['justificacionFalla'] : 'Rechazo / Sede cerrada'}">Incidencia reportada</span>
                         </td>
-                        <td>
+                        <td class="text-end pe-4">
                             <form th:action="@{'/admin/donaciones/' + ${d['id']} + '/reingresar'}" method="post" class="d-inline">
-                                <input type="hidden" name="motivo" value="Reingreso formal a depósito tras incidencia logística (CU-45)">
-                                <button type="submit" class="btn btn-sm btn-outline-success" title="Desasigna y reingresa el bien a depósito para reasignarlo mediante Matchmaking">
-                                    <i class="fa-solid fa-rotate-left me-1"></i>Reingresar a Depósito
+                                <input type="hidden" name="motivo" value="Reingreso formal a depósito tras incidencia logística">
+                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                    <i class="fa-solid fa-rotate-left me-1"></i>Reingresar a depósito
                                 </button>
                             </form>
                         </td>
@@ -181,21 +170,24 @@
     </div>
 
     <!-- Donaciones Pendientes de Asignar -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-warehouse text-warning me-2"></i>Donaciones en Depósito (Pendientes de Asignar)</h5>
-            <a href="/admin/matchmaking" class="btn btn-sm btn-dt-primary">Asignar con Matchmaking</a>
+    <div class="card mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="fw-bold text-dark mb-0">Donaciones en depósito pendientes de asignación</h6>
+                <small class="text-muted">Lotes disponibles en almacén listos para asignarse a una entidad beneficiaria.</small>
+            </div>
+            <a href="/admin/matchmaking" class="btn btn-sm btn-dt-primary">Ir a Matchmaking</a>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
-                        <th>ID</th>
+                        <th class="ps-4">ID</th>
                         <th>Subcategoría</th>
                         <th>Cantidad</th>
                         <th>Donante</th>
                         <th>Estado</th>
-                        <th>Acción</th>
+                        <th class="text-end pe-4">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -203,23 +195,23 @@
                         <td colspan="6" class="text-center py-4 text-muted">No hay donaciones pendientes en depósito.</td>
                     </tr>
                     <tr th:each="d : ${donacionesPendientes}">
-                        <td>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1"
+                        <td class="ps-4">
+                            <span class="font-monospace fw-semibold text-dark small"
                                   th:text="${d['id'] != null ? 'DON-' + #numbers.formatInteger(d['id'], 4) : 'DON-0000'}">DON-0001</span>
                         </td>
                         <td><span class="badge bg-light text-dark border" th:text="${d['subcategoria']}">Alimentos</span></td>
                         <td th:text="${d['cantidad']} + ' ' + ${d['unidadMedida']}">50 kg</td>
                         <td th:text="${d['donante'] != null ? d['donante']['nombreCompleto'] : 'Donante'}">Carlos</td>
-                        <td><span class="badge badge-status status-EN_DEPOSITO">EN_DEPOSITO</span></td>
-                        <td>
-                            <div class="d-flex gap-1">
-                                <a th:href="@{'/admin/matchmaking?donacionId=' + ${d['id']}}" class="btn btn-sm btn-primary">
-                                    <i class="fa-solid fa-brain me-1"></i>Evaluar
+                        <td><span class="badge badge-status status-EN_DEPOSITO">En depósito</span></td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1">
+                                <a th:href="@{'/admin/matchmaking?donacionId=' + ${d['id']}}" class="btn btn-sm btn-dt-primary">
+                                    Evaluar
                                 </a>
                                 <form th:action="@{'/admin/donaciones/' + ${d['id']} + '/marcar-vencida'}" method="post" class="d-inline"
-                                      onsubmit="return confirm('¿Confirma que desea marcar como VENCIDA esta donación?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Marcar como Vencida">
-                                        <i class="fa-solid fa-calendar-xmark me-1"></i>Vencida
+                                      onsubmit="return confirm('¿Confirma que desea marcar como vencida esta donación?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Marcar como vencida">
+                                        Vencida
                                     </button>
                                 </form>
                             </div>
@@ -229,6 +221,59 @@
             </table>
         </div>
     </div>
+
+    <!-- Gestión de Bajas Administrativas ( Secundario / Colapsable ) -->
+    <details class="card">
+        <summary class="card-header bg-white py-3 d-flex justify-content-between align-items-center" style="cursor: pointer; list-style: none;">
+            <div>
+                <h6 class="fw-bold text-dark mb-0">Bajas administrativas de cuentas</h6>
+                <small class="text-muted">Suspensión de donantes o entidades beneficiarias con registro de motivo.</small>
+            </div>
+            <span class="btn btn-sm btn-outline-secondary">Desplegar controles</span>
+        </summary>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <h6 class="fw-bold text-dark mb-2">Dar de baja a un donante</h6>
+                        <form action="/admin/donantes/1/baja" method="post" id="formBajaDonante">
+                            <div class="row g-2 mb-2">
+                                <div class="col-4">
+                                    <label class="form-label small mb-1">ID Donante</label>
+                                    <input type="number" id="donanteBajaId" class="form-control form-control-sm" placeholder="Ej. 1" required
+                                           oninput="document.getElementById('formBajaDonante').action='/admin/donantes/' + this.value + '/baja'">
+                                </div>
+                                <div class="col-8">
+                                    <label class="form-label small mb-1">Motivo de baja</label>
+                                    <input type="text" name="motivo" class="form-control form-control-sm" placeholder="Motivo administrativo..." required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">Confirmar baja de donante</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <h6 class="fw-bold text-dark mb-2">Dar de baja a una entidad beneficiaria</h6>
+                        <form action="/admin/entidades/1/baja" method="post" id="formBajaEntidad">
+                            <div class="row g-2 mb-2">
+                                <div class="col-4">
+                                    <label class="form-label small mb-1">ID Entidad</label>
+                                    <input type="number" id="entidadBajaId" class="form-control form-control-sm" placeholder="Ej. 1" required
+                                           oninput="document.getElementById('formBajaEntidad').action='/admin/entidades/' + this.value + '/baja'">
+                                </div>
+                                <div class="col-8">
+                                    <label class="form-label small mb-1">Motivo de baja</label>
+                                    <input type="text" name="motivo" class="form-control form-control-sm" placeholder="Motivo administrativo..." required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">Confirmar baja de entidad</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </details>
 </div>
 </body>
 </html>

@@ -67,10 +67,12 @@ public class Donacion {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "entidadBeneficiaria", "donaciones"})
     private NecesidadMaterial necesidadAsignada;
 
-    @OneToMany(mappedBy = "donacion", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "donacion", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<BienDonado> bienes = new ArrayList<>();
 
     @OneToMany(mappedBy = "donacion", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     @OrderBy("fechaHora ASC")
     private List<HistorialEstadoDonacion> historialEstados = new ArrayList<>();
 
@@ -167,12 +169,18 @@ public class Donacion {
     }
 
     public void confirmarEntrega(String usuarioResponsable) {
-        if (this.estado != EstadoDonacion.EN_TRASLADO) {
-            throw new IllegalStateException("Para confirmar entrega, la donacion debe encontrarse EN_TRASLADO");
+        if (this.estado == EstadoDonacion.ENTREGADA) {
+            return;
+        }
+        if (this.estado != EstadoDonacion.EN_TRASLADO && this.estado != EstadoDonacion.LISTA_PARA_ENTREGAR) {
+            throw new IllegalStateException("Para confirmar entrega, la donacion debe encontrarse EN_TRASLADO o LISTA_PARA_ENTREGAR");
         }
         cambiarEstado(EstadoDonacion.ENTREGADA, "Entrega confirmada y recibida en sede receptora", usuarioResponsable);
         if (this.entidadAsignada != null) {
             this.entidadAsignada.registrarDonacionRecibida();
+        }
+        if (this.necesidadAsignada != null) {
+            this.necesidadAsignada.registrarRecepcion(this.cantidad);
         }
     }
 

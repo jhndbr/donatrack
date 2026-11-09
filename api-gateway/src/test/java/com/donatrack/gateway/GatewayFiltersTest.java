@@ -1,6 +1,7 @@
 package com.donatrack.gateway;
 
 import com.donatrack.gateway.filter.AuthenticationGatewayFilter;
+import com.donatrack.gateway.filter.ObservabilityAndCorrelationGatewayFilter;
 import com.donatrack.gateway.filter.RateLimitingFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -186,13 +187,96 @@ class GatewayFiltersTest {
         assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
     }
 
-    private String buildSampleJwt(String payloadJson) {
+    @Test
+    @DisplayName("AuthenticationGatewayFilter rechaza con 401 un token con firma criptográfica falsificada (SEG-01)")
+    void testAuthFilterRejectsForgedSignature() {
+        GatewayFilterChain chain = exchange -> Mono.empty();
+
+        long futureExp = Instant.now().getEpochSecond() + 3600;
+        // Token con firma no coincidente o manipulada
         String header = Base64.getUrlEncoder().withoutPadding()
                 .encodeToString("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes(StandardCharsets.UTF_8));
         String payload = Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(payloadJson.getBytes(StandardCharsets.UTF_8));
-        String signature = Base64.getUrlEncoder().withoutPadding()
-                .encodeToString("valid-signature-bytes".getBytes(StandardCharsets.UTF_8));
-        return header + "." + payload + "." + signature;
+                .encodeToString(("{\"sub\":\"attacker\",\"roles\":[\"ROLE_ADMIN\"],\"exp\":" + futureExp + "}").getBytes(StandardCharsets.UTF_8));
+        String forgedSignature = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString("invalid-forged-signature-bytes".getBytes(StandardCharsets.UTF_8));
+        String tamperedToken = header + "." + payload + "." + forgedSignature;
+
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/v1/donaciones/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tamperedToken)
+                        .build()
+        );
+
+        authFilter.filter(exchange, chain).block();
+        assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
+    }
+
+    @Test
+    @DisplayName("AuthenticationGatewayFilter rechaza con 401 un token con algoritmo 'alg: none' (SEG-01)")
+    void testAuthFilterRejectsAlgNone() {
+        GatewayFilterChain chain = exchange -> Mono.empty();
+
+        long futureExp = Instant.now().getEpochSecond() + 3600;
+        String header = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString("{\"alg\":\"none\",\"typ\":\"JWT\"}".getBytes(StandardCharsets.UTF_8));
+        String payload = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(("{\"sub\":\"attacker\",\"exp\":" + futureExp + "}").getBytes(StandardCharsets.UTF_8));
+        String signature = "";
+        String noneToken = header + "." + payload + "." + signature;
+
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/v1/donaciones/1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + noneToken)
+                        .build()
+        );
+
+        authFilter.filter(exchange, chain).block();
+        assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
+    }
+
+    private String buildSampleJwt(String payloadJson) {
+        return authFilter.signToken(payloadJson);
+    }
+
+    @Test
+    @DisplayName("ObservabilityAndCorrelationGatewayFilter genera o propaga X-Correlation-Id y X-Trace-Id en request y response")
+    void testObservabilityFilterPropagatesCorrelationAndTraceHeaders() {
+        ObservabilityAndCorrelationGatewayFilter obsFilter = new ObservabilityAndCorrelationGatewayFilter();
+        AtomicReference<ServerWebExchange> downstreamExchange = new AtomicReference<>();
+        GatewayFilterChain chain = exchange -> {
+            downstreamExchange.set(exchange);
+            return Mono.empty();
+        };
+
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/v1/donaciones")
+                        .header("X-Correlation-Id", "corr-test-123")
+                        .build()
+        );
+
+        obsFilter.filter(exchange, chain).block();
+
+        assertNotNull(downstreamExchange.get());
+        assertEquals("corr-test-123", downstreamExchange.get().getRequest().getHeaders().getFirst("X-Correlation-Id"));
+        assertNotNull(downstreamExchange.get().getRequest().getHeaders().getFirst("X-Trace-Id"));
+        assertEquals("corr-test-123", exchange.getResponse().getHeaders().getFirst("X-Correlation-Id"));
+        assertNotNull(exchange.getResponse().getHeaders().getFirst("X-Trace-Id"));
+    }
+
+    @Test
+    @DisplayName("ObservabilityAndCorrelationGatewayFilter devuelve 503 JSON controlado cuando un servicio aguas abajo falla")
+    void testObservabilityFilterHandlesDownstreamServiceUnavailable() {
+        ObservabilityAndCorrelationGatewayFilter obsFilter = new ObservabilityAndCorrelationGatewayFilter();
+        GatewayFilterChain failingChain = exchange -> Mono.error(new RuntimeException("Connection refused"));
+
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/v1/logistica/camiones").build()
+        );
+
+        obsFilter.filter(exchange, failingChain).block();
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, exchange.getResponse().getStatusCode());
+        assertNotNull(exchange.getResponse().getHeaders().getFirst("X-Correlation-Id"));
     }
 }

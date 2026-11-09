@@ -8,6 +8,7 @@ spring:
   data:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/logistica_db}
+      auto-index-creation: true
 
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}
@@ -36,3 +37,16 @@ donatrack:
   cron:
     # Modo demo / pruebas operativas: ejecuta planificación de rutas cada 5 minutos (en producción: "0 0 1 * * ?")
     planificacion-rutas: ${DONATRACK_CRON_RUTAS:0 */5 * * * *}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [logistica-service] [%X{correlationId:-}] [%X{traceId:-}] %logger{36} - %msg%n"

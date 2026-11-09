@@ -75,3 +75,7 @@ donatrack:
     url: ${DONATRACK_GEOREF_URL:https://apis.datos.gob.ar/georef/api/direcciones}
     timeout-ms: 4000
     strict: false
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [donaciones-service] [%X{correlationId:-}] [%X{traceId:-}] %logger{36} - %msg%n"

@@ -92,4 +92,20 @@ public class DonacionEventConsumerTest {
         verify(incentivosService, never()).registrarEntregaExitosaPorEmail(anyString());
         verify(eventoRepo, never()).save(any());
     }
+
+    @Test
+    void testErrorAlProcesarLanzaAmqpRejectAndDontRequeueExceptionParaDLQ() {
+        DonacionAsignadaEvent evento = new DonacionAsignadaEvent(
+                100L, "Alimentos", 25.0, "kg",
+                10L, "Comedor Sol", "comedor@mail.com",
+                42L, "donante@mail.com", "Lucía Benítez"
+        );
+
+        when(eventoRepo.existsByClaveEvento(anyString())).thenThrow(new RuntimeException("Fallo de base de datos"));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                org.springframework.amqp.AmqpRejectAndDontRequeueException.class,
+                () -> consumer.recibirDonacionAsignada(evento)
+        );
+    }
 }

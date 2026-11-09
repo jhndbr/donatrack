@@ -144,4 +144,38 @@ public class Fase1DominioTest {
         donacion.setVersion(1L);
         assertEquals(1L, donacion.getVersion());
     }
+
+    @Test
+    @DisplayName("La asignación reserva cobertura pero la necesidad solo se satisface al recibir efectivamente los bienes (ENTREGADA)")
+    void testNecesidadSeSatisfaceSoloEnRecepcionEfectivaYNoEnAsignacion() {
+        PersonaHumana donante = new PersonaHumana("Laura", "Martínez", 38, "32444555", "F", "Av. Santa Fe 1500");
+        Donacion donacion = new Donacion(donante, "Arroz", 50.0, "KG", false, LocalDate.now().plusMonths(8));
+
+        EntidadBeneficiaria entidad = new EntidadBeneficiaria("Comedor Esperanza", "Av. Corrientes 1234", "11-4444-5555");
+        NecesidadMaterial necesidad = new NecesidadMaterial("Arroz", "Arroz para almuerzos",
+                TipoNecesidad.EXTRAORDINARIA, 50.0, "KG", null);
+        entidad.agregarNecesidad(necesidad);
+
+        // 1. Asignación en depósito por el 100% de lo solicitado:
+        // Debe reservar cantidadCubierta (para no sobre-asignar en matchmaking),
+        // pero NO debe considerarse recepción efectiva ni satisfacer/cerrar la necesidad.
+        donacion.asignarA(entidad, necesidad, "ADMIN");
+        assertEquals(50.0, necesidad.getCantidadCubierta());
+        assertEquals(0.0, necesidad.getCantidadRecibida());
+        assertFalse(necesidad.estaSatisfecha(), "La mera asignación no debe satisfacer la necesidad antes de la entrega");
+        assertTrue(necesidad.isActiva(), "La necesidad debe seguir activa mientras la donación no haya sido recibida");
+
+        // 2. Despacho e inicio de traslado
+        donacion.marcarListaParaEntregar("PLANIFICADOR");
+        donacion.iniciarTraslado("CHOFER");
+        assertFalse(necesidad.estaSatisfecha());
+
+        // 3. Recepción efectiva confirmada en sede beneficiaria (ENTREGADA)
+        donacion.confirmarEntrega("ENTIDAD_BENEFICIARIA");
+        assertEquals(EstadoDonacion.ENTREGADA, donacion.getEstado());
+        assertEquals(50.0, necesidad.getCantidadRecibida());
+        assertTrue(necesidad.estaSatisfecha(), "Al confirmarse la recepción física se satisface la necesidad");
+        assertFalse(necesidad.isActiva(), "La necesidad satisfecha pasa a estado cerrado/inactivo");
+        assertNotNull(necesidad.getFechaCierre());
+    }
 }

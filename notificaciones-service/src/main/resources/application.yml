@@ -70,3 +70,16 @@ donatrack:
       entrega-fallida: ${DONATRACK_QUEUE_ENTREGA_FALLIDA:q.notificaciones.entrega-fallida}
       mision-cumplida: ${DONATRACK_QUEUE_MISION_CUMPLIDA:q.notificaciones.mision-cumplida}
       categoria-ascendida: ${DONATRACK_QUEUE_CATEGORIA_ASCENDIDA:q.notificaciones.categoria-ascendida}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [notificaciones-service] [%X{correlationId:-}] [%X{traceId:-}] %logger{36} - %msg%n"

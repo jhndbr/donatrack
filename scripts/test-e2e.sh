@@ -60,13 +60,13 @@ test_endpoint "Gateway -> Incentivos (Rankings)" "http://localhost:8080/api/v1/i
 test_endpoint "Gateway -> Notificaciones (Estadísticas)" "http://localhost:8080/api/v1/notificaciones/estadisticas" 200
 test_endpoint "Gateway -> Notificaciones (Historial)" "http://localhost:8080/api/v1/notificaciones/historial" 200
 
-echo -n "Gateway -> Rate Limiting Headers... "
-RATE_RES=$(curl -s -I http://localhost:8080/api/v1/donaciones/saludo || true)
-if echo "$RATE_RES" | grep -q "X-RateLimit-Limit"; then
-    echo -e "${GREEN}[OK - Cabeceras de Rate Limiting presentes]${NC}"
+echo -n "Gateway -> Rate Limiting & Correlation Headers... "
+RATE_RES=$(curl -s -I -H "X-Correlation-Id: e2e-corr-2026" http://localhost:8080/api/v1/donaciones/saludo || true)
+if echo "$RATE_RES" | grep -qi "X-RateLimit-Limit" && echo "$RATE_RES" | grep -qi "X-Correlation-Id.*e2e-corr-2026" && echo "$RATE_RES" | grep -qi "X-Trace-Id"; then
+    echo -e "${GREEN}[OK - Cabeceras X-RateLimit-Limit, X-Correlation-Id y X-Trace-Id presentes]${NC}"
     PASSED=$((PASSED + 1))
 else
-    echo -e "${YELLOW}[AVISO - Sin cabeceras de rate limiting directas]${NC}"
+    echo -e "${YELLOW}[AVISO - Verificando cabeceras de Gateway]${NC}"
 fi
 
 # 4. Flujo de Negocio Completo
@@ -192,6 +192,16 @@ if echo "$ASIGN_RES" | grep -q "ASIGNACION_REALIZADA"; then
     PASSED=$((PASSED + 1))
 else
     echo -e "${RED}[FALLÓ asignación de donación]${NC}"
+    FAILED=$((FAILED + 1))
+fi
+
+echo -n " -> Verificando que la asignación reserva cobertura pero NO satisface la necesidad antes de entregarse... "
+NEC_PRE_ENTREGA=$(curl -s "http://localhost:8082/api/v1/entidades/$ENTIDAD_ID/necesidades")
+if echo "$NEC_PRE_ENTREGA" | grep -q '"cantidadCubierta":50.0' && echo "$NEC_PRE_ENTREGA" | grep -q '"cantidadRecibida":0.0'; then
+    echo -e "${GREEN}[OK - Necesidad con cantidadCubierta=50.0 y cantidadRecibida=0.0 (pendiente de recepción física)]${NC}"
+    PASSED=$((PASSED + 1))
+else
+    echo -e "${RED}[FALLÓ verificación de cobertura vs recepción previa a entrega]${NC}"
     FAILED=$((FAILED + 1))
 fi
 

@@ -320,6 +320,8 @@ public class DonacionService {
         Donacion donacion = donacionRepository.findById(donacionId)
                 .orElseThrow(() -> new IllegalArgumentException("Donacion no encontrada: " + donacionId));
 
+        NecesidadMaterial necesidadVinculada = donacion.getNecesidadAsignada();
+
         String user = usuarioResponsable != null ? usuarioResponsable : "OPERADOR";
         switch (nuevoEstado) {
             case LISTA_PARA_ENTREGAR -> donacion.marcarListaParaEntregar(user);
@@ -331,7 +333,16 @@ public class DonacionService {
             default -> throw new IllegalArgumentException("Transicion de estado no permitida directamente: " + nuevoEstado);
         }
 
-        if (fotoUrl != null && !fotoUrl.isBlank()) {
+        if (necesidadVinculada != null && necesidadRepository != null &&
+                (nuevoEstado == EstadoDonacion.ENTREGADA || nuevoEstado == EstadoDonacion.EN_DEPOSITO || nuevoEstado == EstadoDonacion.VENCIDA)) {
+            necesidadRepository.save(necesidadVinculada);
+        }
+
+        boolean fotoEsValida = fotoUrl != null && !fotoUrl.isBlank()
+                && !fotoUrl.contains("/notificaciones")
+                && !fotoUrl.endsWith("/comprobantes");
+
+        if (fotoEsValida) {
             if (donacion.getBienes() == null) {
                 donacion.setBienes(new ArrayList<>());
             }
@@ -356,7 +367,7 @@ public class DonacionService {
 
         Donacion guardada = donacionRepository.save(donacion);
 
-        if (!"LOGISTICA_SERVICE".equals(user) && !"LOGISTICA".equals(user) && !"CHOFER".equals(user)) {
+        if (!"LOGISTICA_SERVICE".equals(user) && !"LOGISTICA".equals(user) && !"LOGISTICA_AMQP".equals(user) && !"CHOFER".equals(user)) {
             publicarEventoTransicionOutbox(guardada, nuevoEstado, justificacion);
         }
 

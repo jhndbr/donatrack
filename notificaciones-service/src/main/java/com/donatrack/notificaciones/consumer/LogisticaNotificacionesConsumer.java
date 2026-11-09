@@ -8,6 +8,7 @@ import com.donatrack.notificaciones.service.NotificacionesService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +38,7 @@ public class LogisticaNotificacionesConsumer {
             notificacionesService.notificarRutaIniciada(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de ruta iniciada: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en ruta.iniciada -> DLQ", e);
         }
     }
 
@@ -48,6 +50,7 @@ public class LogisticaNotificacionesConsumer {
             notificacionesService.notificarEntregaConfirmada(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de entrega confirmada: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en entrega.confirmada -> DLQ", e);
         }
     }
 
@@ -59,6 +62,7 @@ public class LogisticaNotificacionesConsumer {
             notificacionesService.notificarEntregaFallida(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de entrega fallida: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en entrega.fallida -> DLQ", e);
         }
     }
 
@@ -70,6 +74,7 @@ public class LogisticaNotificacionesConsumer {
             notificacionesService.notificarCamionEnPuerta(evento);
         } catch (Exception e) {
             log.error("Error al procesar mensaje de camion en puerta: {}", e.getMessage(), e);
+            throw new AmqpRejectAndDontRequeueException("Error en camion.en-puerta -> DLQ", e);
         }
     }
 

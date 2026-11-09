@@ -10,6 +10,9 @@ spring:
 
   cloud:
     gateway:
+      httpclient:
+        connect-timeout: 3000
+        response-timeout: 10s
       routes:
         # Rutas hacia el Servicio de Donaciones
         - id: donaciones-service
@@ -96,6 +99,8 @@ donatrack:
     security:
       enabled: ${GATEWAY_SECURITY_ENABLED:true}
       enforce-strict-jwt: ${GATEWAY_ENFORCE_STRICT_JWT:false}
+      jwt-secret: ${GATEWAY_JWT_SECRET:donatrack-default-super-secret-key-32-chars!}
+      verify-signature: ${GATEWAY_VERIFY_SIGNATURE:true}
 
 management:
   endpoints:
@@ -105,3 +110,7 @@ management:
   endpoint:
     health:
       show-details: always
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{correlationId:-}] [%X{traceId:-}] %logger{36} - %msg%n"

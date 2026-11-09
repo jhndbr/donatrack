@@ -35,3 +35,16 @@ donatrack:
 
   integraciones:
     n8n-webhook-url: ${N8N_WEBHOOK_URL:http://localhost:5678/webhook/insignias}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [incentivos-service] [%X{correlationId:-}] [%X{traceId:-}] %logger{36} - %msg%n"

@@ -39,7 +39,7 @@ public class OutboxPublisherTest {
         OutboxEvent event1 = new OutboxEvent("Donacion", "1", "DonacionAsignadaEvent", "donacion.asignada", "{\"id\":1}");
         event1.setId(10L);
 
-        when(outboxEventRepository.findPendingEvents()).thenReturn(List.of(event1));
+        when(outboxEventRepository.findPendingEvents(any())).thenReturn(List.of(event1));
 
         outboxPublisher.publicarEventosPendientes();
 
@@ -53,7 +53,7 @@ public class OutboxPublisherTest {
         OutboxEvent event = new OutboxEvent("Donacion", "1", "DonacionAsignadaEvent", "donacion.asignada", "{\"id\":1}");
         event.setId(10L);
 
-        when(outboxEventRepository.findPendingEvents()).thenReturn(List.of(event));
+        when(outboxEventRepository.findPendingEvents(any())).thenReturn(List.of(event));
         doThrow(new RuntimeException("RabbitMQ connection refused")).when(rabbitTemplate)
                 .convertAndSend(anyString(), anyString(), anyString());
 
@@ -65,7 +65,7 @@ public class OutboxPublisherTest {
 
     @Test
     void testSinEventosPendientesNoInteractuaConRabbitMq() {
-        when(outboxEventRepository.findPendingEvents()).thenReturn(Collections.emptyList());
+        when(outboxEventRepository.findPendingEvents(any())).thenReturn(Collections.emptyList());
 
         outboxPublisher.publicarEventosPendientes();
 
